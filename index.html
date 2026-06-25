@@ -139,7 +139,7 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
   <div class="sec" id="sec-unsub"><h2>아직 안 낸 부부</h2><span class="hint">주차별로 모아봤어요 · 전체 15부부</span></div>
   <div id="unsub"><div class="state">불러오는 중…</div></div>
 
-  <p class="note">이 페이지는 구글시트와 <b>실시간 연결</b>돼 있어요 — 시트에 과제가 새로 쌓이면 새로고침할 때마다 자동 반영됩니다. (시트 공유가 '링크가 있는 모든 사용자 보기'로 열려 있어야 합니다.)</p>
+  <p class="note">카페에 올라온 과제는 <b>매일 1회 자동으로 반영</b>돼요. 새로고침하면 가장 최근에 반영된 내용을 볼 수 있어요.</p>
   <footer>원팀 프로젝트 · 결혼영수증</footer>
 </div>
 
@@ -266,7 +266,7 @@ function renderUnsubmitted(){
       ? `<div class="misslist">${miss.map(m=>`<span class="misschip">${mask(m.h)}</span>`).join('')}</div>`
       : `<div class="allin">다 냈어요! 🎉</div>`;
     return `<div class="weekblk">
-      <div class="wkhead"><span class="wkname">${w}</span><span class="wkprog">${total}집 중 ${done}집 완료${miss.length?` · ${miss.length}집 남았어요`:''}</span></div>
+      <div class="wkhead"><span class="wkname">${w}</span><span class="wkprog">${total}부부 중 ${done}부부 완료${miss.length?` · ${miss.length}부부 남았어요`:''}</span></div>
       <div class="bar"><i style="width:${pct}%"></i></div>
       ${body}
     </div>`;
@@ -293,9 +293,7 @@ function renderStats(){
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="lbl">참여 멤버</div><div class="val">${nicks.size}<small> 명</small></div></div>
     <div class="stat"><div class="lbl">총 제출 과제</div><div class="val pos">${rows.length}<small> 건</small></div></div>
-    <div class="stat"><div class="lbl">트랙</div><div class="val">${tracks.size}<small> 개</small></div></div>
-    <div class="stat"><div class="lbl">이번 주 안 낸 집</div><div class="val">${missLast}<small> 집</small></div></div>
-    <div class="stat"><div class="lbl">평균 조회수</div><div class="val">${kshort(avgV)}</div></div>`;
+    <div class="stat"><div class="lbl">이번 주 안 낸 부부</div><div class="val">${missLast}<small> 부부</small></div></div>`;
 }
 
 function renderMembers(){
@@ -322,8 +320,7 @@ function renderMembers(){
         <div class="mdot ${active?'':'idle'}"></div>
       </div>
       <div class="mrow">
-        <div class="met"><div class="v">${m.subs.length}</div><div class="k">제출</div></div>
-        <div class="met"><div class="v">${m.views.length?kshort(avgV):'—'}</div><div class="k">평균 조회</div></div>
+        <div class="met"><div class="v">${m.subs.length}</div><div class="k">제출 과제</div></div>
       </div>
       <div class="tags">${trackTags}</div>
       <div class="mfoot">
