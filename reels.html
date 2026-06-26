@@ -317,4 +317,17 @@ async function loadMetrics(){
         live[last.username]={reels:last.reels_count||0, avgViews:last.avg_views||0,
           followers:last.followers||0, delta:prev===null?null:last.followers-prev, hist:hist};
       });
-      // 기존 8명 명단에 실측치를 병합 (수집 안 된 멤버도 명단에서 사라�
+      members.forEach(m=>{
+        const u=m.handle.replace('@','');
+        if(live[u]){ Object.assign(m, live[u]); delete live[u]; }
+      });
+      Object.keys(live).forEach(u=>{ members.push({name:u, handle:'@'+u, ...live[u]}); });
+      members.sort((a,b)=>b.followers-a.followers);
+      renderStats();renderMembers();renderBoards();renderForm();
+    }
+  }catch(e){ console.error('metrics load failed',e); }
+}
+renderStats();renderMembers();renderBoards();renderForm();loadFeedback();loadMetrics();
+</script>
+</body>
+</html>
