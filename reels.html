@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>원팀 프로젝트 · 릴스 소모임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sage:#8FAF8A; --sage-dark:#5f7d5a; --sage-deep:#37502f; --sage-soft:#dfeada; --sage-tint:#eef3ec;
+  --ink:#1c1c1a; --soft:#6a6a64; --faint:#a3a39c; --line:#eeeeea; --hair:#f4f4f1;
+  --bg:#fbfbf9; --card:#ffffff; --up:#4c8c2f; --down:#c0573a; --gold:#b8881c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+
+.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid var(--line)}
+.nav-in{max-width:1040px;margin:0 auto;padding:0 24px}
+.nav-top{display:flex;align-items:center;justify-content:space-between;height:60px}
+.nbrand{display:flex;align-items:center;gap:12px}
+.logo{width:27px;height:27px;border-radius:8px;background:var(--sage);display:flex;align-items:center;justify-content:center}
+.wordmark{font-size:18px;font-weight:700;letter-spacing:-.5px;color:var(--ink)}
+.ndiv{width:1px;height:16px;background:#dcdcd6}
+.subname{font-size:14px;color:#8a8a82}
+.nlinks{display:flex;gap:30px}
+.nlinks a{font-size:14px;color:#8a8a82;text-decoration:none;font-weight:500;transition:.15s}
+.nlinks a:hover{color:var(--sage-deep)}
+.nactions{display:flex;align-items:center;gap:18px}
+.nactions .ghost{font-size:14px;color:var(--sage-dark);font-weight:500;text-decoration:none}
+.pill{background:var(--sage-soft);color:#21331c;font-weight:700;border:0;border-radius:999px;padding:9px 19px;font-size:13.5px;cursor:pointer;font-family:inherit;transition:.15s}
+.pill:hover{background:var(--sage);color:#fff}
+.nav-bot{display:none}
+
+.wrap{max-width:1040px;margin:0 auto;padding:38px 24px 90px}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;padding-bottom:26px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.hero-t{font-size:24px;font-weight:700;letter-spacing:-.6px}
+.hero-s{font-size:13.5px;color:var(--soft);margin-top:7px}
+.period{font-size:13px;color:var(--sage-deep);font-weight:500;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.period .dot{width:6px;height:6px;border-radius:50%;background:var(--sage)}
+.lab{font-size:10.5px;color:var(--faint);letter-spacing:1.5px;font-weight:500}
+.sec{display:flex;align-items:baseline;gap:10px;margin:46px 0 18px;scroll-margin-top:80px}
+.sec h2{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.sec .hint{font-size:12px;color:var(--faint)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:26px}
+.stat{background:var(--card);padding:18px 20px}
+.stat .lbl{font-size:10.5px;color:var(--faint);letter-spacing:1px}
+.stat .val{font-size:30px;font-weight:300;margin-top:6px;letter-spacing:-1px}
+.stat .val small{font-size:13px;font-weight:400;color:var(--faint);letter-spacing:0}
+.stat .val.pos{color:var(--up)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.mname{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.mhandle{font-size:11.5px;color:var(--faint);margin-top:1px}
+.mdot{width:7px;height:7px;border-radius:50%;background:var(--sage);flex-shrink:0}
+.mrow{display:flex;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid var(--hair);margin-bottom:16px}
+.met .v{font-size:27px;font-weight:300;letter-spacing:-1px;color:var(--ink)}
+.met .k{font-size:10px;color:var(--faint);letter-spacing:1px;margin-top:2px}
+.fol{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.fol .k{font-size:10px;color:var(--faint);letter-spacing:1px}
+.fol .v{font-size:16px;font-weight:500;margin-top:2px}
+.delta{font-size:11.5px;font-weight:400}
+.delta.up{color:var(--up)} .delta.down{color:var(--down)}
+.boards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.board h3{font-size:11px;color:var(--faint);letter-spacing:1px;font-weight:500;margin-bottom:12px}
+.rank{display:flex;align-items:center;gap:13px;padding:9px 0;border-bottom:1px solid var(--hair)}
+.rank:last-child{border-bottom:0}
+.rank .no{font-size:13px;font-weight:500;color:var(--faint);width:16px}
+.rank .no.first{color:var(--sage-dark);font-weight:700}
+.rank .nm{flex:1;font-size:13.5px;font-weight:500}
+.rank .mv{font-size:13.5px;font-weight:400;color:var(--soft)}
+.fwall{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+.fb{padding:16px 2px;border-bottom:1px solid var(--hair)}
+.fb .line{font-size:13.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.fb .who{font-weight:700}
+.fb .arrow{color:var(--faint)}
+.fb .star{color:var(--gold);font-size:12px;font-weight:500;margin-left:auto}
+.fb .good,.fb .bad{font-size:13px;color:var(--soft);margin-top:2px}
+.fb .sum{font-size:13px;color:var(--ink);margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--sage-deep);font-weight:500;border:1px solid var(--sage);border-radius:8px;padding:9px 17px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s}
+.btn:hover{background:var(--sage);color:#fff}
+.btn.solid{background:var(--sage);color:#21331c;border-color:var(--sage)}
+.btn.solid:hover{background:var(--sage-dark);color:#fff}
+.form{border:1px solid var(--line);border-radius:8px;padding:22px;margin-top:14px;display:none;background:var(--card)}
+.form.open{display:block}
+.form .row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.form .fld{flex:1;min-width:140px}
+.form label{display:block;font-size:10.5px;color:var(--faint);letter-spacing:1px;margin-bottom:6px}
+.form select,.form input,.form textarea{width:100%;font-family:inherit;font-size:13.5px;padding:10px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+.form select:focus,.form input:focus,.form textarea:focus{outline:0;border-color:var(--sage)}
+.form textarea{resize:vertical;min-height:44px}
+.stars{display:flex;gap:18px;flex-wrap:wrap}
+.crit{display:flex;align-items:center;gap:7px}
+.crit .cl{font-size:12.5px;color:var(--soft);width:42px}
+.star-row i{font-size:20px;color:#e0e0db;cursor:pointer;font-style:normal}
+.star-row i.on{color:var(--gold)}
+.note{font-size:11.5px;color:var(--faint);line-height:1.7;margin-top:30px;padding-top:18px;border-top:1px solid var(--line)}
+footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;margin-top:44px}
+@media(max-width:640px){.nlinks{display:none}.hero-t{font-size:20px}.stat .val{font-size:25px}.met .v{font-size:23px}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-in">
+    <div class="nav-top">
+      <div class="nbrand">
+        <span class="logo"><svg width="11" height="11" viewBox="0 0 11 11"><polygon points="2,1 10,5.5 2,10" fill="#fff"/></svg></span>
+        <span class="wordmark">원팀 프로젝트</span>
+        <span class="ndiv"></span>
+        <span class="subname">릴스 소모임</span>
+      </div>
+      <div class="nlinks">
+        <a href="#sec-members">현황</a>
+        <a href="#sec-boards">리더보드</a>
+        <a href="#sec-feedback">피드백</a>
+      </div>
+      <div class="nactions">
+        <a class="ghost" href="#sec-members">멤버 보기</a>
+        <button class="pill" id="navFb">피드백 남기기</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div>
+      <div class="hero-t">이번달, 챌린지원의 성장 기록 🌱</div>
+      <div class="hero-s">둘이서 함께하는 부의 첫걸음 — 같이 올리고, 서로 피드백하며 성장해요.</div>
+    </div>
+    <div class="period"><span class="dot"></span><span id="period">2026년 6월</span></div>
+  </section>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="sec" id="sec-members"><h2>챌린지원 현황</h2><span class="hint">릴스 · 조회수 · 팔로워 증감</span></div>
+  <div class="grid" id="members"></div>
+
+  <div class="sec" id="sec-boards"><h2>이번달 리더보드</h2><span class="hint">성장 중심</span></div>
+  <div class="boards" id="boards"></div>
+
+  <div class="sec" id="sec-feedback"><h2>멤버 피드백</h2><span class="hint">서로 주고받기</span></div>
+  <button class="btn solid" id="fbToggle">＋ 피드백 남기기</button>
+  <div class="form" id="fbForm">
+    <div class="row">
+      <div class="fld"><label>누가 (나)</label><select id="fFrom"></select></div>
+      <div class="fld"><label>누구에게</label><select id="fTo"></select></div>
+    </div>
+    <div class="fld" style="margin-bottom:16px">
+      <label>항목별 별점 · 각 1~5</label>
+      <div class="stars" id="fStars"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label>잘된 점</label><textarea id="fGood" placeholder="첫 3초 훅이 좋아요…"></textarea></div>
+      <div class="fld"><label>부족한 점</label><textarea id="fBad" placeholder="끝에 저장 유도 한 줄…"></textarea></div>
+    </div>
+    <div class="fld" style="margin-bottom:16px"><label>한 줄 총평</label><input id="fSum" placeholder="훅 탄탄, CTA만 보강하면 더 터질 듯!"></div>
+    <button class="btn solid" id="fbSubmit">제출하기</button>
+  </div>
+  <div class="fwall" id="fwall" style="margin-top:16px"></div>
+
+  <p class="note">멤버 지표는 <b>2026년 6월 26일 기준 실측 데이터</b>예요 (Apify 수집). 팔로워 증감 추이 그래프는 매일 수집이 며칠 쌓이면 그려집니다. <b>피드백은 Supabase에 실시간 저장</b>돼 모든 멤버가 함께 봅니다.</p>
+  <footer>원팀 프로젝트 · 결혼영수증</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPA_URL='https://vfgfvwqejfuqaxvtordh.supabase.co';
+const SUPA_KEY='sb_publishable_W_XKLh1kA5hZ-zFatXOhLQ_icQ-j1aW';
+const db = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+const members = [
+  {name:'당장부부', handle:'@dangjang.bubu', reels:1, avgViews:1484, followers:3185, delta:null, hist:[3185]},
+  {name:'너리네', handle:'@nery.haus', reels:3, avgViews:1678, followers:20, delta:null, hist:[20]},
+  {name:'신혼랩', handle:'@sinhon_lab', reels:6, avgViews:779, followers:28, delta:null, hist:[28]},
+  {name:'맥랑이네', handle:'@maek_lang_ee', reels:5, avgViews:461, followers:12, delta:null, hist:[12]},
+  {name:'링꾸네아내', handle:'@linkku.ne', reels:0, avgViews:0, followers:0, delta:null, hist:[0]},
+  {name:'개미네', handle:'@kimi.home__', reels:0, avgViews:0, followers:0, delta:null, hist:[0]},
+  {name:'다와와', handle:'@wawa_reality', reels:0, avgViews:0, followers:0, delta:null, hist:[0]},
+  {name:'daily_homedish', handle:'@daily_homedish', reels:0, avgViews:0, followers:0, delta:null, hist:[0]}
+];
+let feedback = [];
+async function loadFeedback(){
+  try{
+    const {data,error}=await db.from('feedback').select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    feedback=(data||[]).map(r=>({from:r.from_member,to:r.to_member,score:r.score,good:r.good,bad:r.bad,sum:r.summary}));
+  }catch(e){ console.error('피드백 불러오기 실패',e); }
+  renderWall();
+}
+
+const won=n=>n.toLocaleString('ko-KR');
+const kshort=n=>n>=1000?(Math.round(n/100)/10)+'K':String(n);
+
+function sparkline(hist,up){
+  const w=70,h=26,min=Math.min(...hist),max=Math.max(...hist),rng=(max-min)||1;
+  const pts=hist.map((v,i)=>`${(i/(hist.length-1))*w},${h-2-((v-min)/rng)*(h-6)}`).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${up?'#8FAF8A':'#c0573a'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function renderStats(){
+  const totReels=members.reduce((a,m)=>a+m.reels,0);
+  const deltas=members.map(m=>m.delta).filter(v=>v!==null);
+  const totGain=deltas.reduce((a,b)=>a+b,0);
+  const gainHtml=deltas.length?`<div class="val pos">+${won(totGain)}</div>`:`<div class="val" style="font-size:18px;color:var(--faint);font-weight:400">측정 시작</div>`;
+  const avgV=Math.round(members.reduce((a,m)=>a+m.avgViews,0)/members.length);
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="lbl">참여 멤버</div><div class="val">${members.length}<small> 명</small></div></div>
+    <div class="stat"><div class="lbl">이번달 릴스</div><div class="val">${totReels}<small> 개</small></div></div>
+    <div class="stat"><div class="lbl">팔로워 순증</div>${gainHtml}</div>
+    <div class="stat"><div class="lbl">평균 조회수</div><div class="val">${kshort(avgV)}</div></div>`;
+}
+
+function renderMembers(){
+  document.getElementById('members').innerHTML=members.map(m=>{
+    const up=m.delta>=0;
+    return `<div class="card">
+      <div class="mhead">
+        <div><div class="mname">${m.name}</div><div class="mhandle">${m.handle}</div></div>
+        <div class="mdot"></div>
+      </div>
+      <div class="mrow">
+        <div class="met"><div class="v">${m.reels}</div><div class="k">릴스</div></div>
+        <div class="met"><div class="v">${kshort(m.avgViews)}</div><div class="k">평균 조회</div></div>
+      </div>
+      <div class="fol">
+        <div><div class="k">팔로워</div><div class="v">${won(m.followers)}
+          ${m.delta===null?'<span class="delta" style="color:var(--faint)">첫 측정</span>':`<span class="delta ${up?'up':'down'}">${up?'+':'−'}${won(Math.abs(m.delta))}</span>`}</div></div>
+        ${m.hist.length>1?sparkline(m.hist,up):''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function board(title,key,fmt){
+  const sorted=[...members].sort((a,b)=>b[key]-a[key]);
+  return `<div class="board card"><h3>${title}</h3>${sorted.map((m,i)=>`
+    <div class="rank"><div class="no${i===0?' first':''}">${i+1}</div>
+      <div class="nm">${m.name}</div><div class="mv">${fmt(m[key])}</div></div>`).join('')}</div>`;
+}
+function renderBoards(){
+  document.getElementById('boards').innerHTML=
+    board('릴스 많이 올린 순','reels',v=>v+'개')+
+    board('평균 조회수','avgViews',v=>kshort(v))+
+    board('팔로워 증가','delta',v=>(v>=0?'+':'')+won(v));
+}
+
+function renderWall(){
+  if(!feedback.length){document.getElementById('fwall').innerHTML='<div class="fb" style="color:var(--faint)">아직 피드백이 없어요. 첫 피드백을 남겨보세요!</div>';return;}
+  document.getElementById('fwall').innerHTML=feedback.map(f=>`
+    <div class="fb"><div class="line"><span class="who">${f.from}</span>
+      <span class="arrow">→</span><span class="who">${f.to}</span>
+      ${f.score?`<span class="star">★ ${f.score}</span>`:''}</div>
+      ${f.good?`<div class="good">잘된 점 · ${f.good}</div>`:''}
+      ${f.bad?`<div class="bad">아쉬운 점 · ${f.bad}</div>`:''}
+      ${f.sum?`<div class="sum">“${f.sum}”</div>`:''}</div>`).join('');
+}
+
+const crits=['후킹','편집','정보성','CTA'];
+const scores={};
+function renderForm(){
+  const opts=members.map(m=>`<option>${m.name}</option>`).join('');
+  document.getElementById('fFrom').innerHTML=opts;
+  document.getElementById('fTo').innerHTML=opts;
+  document.getElementById('fTo').selectedIndex=1;
+  document.getElementById('fStars').innerHTML=crits.map(c=>{
+    scores[c]=0;
+    return `<div class="crit"><span class="cl">${c}</span><span class="star-row" data-c="${c}">${
+      [1,2,3,4,5].map(n=>`<i data-n="${n}">★</i>`).join('')}</span></div>`;
+  }).join('');
+  document.querySelectorAll('.star-row').forEach(row=>{
+    row.querySelectorAll('i').forEach(st=>st.onclick=()=>{
+      const n=+st.dataset.n,c=row.dataset.c; scores[c]=n;
+      row.querySelectorAll('i').forEach(x=>x.classList.toggle('on',+x.dataset.n<=n));
+    });
+  });
+}
+
+function openForm(){document.getElementById('fbForm').classList.add('open');
+  document.getElementById('sec-feedback').scrollIntoView({behavior:'smooth'});}
+document.getElementById('fbToggle').onclick=()=>document.getElementById('fbForm').classList.toggle('open');
+document.getElementById('navFb').onclick=openForm;
+document.getElementById('fbSubmit').onclick=async ()=>{
+  const from=document.getElementById('fFrom').value, to=document.getElementById('fTo').value;
+  if(from===to){alert('나와 상대를 다르게 골라주세요!');return;}
+  const vals=crits.map(c=>scores[c]).filter(v=>v>0);
+  const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:0;
+  const row={from_member:from,to_member:to,
+    hooking:scores['후킹']||null,editing:scores['편집']||null,info:scores['정보성']||null,cta:scores['CTA']||null,
+    score:avg,good:document.getElementById('fGood').value.trim(),
+    bad:document.getElementById('fBad').value.trim(),summary:document.getElementById('fSum').value.trim()};
+  const btn=document.getElementById('fbSubmit'); btn.disabled=true; btn.textContent='제출 중…';
+  const {error}=await db.from('feedback').insert(row);
+  btn.disabled=false; btn.textContent='제출하기';
+  if(error){alert('저장 실패: '+error.message);return;}
+  document.getElementById('fGood').value='';document.getElementById('fBad').value='';document.getElementById('fSum').value='';
+  document.getElementById('fbForm').classList.remove('open');
+  renderForm(); loadFeedback();
+};
+
+async function loadMetrics(){
+  try{
+    const {data,error}=await db.from('metrics').select('*').order('captured_on',{ascending:true});
+    if(error) throw error;
+    if(data && data.length){
+      const byUser={};
+      data.forEach(r=>{(byUser[r.username]=byUser[r.username]||[]).push(r);});
+      const live={};
+      Object.values(byUser).forEach(rows=>{
+        const last=rows[rows.length-1];
+        const hist=rows.map(r=>r.followers);
+        const prev=rows.length>1?rows[rows.length-2].followers:null;
+        live[last.username]={reels:last.reels_count||0, avgViews:last.avg_views||0,
+          followers:last.followers||0, delta:prev===null?null:last.followers-prev, hist:hist};
+      });
+      // 기존 8명 명단에 실측치를 병합 (수집 안 된 멤버도 명단에서 사라�
