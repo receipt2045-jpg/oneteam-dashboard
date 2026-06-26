@@ -246,7 +246,7 @@ function renderBoards(){
   document.getElementById('boards').innerHTML=
     board('릴스 많이 올린 순','reels',v=>v+'개')+
     board('평균 조회수','avgViews',v=>kshort(v))+
-    board('팔로워 증가','delta',v=>(v>=0?'+':'')+won(v));
+    board('팔로워 증가','delta',v=>v===null?'측정 전':(v>=0?'+':'')+won(v));
 }
 
 function renderWall(){
