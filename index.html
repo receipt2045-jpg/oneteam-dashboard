@@ -75,6 +75,15 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:
 .misslist{display:flex;flex-wrap:wrap;gap:6px}
 .misschip{font-size:11.5px;font-weight:500;color:var(--down);background:#f7e9e4;border-radius:999px;padding:3px 11px}
 .allin{font-size:12.5px;color:var(--up);font-weight:500}
+.asgn{padding:12px 0;border-top:1px solid var(--hair)}
+.asgn:first-child{border-top:0;padding-top:2px}
+.asgn-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.asgn-t{font-size:13px;font-weight:600;color:var(--ink)}
+.asgn-prog{font-size:11.5px;color:var(--soft);margin-left:auto;white-space:nowrap}
+.scope{font-size:10px;font-weight:700;border-radius:999px;padding:2px 8px;letter-spacing:.2px}
+.scope.common{background:var(--sage-tint);color:var(--sage-deep)}
+.scope.sns{background:#fbeaf2;color:#a23b6e}
+.scope.naezip{background:#e6eefb;color:#2f5aa2}
 .unmatched{font-size:11.5px;color:var(--gold);background:#fbf3e0;border-radius:8px;padding:10px 13px;margin-top:4px}
 .matrix-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--card)}
 table.matrix{width:100%;border-collapse:collapse;min-width:520px}
@@ -107,7 +116,7 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
       <div class="nlinks">
         <a href="#sec-members">멤버 현황</a>
         <a href="#sec-matrix">제출 매트릭스</a>
-        <a href="#sec-unsub">안 낸 부부</a>
+        <a href="#sec-unsub">과제 체크</a>
       </div>
       <div class="nactions">
         <button class="pill" id="refreshBtn">새로고침</button>
@@ -136,7 +145,7 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
   <div class="sec" id="sec-matrix"><h2>트랙 × 주차 제출 현황</h2><span class="hint">칸의 숫자 = 제출 글 수</span></div>
   <div class="matrix-wrap" id="matrixWrap"><div class="state">불러오는 중…</div></div>
 
-  <div class="sec" id="sec-unsub"><h2>아직 안 낸 부부</h2><span class="hint">주차별로 모아봤어요 · 전체 15부부</span></div>
+  <div class="sec" id="sec-unsub"><h2>과제별 미제출 체크</h2><span class="hint">공통=전원 · SNS/내집은 해당 반만</span></div>
   <div id="unsub"><div class="state">불러오는 중…</div></div>
 
   <p class="note">카페에 올라온 과제는 <b>매일 1회 자동으로 반영</b>돼요. 새로고침하면 가장 최근에 반영된 내용을 볼 수 있어요.</p>
@@ -176,6 +185,51 @@ function householdOf(nick){
   for(const r of ROSTER){ if(r.stems.some(s=>n.includes(s.toLowerCase()))) return r.h; }
   return null;
 }
+
+// 반 배정: 가구 → 'sns' | 'naezip'. (결영이네·순둥이네=운영진, 과제체크 제외)
+const CLASS={
+  '꾸꾸네':'sns','뚱이부부':'sns','오운':'sns','콩콩부부':'sns','소원쀼':'sns','금복부부':'sns',
+  '민퐁듀네':'naezip','햇깡자네':'naezip','두근부부':'naezip','래미안':'naezip','프리부부':'naezip','호수':'naezip','재코드커플':'naezip'
+};
+const STUDENTS=Object.keys(CLASS); // 13가구
+// 과제 전체 목록(Notion "과제 예시" 기준). scope: common=전원 / sns / naezip. track=시트 트랙명.
+const CATALOG=[
+  {week:'OT', items:[
+    {track:'강의출석', label:'OT 강의 출석', scope:'common'},
+    {track:'돈관리', label:'자산 점검', scope:'common'}
+  ]},
+  {week:'1주차', items:[
+    {track:'독서', label:'부의 인문학 1장', scope:'common'},
+    {track:'돈관리', label:'고정비 점검', scope:'common'},
+    {track:'SNS', label:'프로필 세팅', scope:'sns'},
+    {track:'내집마련', label:'절세계좌·ETF', scope:'naezip'}
+  ]},
+  {week:'2주차', items:[
+    {track:'독서', label:'부의 인문학 2~3장', scope:'common'},
+    {track:'돈관리', label:'고정비 줄이기 1', scope:'common'},
+    {track:'SNS', label:'릴스 2개 업로드', scope:'sns'},
+    {track:'내집마련', label:'대출 계획·한도', scope:'naezip'}
+  ]},
+  {week:'3주차', items:[
+    {track:'독서', label:'부의 인문학 4~5장', scope:'common'},
+    {track:'돈관리', label:'고정비 줄이기 2', scope:'common'},
+    {track:'SNS', label:'공유/저장 릴스', scope:'sns'},
+    {track:'내집마련', label:'관심지역 분석', scope:'naezip'}
+  ]},
+  {week:'4주차', items:[
+    {track:'독서', label:'부의 인문학 6장', scope:'common'},
+    {track:'SNS', label:'1,000원 벌어보기', scope:'sns'},
+    {track:'내집마련', label:'후보단지 분석', scope:'naezip'}
+  ]}
+];
+// 특정 과제 대상 가구 목록
+function expectedFor(scope){ return STUDENTS.filter(h=> scope==='common' ? true : CLASS[h]===scope); }
+// 특정 주차·트랙을 제출한 가구 집합
+function submittedSet(week,track){
+  return new Set(rows.filter(r=>(r.week||'기타')===week && r.track===track).map(r=>householdOf(r.nick)).filter(Boolean));
+}
+// 데이터에 등장한 최신 주차 순번
+function maxWeekOrder(){ return Math.max(0,...rows.map(r=>weekOrder(r.week||'기타')).filter(n=>n<9000)); }
 
 let rows=[];
 
@@ -249,32 +303,36 @@ function render(){
 }
 
 function renderUnsubmitted(){
-  const weeks=[...new Set(rows.map(r=>r.week||'기타'))].sort((a,b)=>weekOrder(a)-weekOrder(b));
-  const total=ROSTER.length;
-  // 매칭 안 된 닉네임(명단에 없는 제출자)
+  const maxW=maxWeekOrder();
+  const shown=CATALOG.filter(c=>weekOrder(c.week)<=maxW);
+  const scopeLabel={common:'공통',sns:'SNS반',naezip:'내집반'};
+  let html=shown.map(c=>{
+    const items=c.items.map(it=>{
+      const exp=expectedFor(it.scope);
+      const sub=submittedSet(c.week,it.track);
+      const miss=exp.filter(h=>!sub.has(h));
+      const done=exp.length-miss.length;
+      const body=miss.length
+        ? `<div class="misslist">${miss.map(h=>`<span class="misschip">${mask(h)}</span>`).join('')}</div>`
+        : `<div class="allin">다 했어요! 🎉</div>`;
+      return `<div class="asgn">
+        <div class="asgn-h"><span class="asgn-t">${it.track} · ${it.label}</span>
+          <span class="scope ${it.scope}">${scopeLabel[it.scope]}</span>
+          <span class="asgn-prog">${done}/${exp.length} 완료</span></div>
+        ${body}</div>`;
+    }).join('');
+    return `<div class="weekblk"><div class="wkhead"><span class="wkname">${c.week}</span></div>${items}</div>`;
+  }).join('');
+  // 명단과 매칭되지 않은 제출 닉네임(참고용)
   const unmatched=[...new Set(rows.map(r=>r.nick).filter(nk=>{
     if(householdOf(nk)) return false;
     const n=String(nk||'').replace(/\s/g,'');
-    return !IGNORE.some(s=>n.includes(s)); // 새싹 등 의도적 제외는 경고에서 숨김
+    return !IGNORE.some(s=>n.includes(s));
   }))];
-  let html=weeks.map(w=>{
-    const submitted=new Set(rows.filter(r=>(r.week||'기타')===w).map(r=>householdOf(r.nick)).filter(Boolean));
-    const miss=ROSTER.filter(r=>!submitted.has(r.h));
-    const done=total-miss.length;
-    const pct=Math.round(done/total*100);
-    const body = miss.length
-      ? `<div class="misslist">${miss.map(m=>`<span class="misschip">${mask(m.h)}</span>`).join('')}</div>`
-      : `<div class="allin">다 냈어요! 🎉</div>`;
-    return `<div class="weekblk">
-      <div class="wkhead"><span class="wkname">${w}</span><span class="wkprog">${total}부부 중 ${done}부부 완료${miss.length?` · ${miss.length}부부 남았어요`:''}</span></div>
-      <div class="bar"><i style="width:${pct}%"></i></div>
-      ${body}
-    </div>`;
-  }).join('');
   if(unmatched.length){
-    html+=`<div class="unmatched">⚠️ 명단과 매칭되지 않은 제출 닉네임: ${unmatched.join(', ')} — 명단(ROSTER)에 어간을 추가하면 정확해져요.</div>`;
+    html+=`<div class="unmatched">⚠️ 명단과 매칭 안 된 제출 닉네임: ${unmatched.join(', ')}</div>`;
   }
-  document.getElementById('unsub').innerHTML=html;
+  document.getElementById('unsub').innerHTML=html||'<div class="state">표시할 과제가 없어요.</div>';
 }
 
 function renderStats(){
@@ -285,15 +343,16 @@ function renderStats(){
   const dates=rows.map(r=>r.date).filter(Boolean).sort((a,b)=>a-b);
   const periodTxt=dates.length?`${fmtDate(dates[0])} ~ ${fmtDate(dates[dates.length-1])}`:'';
   document.getElementById('period').textContent=periodTxt||'3기';
-  // 최근 주차 안 낸 집 수
-  const weeks=[...new Set(rows.map(r=>r.week||'기타'))].sort((a,b)=>weekOrder(a)-weekOrder(b));
-  const lastW=weeks[weeks.length-1];
-  const subLast=new Set(rows.filter(r=>(r.week||'기타')===lastW).map(r=>householdOf(r.nick)).filter(Boolean));
-  const missLast=ROSTER.length-subLast.size;
+  // 최근 주차에 과제 1개라도 안 한 부부 수
+  const shownW=CATALOG.filter(c=>weekOrder(c.week)<=maxWeekOrder());
+  const lastC=shownW[shownW.length-1];
+  const incomplete=new Set();
+  if(lastC){lastC.items.forEach(it=>{const sub=submittedSet(lastC.week,it.track);expectedFor(it.scope).forEach(h=>{if(!sub.has(h))incomplete.add(h);});});}
+  const missLast=incomplete.size;
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="lbl">참여 멤버</div><div class="val">${nicks.size}<small> 명</small></div></div>
     <div class="stat"><div class="lbl">총 제출 과제</div><div class="val pos">${rows.length}<small> 건</small></div></div>
-    <div class="stat"><div class="lbl">이번 주 안 낸 부부</div><div class="val">${missLast}<small> 부부</small></div></div>`;
+    <div class="stat"><div class="lbl">이번 주 미완료 부부</div><div class="val">${missLast}<small> 부부</small></div></div>`;
 }
 
 function renderMembers(){
