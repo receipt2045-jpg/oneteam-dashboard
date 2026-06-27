@@ -97,6 +97,16 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:
 .crit .cl{font-size:12.5px;color:var(--soft);width:42px}
 .star-row i{font-size:20px;color:#e0e0db;cursor:pointer;font-style:normal}
 .star-row i.on{color:var(--gold)}
+.reelpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;max-height:330px;overflow-y:auto;padding:2px}
+.rcard{border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;background:#fff;transition:.12s}
+.rcard:hover{border-color:var(--sage)}
+.rcard.sel{border-color:var(--sage-dark);box-shadow:0 0 0 2px var(--sage-soft)}
+.rcard .th{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--sage-tint)}
+.rcard .meta{padding:7px 8px}
+.rcard .cap{font-size:11.5px;line-height:1.4;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px}
+.rcard .sub{font-size:10.5px;color:var(--faint);margin-top:5px;display:flex;justify-content:space-between;align-items:center}
+.rcard a.open,.reelref a.open{font-size:10.5px;color:var(--sage-dark);text-decoration:none}
+.reelref{font-size:12px;color:var(--sage-deep);margin:14px 0 6px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .note{font-size:11.5px;color:var(--faint);line-height:1.7;margin-top:30px;padding-top:18px;border-top:1px solid var(--line)}
 footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;margin-top:44px}
 @media(max-width:640px){.nlinks{display:none}.hero-t{font-size:20px}.stat .val{font-size:25px}.met .v{font-size:23px}}
@@ -144,12 +154,16 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
   <div class="sec" id="sec-boards"><h2>이번달 리더보드</h2><span class="hint">성장 중심</span></div>
   <div class="boards" id="boards"></div>
 
-  <div class="sec" id="sec-feedback"><h2>멤버 피드백</h2><span class="hint">서로 주고받기</span></div>
+  <div class="sec" id="sec-feedback"><h2>릴스별 피드백</h2><span class="hint">릴스 하나 골라서</span></div>
   <button class="btn solid" id="fbToggle">＋ 피드백 남기기</button>
   <div class="form" id="fbForm">
     <div class="row">
       <div class="fld"><label>누가 (나)</label><select id="fFrom"></select></div>
-      <div class="fld"><label>누구에게</label><select id="fTo"></select></div>
+      <div class="fld"><label>누구의 릴스</label><select id="fTo"></select></div>
+    </div>
+    <div class="fld" style="margin-bottom:16px">
+      <label>릴스 고르기 · 카드를 누르면 선택돼요</label>
+      <div class="reelpick" id="reelPick"></div>
     </div>
     <div class="fld" style="margin-bottom:16px">
       <label>항목별 별점 · 각 1~5</label>
@@ -164,7 +178,7 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
   </div>
   <div class="fwall" id="fwall" style="margin-top:16px"></div>
 
-  <p class="note">멤버 지표는 <b>2026년 6월 26일 기준 실측 데이터</b>예요 (Apify 수집). 팔로워 증감 추이 그래프는 매일 수집이 며칠 쌓이면 그려집니다. <b>피드백은 Supabase에 실시간 저장</b>돼 모든 멤버가 함께 봅니다.</p>
+  <p class="note">멤버 지표는 <b>2026년 6월 26일 기준 실측 데이터</b>예요 (Apify 수집). 팔로워 증감 추이 그래프는 매일 수집이 며칠 쌓이면 그려집니다. <b>릴스별 피드백은 실시간 저장</b>돼 모든 멤버가 함께 봅니다. 릴스는 매일 새벽 자동 수집돼요.</p>
   <footer>원팀 프로젝트 · 결혼영수증</footer>
 </div>
 
@@ -188,7 +202,7 @@ async function loadFeedback(){
   try{
     const {data,error}=await db.from('feedback').select('*').order('created_at',{ascending:false});
     if(error) throw error;
-    feedback=(data||[]).map(r=>({from:r.from_member,to:r.to_member,score:r.score,good:r.good,bad:r.bad,sum:r.summary}));
+    feedback=(data||[]).map(r=>({from:r.from_member,to:r.to_member,score:r.score,good:r.good,bad:r.bad,sum:r.summary,reel:r.reel_shortcode}));
   }catch(e){ console.error('피드백 불러오기 실패',e); }
   renderWall();
 }
@@ -249,15 +263,55 @@ function renderBoards(){
     board('팔로워 증가','delta',v=>v===null?'측정 전':(v>=0?'+':'')+won(v));
 }
 
+let allReels={};
+let reelOrder=[];
+let selectedShort=null;
+
+async function loadAllReels(){
+  try{
+    const {data,error}=await db.from('reels').select('*').order('taken_at',{ascending:false});
+    if(error) throw error;
+    allReels={}; reelOrder=[];
+    (data||[]).forEach(r=>{ allReels[r.shortcode]=r; reelOrder.push(r.shortcode); });
+  }catch(e){ console.error('릴스 불러오기 실패',e); }
+  refreshReelPick(); renderWall();
+}
+
+const fmtDate=ss=>{ if(!ss) return ''; const d=new Date(ss); return (d.getMonth()+1)+'/'+d.getDate(); };
+const capLine=c=>{ c=(c||'').replace(/\n/g,' ').trim(); return c||'(캡션 없음)'; };
+
+function reelCardHtml(r,sel){
+  const th=r.thumb_url?`<img class="th" src="${r.thumb_url}" loading="lazy" onerror="this.style.display='none'">`:'<div class="th"></div>';
+  return `<div class="rcard${sel?' sel':''}" data-sc="${r.shortcode}">${th}<div class="meta"><div class="cap">${capLine(r.caption)}</div><div class="sub"><span>${fmtDate(r.taken_at)} · ${kshort(r.views||0)}</span><a class="open" href="${r.permalink}" target="_blank" rel="noopener" onclick="event.stopPropagation()">열기 ↗</a></div></div></div>`;
+}
+
+function refreshReelPick(){
+  const to=document.getElementById('fTo'); if(!to) return;
+  const m=members.find(x=>x.name===to.value);
+  const u=m?m.handle.replace('@',''):null;
+  const list=reelOrder.map(sc=>allReels[sc]).filter(r=>r && r.username===u);
+  const box=document.getElementById('reelPick');
+  if(!list.length){ box.innerHTML='<div style="font-size:12px;color:var(--faint);padding:8px">아직 수집된 릴스가 없어요. 매일 새벽 자동 수집돼요.</div>'; selectedShort=null; return; }
+  if(!list.some(r=>r.shortcode===selectedShort)) selectedShort=null;
+  box.innerHTML=list.map(r=>reelCardHtml(r,r.shortcode===selectedShort)).join('');
+  box.querySelectorAll('.rcard').forEach(c=>c.onclick=()=>{
+    selectedShort=c.dataset.sc;
+    box.querySelectorAll('.rcard').forEach(x=>x.classList.toggle('sel',x.dataset.sc===selectedShort));
+  });
+}
+
 function renderWall(){
-  if(!feedback.length){document.getElementById('fwall').innerHTML='<div class="fb" style="color:var(--faint)">아직 피드백이 없어요. 첫 피드백을 남겨보세요!</div>';return;}
-  document.getElementById('fwall').innerHTML=feedback.map(f=>`
-    <div class="fb"><div class="line"><span class="who">${f.from}</span>
-      <span class="arrow">→</span><span class="who">${f.to}</span>
-      ${f.score?`<span class="star">★ ${f.score}</span>`:''}</div>
-      ${f.good?`<div class="good">잘된 점 · ${f.good}</div>`:''}
-      ${f.bad?`<div class="bad">아쉬운 점 · ${f.bad}</div>`:''}
-      ${f.sum?`<div class="sum">“${f.sum}”</div>`:''}</div>`).join('');
+  const wall=document.getElementById('fwall');
+  if(!feedback.length){wall.innerHTML='<div class="fb" style="color:var(--faint)">아직 피드백이 없어요. 릴스를 골라 첫 피드백을 남겨보세요!</div>';return;}
+  const byReel={};
+  feedback.forEach(f=>{ const k=f.reel||'_'; (byReel[k]=byReel[k]||[]).push(f); });
+  let html='';
+  Object.keys(byReel).forEach(k=>{
+    const r=allReels[k];
+    if(r){ html+=`<div class="reelref">🎬 ${r.name} · ${capLine(r.caption).slice(0,38)} <a class="open" href="${r.permalink}" target="_blank" rel="noopener">열기 ↗</a></div>`; }
+    html+=byReel[k].map(f=>`<div class="fb"><div class="line"><span class="who">${f.from}</span><span class="arrow">→</span><span class="who">${f.to}</span>${f.score?`<span class="star">★ ${f.score}</span>`:''}</div>${f.good?`<div class="good">잘된 점 · ${f.good}</div>`:''}${f.bad?`<div class="bad">아쉬운 점 · ${f.bad}</div>`:''}${f.sum?`<div class="sum">"${f.sum}"</div>`:''}</div>`).join('');
+  });
+  wall.innerHTML=html;
 }
 
 const crits=['후킹','편집','정보성','CTA'];
@@ -267,6 +321,8 @@ function renderForm(){
   document.getElementById('fFrom').innerHTML=opts;
   document.getElementById('fTo').innerHTML=opts;
   document.getElementById('fTo').selectedIndex=1;
+  document.getElementById('fTo').onchange=refreshReelPick;
+  refreshReelPick();
   document.getElementById('fStars').innerHTML=crits.map(c=>{
     scores[c]=0;
     return `<div class="crit"><span class="cl">${c}</span><span class="star-row" data-c="${c}">${
@@ -286,10 +342,11 @@ document.getElementById('fbToggle').onclick=()=>document.getElementById('fbForm'
 document.getElementById('navFb').onclick=openForm;
 document.getElementById('fbSubmit').onclick=async ()=>{
   const from=document.getElementById('fFrom').value, to=document.getElementById('fTo').value;
-  if(from===to){alert('나와 상대를 다르게 골라주세요!');return;}
+  if(from===to){alert('내 릴스엔 피드백할 수 없어요. 다른 멤버를 골라주세요!');return;}
+  if(!selectedShort){alert('피드백할 릴스를 먼저 골라주세요!');return;}
   const vals=crits.map(c=>scores[c]).filter(v=>v>0);
   const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:0;
-  const row={from_member:from,to_member:to,
+  const row={from_member:from,to_member:to,reel_shortcode:selectedShort,
     hooking:scores['후킹']||null,editing:scores['편집']||null,info:scores['정보성']||null,cta:scores['CTA']||null,
     score:avg,good:document.getElementById('fGood').value.trim(),
     bad:document.getElementById('fBad').value.trim(),summary:document.getElementById('fSum').value.trim()};
@@ -298,6 +355,7 @@ document.getElementById('fbSubmit').onclick=async ()=>{
   btn.disabled=false; btn.textContent='제출하기';
   if(error){alert('저장 실패: '+error.message);return;}
   document.getElementById('fGood').value='';document.getElementById('fBad').value='';document.getElementById('fSum').value='';
+  selectedShort=null;
   document.getElementById('fbForm').classList.remove('open');
   renderForm(); loadFeedback();
 };
@@ -327,7 +385,7 @@ async function loadMetrics(){
     }
   }catch(e){ console.error('metrics load failed',e); }
 }
-renderStats();renderMembers();renderBoards();renderForm();loadFeedback();loadMetrics();
+renderStats();renderMembers();renderBoards();renderForm();loadAllReels();loadFeedback();loadMetrics();
 </script>
 </body>
 </html>
