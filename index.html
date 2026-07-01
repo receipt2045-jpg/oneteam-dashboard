@@ -292,7 +292,7 @@ function loadSheet(){
     delete window[cb];
   };
   const s=document.createElement('script');
-  s.src=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:${cb}&headers=1`;
+  s.src=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:${cb}&headers=1&t=${Date.now()}`;
   s.onerror=()=>{setState('시트에 연결하지 못했어요. 인터넷 또는 공유 설정을 확인해 주세요.',true);delete window[cb];};
   document.head.appendChild(s);
 }
