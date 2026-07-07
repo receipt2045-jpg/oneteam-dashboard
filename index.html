@@ -358,8 +358,9 @@ function renderStats(){
 function renderMembers(){
   const map=new Map();
   rows.forEach(r=>{
-    if(!map.has(r.nick)) map.set(r.nick,{nick:r.nick,subs:[],tracks:new Set(),weeks:new Set(),views:[],q:0,last:null});
-    const m=map.get(r.nick);
+    const key=householdOf(r.nick)||r.nick;   // 부부(가구) 단위로 묶기 (민퐁듀네 남편+아내 → 민퐁듀네)
+    if(!map.has(key)) map.set(key,{nick:key,subs:[],tracks:new Set(),weeks:new Set(),views:[],q:0,last:null});
+    const m=map.get(key);
     m.subs.push(r);
     if(r.track) m.tracks.add(r.track);
     if(r.week) m.weeks.add(r.week);
@@ -411,11 +412,4 @@ function renderMatrix(){
   html+='</tbody><tfoot><tr><th>합계</th>';
   weeks.forEach(w=>html+=`<td>${colTot(w)}</td>`);
   html+=`<td>${rows.length}</td></tr></tfoot></table>`;
-  document.getElementById('matrixWrap').innerHTML=html;
-}
-
-document.getElementById('refreshBtn').onclick=loadSheet;
-loadSheet();
-</script>
-</body>
-</html>
+  document.getElementById('matrixWrap').i
