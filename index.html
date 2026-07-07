@@ -412,4 +412,11 @@ function renderMatrix(){
   html+='</tbody><tfoot><tr><th>합계</th>';
   weeks.forEach(w=>html+=`<td>${colTot(w)}</td>`);
   html+=`<td>${rows.length}</td></tr></tfoot></table>`;
-  document.getElementById('matrixWrap').i
+  document.getElementById('matrixWrap').innerHTML=html;
+}
+
+document.getElementById('refreshBtn').onclick=loadSheet;
+loadSheet();
+</script>
+</body>
+</html>
