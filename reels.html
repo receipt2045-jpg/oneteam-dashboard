@@ -178,7 +178,7 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
   </div>
   <div class="fwall" id="fwall" style="margin-top:16px"></div>
 
-  <p class="note">멤버 지표는 <b>2026년 6월 26일 기준 실측 데이터</b>예요 (Apify 수집). 팔로워 증감 추이 그래프는 매일 수집이 며칠 쌓이면 그려집니다. <b>릴스별 피드백은 실시간 저장</b>돼 모든 멤버가 함께 봅니다. 릴스는 매일 새벽 자동 수집돼요.</p>
+  <p class="note">멤버 지표는 <b>매일 새벽 자동 수집된 실측 데이터</b>예요 (Apify). 평균 조회수는 최근 수집된 릴스 기준이며, 인스타가 갓 올린 릴스의 조회수는 바로 공개하지 않아 며칠 뒤 반영됩니다. 팔로워 증감 추이 그래프는 매일 수집이 며칠 쌓이면 그려집니다. <b>릴스별 피드백은 실시간 저장</b>돼 모든 멤버가 함께 봅니다. 릴스는 매일 새벽 자동 수집돼요.</p>
   <footer>원팀 프로젝트 · 결혼영수증</footer>
 </div>
 
@@ -267,6 +267,15 @@ let allReels={};
 let reelOrder=[];
 let selectedShort=null;
 
+function applyReelAvg(){
+  if(!Object.keys(allReels).length) return;
+  members.forEach(m=>{
+    const u=m.handle.replace('@','');
+    const vs=Object.values(allReels).filter(r=>r.username===u && r.views>0).map(r=>r.views);
+    if(vs.length) m.avgViews=Math.round(vs.reduce((a,b)=>a+b,0)/vs.length);
+  });
+}
+
 async function loadAllReels(){
   try{
     const {data,error}=await db.from('reels').select('*').order('taken_at',{ascending:false});
@@ -274,7 +283,7 @@ async function loadAllReels(){
     allReels={}; reelOrder=[];
     (data||[]).forEach(r=>{ allReels[r.shortcode]=r; reelOrder.push(r.shortcode); });
   }catch(e){ console.error('릴스 불러오기 실패',e); }
-  refreshReelPick(); renderWall();
+  applyReelAvg(); renderStats(); renderMembers(); renderBoards(); refreshReelPick(); renderWall();
 }
 
 const fmtDate=ss=>{ if(!ss) return ''; const d=new Date(ss); return (d.getMonth()+1)+'/'+d.getDate(); };
@@ -381,10 +390,12 @@ async function loadMetrics(){
       });
       Object.keys(live).forEach(u=>{ members.push({name:u, handle:'@'+u, ...live[u]}); });
       members.sort((a,b)=>b.followers-a.followers);
+      applyReelAvg();
       renderStats();renderMembers();renderBoards();renderForm();
     }
   }catch(e){ console.error('metrics load failed',e); }
 }
+document.getElementById('period').textContent=new Date().getFullYear()+'년 '+(new Date().getMonth()+1)+'월';
 renderStats();renderMembers();renderBoards();renderForm();loadAllReels();loadFeedback();loadMetrics();
 </script>
 </body>
