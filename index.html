@@ -161,7 +161,6 @@ const COL={num:0,track:1,nick:2,week:3,title:4,date:5,views:6,body:7,question:8,
 const ROSTER=[
   {h:'결영이네',stems:['결영','머니그랩','wedding_receipt']},
   {h:'순둥이네',stems:['순둥']},
-  {h:'금복부부',stems:['금복']},
   {h:'꾸꾸네',stems:['꾸꾸']},
   {h:'두근부부',stems:['두근']},
   {h:'뚱이부부',stems:['뚱이']},
@@ -177,6 +176,12 @@ const ROSTER=[
 ];
 // 명단에서 의도적으로 제외(새싹 등) — 미매칭 경고에 안 뜨게
 const IGNORE=['삼각별','잔디아내','잔디'];
+// 중도 이탈로 명단에서 완전 제외 — 통계·멤버카드·매트릭스·과제체크 어디에도 안 나옴
+const DROPPED=['금복'];
+function isDropped(nick){
+  const n=String(nick||'').replace(/\s/g,'').toLowerCase();
+  return DROPPED.some(s=>n.includes(s.toLowerCase()));
+}
 // 이름 가리기: 첫 글자만 노출 (소원쀼 → 소**)
 function mask(name){const s=String(name||'');return s.length<=1?s:s[0]+'*'.repeat(s.length-1);}
 // 시트 닉네임 → 소속 가구명(없으면 null)
@@ -188,10 +193,10 @@ function householdOf(nick){
 
 // 반 배정: 가구 → 'sns' | 'naezip'. (결영이네·순둥이네=운영진, 과제체크 제외)
 const CLASS={
-  '꾸꾸네':'sns','뚱이부부':'sns','오운':'sns','콩콩부부':'sns','소원쀼':'sns','금복부부':'sns',
+  '꾸꾸네':'sns','뚱이부부':'sns','오운':'sns','콩콩부부':'sns','소원쀼':'sns',
   '민퐁듀네':'naezip','햇깡자네':'naezip','두근부부':'naezip','래미안':'naezip','프리부부':'naezip','호수':'naezip','재코드커플':'naezip'
 };
-const STUDENTS=Object.keys(CLASS); // 13가구
+const STUDENTS=Object.keys(CLASS); // 12가구
 // 과제 전체 목록(Notion "과제 예시" 기준). scope: common=전원 / sns / naezip. track=시트 트랙명.
 const CATALOG=[
   {week:'OT', items:[
@@ -283,7 +288,7 @@ function loadSheet(){
           question:String(cell(COL.question)||'').trim(),
           status:String(cell(COL.status)||'').trim()
         };
-      }).filter(r=>r.nick); // 닉네임 없는 빈 행 제외
+      }).filter(r=>r.nick && !isDropped(r.nick)); // 빈 행·중도이탈 가구 제외
       render();
     }catch(e){
       console.error(e);
