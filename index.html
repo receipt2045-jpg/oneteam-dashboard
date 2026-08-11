@@ -99,6 +99,14 @@ table.matrix tfoot th,table.matrix tfoot td{font-weight:700;color:var(--ink);bac
 .state{padding:40px 4px;text-align:center;color:var(--faint);font-size:13.5px}
 .note{font-size:11.5px;color:var(--faint);line-height:1.7;margin-top:34px;padding-top:18px;border-top:1px solid var(--line)}
 footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;margin-top:44px}
+
+/* 기수 탭 */
+.terms{display:inline-flex;gap:3px;background:#f0f0ec;border-radius:999px;padding:3px;margin-bottom:20px}
+.terms button{border:0;background:transparent;font-family:inherit;font-size:13.5px;font-weight:600;color:#8a8a82;padding:8px 20px;border-radius:999px;cursor:pointer;transition:.15s;letter-spacing:-.2px}
+.terms button.on{background:#fff;color:var(--sage-deep);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.terms button:not(.on):hover{color:var(--sage-deep)}
+.terms .sub{font-size:10px;font-weight:500;color:var(--faint);margin-left:5px}
+
 @media(max-width:640px){.nlinks{display:none}.hero-t{font-size:20px}.stat .val{font-size:25px}.met .v{font-size:23px}}
 </style>
 </head>
@@ -127,9 +135,14 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
 
 <div class="wrap">
 
+  <div class="terms" id="terms">
+    <button type="button" data-term="4">4기<span class="sub">진행 중</span></button>
+    <button type="button" data-term="3">3기<span class="sub">종료</span></button>
+  </div>
+
   <section class="hero">
     <div>
-      <div class="hero-t">3기 과제 제출 현황 📋</div>
+      <div class="hero-t" id="heroTitle">4기 과제 제출 현황 📋</div>
       <div class="hero-s">둘이서 함께하는 부의 첫걸음 — 매주 함께 쌓아가는 과제 인증 기록이에요.</div>
     </div>
     <div class="period"><span class="dot"></span><span id="period">불러오는 중…</span></div>
@@ -145,7 +158,7 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
   <div class="sec" id="sec-matrix"><h2>트랙 × 주차 제출 현황</h2><span class="hint">칸의 숫자 = 제출 글 수</span></div>
   <div class="matrix-wrap" id="matrixWrap"><div class="state">불러오는 중…</div></div>
 
-  <div class="sec" id="sec-unsub"><h2>과제별 미제출 체크</h2><span class="hint">공통=전원 · SNS/내집은 해당 반만</span></div>
+  <div class="sec" id="sec-unsub"><h2>과제별 미제출 체크</h2><span class="hint" id="unsubHint">공통=전원 · SNS/내집은 해당 반만</span></div>
   <div id="unsub"><div class="state">불러오는 중…</div></div>
 
   <p class="note">카페에 올라온 과제는 <b>매일 1회 자동으로 반영</b>돼요. 새로고침하면 가장 최근에 반영된 내용을 볼 수 있어요.</p>
@@ -157,78 +170,160 @@ const SHEET_ID='1Xl7oL7Ia8GWsv5VhhbZzo1lHPZIL_kNPBzFmYttUPco';
 // 컬럼 인덱스 (시트 열 순서)
 const COL={num:0,track:1,nick:2,week:3,title:4,date:5,views:6,body:7,question:8,summary:9,status:10};
 
-// 카톡 단톡방 전체 명단(부부=가구 단위, 운영자 포함). stems = 시트 닉네임 매칭용 대표 어간.
-const ROSTER=[
-  {h:'결영이네',stems:['결영','머니그랩','wedding_receipt']},
-  {h:'순둥이네',stems:['순둥']},
-  {h:'꾸꾸네',stems:['꾸꾸']},
-  {h:'두근부부',stems:['두근']},
-  {h:'뚱이부부',stems:['뚱이']},
-  {h:'래미안',stems:['래미안']},
-  {h:'민퐁듀네',stems:['민퐁듀','민퐁']},
-  {h:'소원쀼',stems:['소원']},
-  {h:'오운',stems:['오운']},
-  {h:'재코드커플',stems:['재코드']},
-  {h:'콩콩부부',stems:['콩콩']},
-  {h:'프리부부',stems:['프리']},
-  {h:'햇깡자네',stems:['햇깡']},
-  {h:'호수',stems:['호수']}
-];
-// 명단에서 의도적으로 제외(새싹 등) — 미매칭 경고에 안 뜨게
-const IGNORE=['삼각별','잔디아내','잔디'];
-// 중도 이탈로 명단에서 완전 제외 — 통계·멤버카드·매트릭스·과제체크 어디에도 안 나옴
-const DROPPED=['금복'];
+// ─────────────────────────────────────────────────────────────
+// 기수별 설정
+// 3기·4기 과제가 같은 시트에 쌓이므로 '작성일'로 기수를 가른다.
+//   3기: ~2026-08-10 (종료) / 4기: 2026-08-11(OT) ~
+// staff:true = 운영진. 멤버 카드에는 나오지만 과제 체크 대상에서는 빠진다.
+// stems = 시트 닉네임 매칭용 대표 어간 (예: '민퐁듀네 아내' → '민퐁듀').
+// ─────────────────────────────────────────────────────────────
+const TERMS={
+  '4':{
+    label:'4기', from:'2026-08-11', to:null,
+    hint:'반 구분 없이 전원 같은 과제예요',
+    // 반 배정 없음 → 모든 과제가 전원 대상
+    classes:null,
+    roster:[
+      {h:'결영이네',staff:true,stems:['결영','머니그랩','wedding_receipt']},
+      {h:'감귤부부',stems:['감귤']},
+      {h:'꼬미부부',stems:['꼬미']},
+      {h:'늘보부부',stems:['늘보']},
+      {h:'동이부부',stems:['동이']},
+      {h:'미재부부',stems:['미재']},
+      {h:'바미부부',stems:['바미']},
+      {h:'실짱부부',stems:['실짱']},
+      {h:'옹서당',stems:['옹서당']},
+      {h:'윤슬이네',stems:['윤슬']},
+      {h:'윰밤부부',stems:['윰밤']},
+      {h:'재으니',stems:['재으니']},   // '으니네'보다 먼저 — 어간이 겹친다
+      {h:'으니네',stems:['으니네']},
+      {h:'하루네',stems:['하루']}
+    ],
+    ignore:[], dropped:[],
+    // 출처: 4기_운영/과제공지_4주치.md · 강의출석은 매주 별도 인증
+    catalog:[
+      {week:'OT', items:[
+        {track:'강의출석', label:'OT 강의 출석', scope:'common'},
+        {track:'돈관리', label:'자산 점검', scope:'common'}
+      ]},
+      {week:'1주차', items:[
+        {track:'강의출석', label:'1주차 강의 출석', scope:'common'},
+        {track:'돈관리', label:'고정비 점검', scope:'common'},
+        {track:'SNS', label:'프로필 세팅', scope:'common'},
+        {track:'내집마련', label:'절세계좌·ETF', scope:'common'},
+        {track:'독서', label:'부의 인문학 1장', scope:'common'}
+      ]},
+      {week:'2주차', items:[
+        {track:'강의출석', label:'2주차 강의 출석', scope:'common'},
+        {track:'돈관리', label:'고정비 줄이기', scope:'common'},
+        {track:'SNS', label:'대본 + 업로드', scope:'common'},
+        {track:'내집마련', label:'대출 계획', scope:'common'},
+        {track:'독서', label:'부의 인문학 2~3장', scope:'common'}
+      ]},
+      {week:'3주차', items:[
+        {track:'강의출석', label:'3주차 강의 출석', scope:'common'},
+        {track:'돈관리', label:'변동비 예산', scope:'common'},
+        {track:'SNS', label:'수익화 세팅', scope:'common'},
+        {track:'내집마련', label:'입지 분석', scope:'common'},
+        {track:'독서', label:'부의 인문학 4~5장', scope:'common'}
+      ]},
+      {week:'4주차', items:[
+        {track:'강의출석', label:'4주차 강의 출석', scope:'common'},
+        {track:'돈관리', label:'한 달 결산', scope:'common'},
+        {track:'SNS', label:'30일 콘텐츠 플랜', scope:'common'},
+        {track:'내집마련', label:'후보 단지 분석·임장', scope:'common'},
+        {track:'독서', label:'부의 인문학 6장', scope:'common'}
+      ]}
+    ]
+  },
+  '3':{
+    label:'3기', from:null, to:'2026-08-10',
+    hint:'공통=전원 · SNS/내집은 해당 반만',
+    // 가구 → 'sns' | 'naezip' (운영진 제외 12가구)
+    classes:{
+      '꾸꾸네':'sns','뚱이부부':'sns','오운':'sns','콩콩부부':'sns','소원쀼':'sns',
+      '민퐁듀네':'naezip','햇깡자네':'naezip','두근부부':'naezip','래미안':'naezip','프리부부':'naezip','호수':'naezip','재코드커플':'naezip'
+    },
+    roster:[
+      {h:'결영이네',staff:true,stems:['결영','머니그랩','wedding_receipt']},
+      {h:'순둥이네',staff:true,stems:['순둥']},
+      {h:'꾸꾸네',stems:['꾸꾸']},
+      {h:'두근부부',stems:['두근']},
+      {h:'뚱이부부',stems:['뚱이']},
+      {h:'래미안',stems:['래미안']},
+      {h:'민퐁듀네',stems:['민퐁듀','민퐁']},
+      {h:'소원쀼',stems:['소원']},
+      {h:'오운',stems:['오운']},
+      {h:'재코드커플',stems:['재코드']},
+      {h:'콩콩부부',stems:['콩콩']},
+      {h:'프리부부',stems:['프리']},
+      {h:'햇깡자네',stems:['햇깡']},
+      {h:'호수',stems:['호수']}
+    ],
+    // 의도적으로 제외(새싹 등) — 미매칭 경고에 안 뜨게
+    ignore:['삼각별','잔디아내','잔디'],
+    // 중도 이탈 — 통계·멤버카드·매트릭스·과제체크 어디에도 안 나옴
+    dropped:['금복'],
+    catalog:[
+      {week:'OT', items:[
+        {track:'강의출석', label:'OT 강의 출석', scope:'common'},
+        {track:'돈관리', label:'자산 점검', scope:'common'}
+      ]},
+      {week:'1주차', items:[
+        {track:'독서', label:'부의 인문학 1장', scope:'common'},
+        {track:'돈관리', label:'고정비 점검', scope:'common'},
+        {track:'SNS', label:'프로필 세팅', scope:'sns'},
+        {track:'내집마련', label:'절세계좌·ETF', scope:'naezip'}
+      ]},
+      {week:'2주차', items:[
+        {track:'독서', label:'부의 인문학 2~3장', scope:'common'},
+        {track:'돈관리', label:'고정비 줄이기 1', scope:'common'},
+        {track:'SNS', label:'릴스 2개 업로드', scope:'sns'},
+        {track:'내집마련', label:'대출 계획·한도', scope:'naezip'}
+      ]},
+      {week:'3주차', items:[
+        {track:'독서', label:'부의 인문학 4~5장', scope:'common'},
+        {track:'돈관리', label:'고정비 줄이기 2', scope:'common'},
+        {track:'SNS', label:'공유/저장 릴스', scope:'sns'},
+        {track:'내집마련', label:'관심지역 분석', scope:'naezip'}
+      ]},
+      {week:'4주차', items:[
+        {track:'독서', label:'부의 인문학 6장', scope:'common'},
+        {track:'SNS', label:'1,000원 벌어보기', scope:'sns'},
+        {track:'내집마련', label:'후보단지 분석', scope:'naezip'}
+      ]}
+    ]
+  }
+};
+
+let curTermKey='4';    // 기본 탭 = 4기
+let TERM=TERMS[curTermKey];
+let allRows=[];        // 시트 전체
+let rows=[];           // 현재 기수 것만
+
+// 중도 이탈 가구인가
 function isDropped(nick){
   const n=String(nick||'').replace(/\s/g,'').toLowerCase();
-  return DROPPED.some(s=>n.includes(s.toLowerCase()));
+  return TERM.dropped.some(s=>n.includes(s.toLowerCase()));
 }
 // 이름 가리기: 첫 글자만 노출 (소원쀼 → 소**)
 function mask(name){const s=String(name||'');return s.length<=1?s:s[0]+'*'.repeat(s.length-1);}
 // 시트 닉네임 → 소속 가구명(없으면 null)
 function householdOf(nick){
   const n=String(nick||'').replace(/\s/g,'').toLowerCase();
-  for(const r of ROSTER){ if(r.stems.some(s=>n.includes(s.toLowerCase()))) return r.h; }
+  for(const r of TERM.roster){ if(r.stems.some(s=>n.includes(s.toLowerCase()))) return r.h; }
   return null;
 }
-
-// 반 배정: 가구 → 'sns' | 'naezip'. (결영이네·순둥이네=운영진, 과제체크 제외)
-const CLASS={
-  '꾸꾸네':'sns','뚱이부부':'sns','오운':'sns','콩콩부부':'sns','소원쀼':'sns',
-  '민퐁듀네':'naezip','햇깡자네':'naezip','두근부부':'naezip','래미안':'naezip','프리부부':'naezip','호수':'naezip','재코드커플':'naezip'
-};
-const STUDENTS=Object.keys(CLASS); // 12가구
-// 과제 전체 목록(Notion "과제 예시" 기준). scope: common=전원 / sns / naezip. track=시트 트랙명.
-const CATALOG=[
-  {week:'OT', items:[
-    {track:'강의출석', label:'OT 강의 출석', scope:'common'},
-    {track:'돈관리', label:'자산 점검', scope:'common'}
-  ]},
-  {week:'1주차', items:[
-    {track:'독서', label:'부의 인문학 1장', scope:'common'},
-    {track:'돈관리', label:'고정비 점검', scope:'common'},
-    {track:'SNS', label:'프로필 세팅', scope:'sns'},
-    {track:'내집마련', label:'절세계좌·ETF', scope:'naezip'}
-  ]},
-  {week:'2주차', items:[
-    {track:'독서', label:'부의 인문학 2~3장', scope:'common'},
-    {track:'돈관리', label:'고정비 줄이기 1', scope:'common'},
-    {track:'SNS', label:'릴스 2개 업로드', scope:'sns'},
-    {track:'내집마련', label:'대출 계획·한도', scope:'naezip'}
-  ]},
-  {week:'3주차', items:[
-    {track:'독서', label:'부의 인문학 4~5장', scope:'common'},
-    {track:'돈관리', label:'고정비 줄이기 2', scope:'common'},
-    {track:'SNS', label:'공유/저장 릴스', scope:'sns'},
-    {track:'내집마련', label:'관심지역 분석', scope:'naezip'}
-  ]},
-  {week:'4주차', items:[
-    {track:'독서', label:'부의 인문학 6장', scope:'common'},
-    {track:'SNS', label:'1,000원 벌어보기', scope:'sns'},
-    {track:'내집마련', label:'후보단지 분석', scope:'naezip'}
-  ]}
-];
+// 과제 체크 대상 가구(운영진 제외)
+function students(){
+  return TERM.classes ? Object.keys(TERM.classes) : TERM.roster.filter(r=>!r.staff).map(r=>r.h);
+}
 // 특정 과제 대상 가구 목록
-function expectedFor(scope){ return STUDENTS.filter(h=> scope==='common' ? true : CLASS[h]===scope); }
+function expectedFor(scope){
+  const st=students();
+  if(!TERM.classes) return st;                 // 반 없는 기수는 전원
+  return st.filter(h=> scope==='common' ? true : TERM.classes[h]===scope);
+}
 // 특정 주차·트랙을 제출한 가구 집합
 function submittedSet(week,track){
   return new Set(rows.filter(r=>(r.week||'기타')===week && r.track===track).map(r=>householdOf(r.nick)).filter(Boolean));
@@ -236,7 +331,13 @@ function submittedSet(week,track){
 // 데이터에 등장한 최신 주차 순번
 function maxWeekOrder(){ return Math.max(0,...rows.map(r=>weekOrder(r.week||'기타')).filter(n=>n<9000)); }
 
-let rows=[];
+// 이 행이 해당 기수 것인가 (작성일 기준)
+function inTerm(r,t){
+  if(!r.date) return !t.from;   // 날짜 없는 행은 상한만 있는 기수(3기)에 남긴다
+  if(t.from && r.date < new Date(t.from+'T00:00:00')) return false;
+  if(t.to   && r.date > new Date(t.to+'T23:59:59'))  return false;
+  return true;
+}
 
 // gviz 날짜값 "Date(2026,5,23)" → JS Date
 function parseGvizDate(v){
@@ -274,7 +375,7 @@ function loadSheet(){
     try{
       if(!resp||!resp.table){throw new Error('데이터 형식 오류');}
       const trows=resp.table.rows||[];
-      rows=trows.map(r=>{
+      allRows=trows.map(r=>{
         const c=r.c||[];
         const cell=i=>c[i]? (c[i].f!=null?c[i].f:c[i].v) : '';
         const rawDate=c[COL.date]?c[COL.date].v:null;
@@ -288,8 +389,8 @@ function loadSheet(){
           question:String(cell(COL.question)||'').trim(),
           status:String(cell(COL.status)||'').trim()
         };
-      }).filter(r=>r.nick && !isDropped(r.nick)); // 빈 행·중도이탈 가구 제외
-      render();
+      }).filter(r=>r.nick); // 빈 행 제외
+      applyTerm(curTermKey);
     }catch(e){
       console.error(e);
       setState('데이터를 불러오지 못했어요. 시트 공유 설정(링크 보기)을 확인해 주세요.',true);
@@ -303,13 +404,30 @@ function loadSheet(){
 }
 
 function render(){
-  if(!rows.length){setState('아직 제출된 과제가 없어요.');return;}
   renderStats();renderMembers();renderMatrix();renderUnsubmitted();
+}
+
+// 기수 전환 — 시트를 다시 부르지 않고 필터만 다시 건다
+function applyTerm(key){
+  if(!TERMS[key]) key='4';
+  curTermKey=key;
+  TERM=TERMS[key];
+  document.querySelectorAll('#terms button').forEach(b=>b.classList.toggle('on', b.dataset.term===key));
+  document.getElementById('heroTitle').textContent=`${TERM.label} 과제 제출 현황 📋`;
+  document.getElementById('unsubHint').textContent=TERM.hint;
+  try{
+    const u=new URL(location.href);
+    u.searchParams.set('term',key);
+    history.replaceState(null,'',u);
+  }catch(e){}
+  rows=allRows.filter(r=>inTerm(r,TERM) && !isDropped(r.nick));
+  render();
 }
 
 function renderUnsubmitted(){
   const maxW=maxWeekOrder();
-  const shown=CATALOG.filter(c=>weekOrder(c.week)<=maxW);
+  // 제출이 아직 없어도 첫 주차(OT)는 보여준다 — 전원 미제출로 표시
+  const shown=TERM.catalog.filter(c=>weekOrder(c.week)<=maxW);
   const scopeLabel={common:'공통',sns:'SNS반',naezip:'내집반'};
   let html=shown.map(c=>{
     const items=c.items.map(it=>{
@@ -320,9 +438,11 @@ function renderUnsubmitted(){
       const body=miss.length
         ? `<div class="misslist">${miss.map(h=>`<span class="misschip">${mask(h)}</span>`).join('')}</div>`
         : `<div class="allin">다 했어요! 🎉</div>`;
+      // 반 배정이 없는 기수는 전부 전원 대상이라 뱃지를 생략한다
+      const badge=TERM.classes?`<span class="scope ${it.scope}">${scopeLabel[it.scope]}</span>`:'';
       return `<div class="asgn">
         <div class="asgn-h"><span class="asgn-t">${it.track} · ${it.label}</span>
-          <span class="scope ${it.scope}">${scopeLabel[it.scope]}</span>
+          ${badge}
           <span class="asgn-prog">${done}/${exp.length} 완료</span></div>
         ${body}</div>`;
     }).join('');
@@ -332,7 +452,7 @@ function renderUnsubmitted(){
   const unmatched=[...new Set(rows.map(r=>r.nick).filter(nk=>{
     if(householdOf(nk)) return false;
     const n=String(nk||'').replace(/\s/g,'');
-    return !IGNORE.some(s=>n.includes(s));
+    return !TERM.ignore.some(s=>n.includes(s));
   }))];
   if(unmatched.length){
     html+=`<div class="unmatched">⚠️ 명단과 매칭 안 된 제출 닉네임: ${unmatched.join(', ')}</div>`;
@@ -347,9 +467,9 @@ function renderStats(){
   const avgV=viewsArr.length?Math.round(viewsArr.reduce((a,b)=>a+b,0)/viewsArr.length):0;
   const dates=rows.map(r=>r.date).filter(Boolean).sort((a,b)=>a-b);
   const periodTxt=dates.length?`${fmtDate(dates[0])} ~ ${fmtDate(dates[dates.length-1])}`:'';
-  document.getElementById('period').textContent=periodTxt||'3기';
+  document.getElementById('period').textContent=periodTxt||`${TERM.label} · 아직 제출 없음`;
   // 최근 주차에 과제 1개라도 안 한 부부 수
-  const shownW=CATALOG.filter(c=>weekOrder(c.week)<=maxWeekOrder());
+  const shownW=TERM.catalog.filter(c=>weekOrder(c.week)<=maxWeekOrder());
   const lastC=shownW[shownW.length-1];
   const incomplete=new Set();
   if(lastC){lastC.items.forEach(it=>{const sub=submittedSet(lastC.week,it.track);expectedFor(it.scope).forEach(h=>{if(!sub.has(h))incomplete.add(h);});});}
@@ -362,9 +482,12 @@ function renderStats(){
 
 function renderMembers(){
   const map=new Map();
+  const blank=k=>({nick:k,subs:[],tracks:new Set(),weeks:new Set(),views:[],q:0,last:null});
+  // 명단 전체를 먼저 깔아둔다 — 아직 한 건도 안 낸 가구도 0건으로 보이게
+  TERM.roster.forEach(r=>map.set(r.h,blank(r.h)));
   rows.forEach(r=>{
     const key=householdOf(r.nick)||r.nick;   // 부부(가구) 단위로 묶기 (민퐁듀네 남편+아내 → 민퐁듀네)
-    if(!map.has(key)) map.set(key,{nick:key,subs:[],tracks:new Set(),weeks:new Set(),views:[],q:0,last:null});
+    if(!map.has(key)) map.set(key,blank(key));
     const m=map.get(key);
     m.subs.push(r);
     if(r.track) m.tracks.add(r.track);
@@ -397,6 +520,10 @@ function renderMembers(){
 }
 
 function renderMatrix(){
+  if(!rows.length){
+    document.getElementById('matrixWrap').innerHTML=`<div class="state">${TERM.label} 제출이 아직 없어요. 카페에 과제가 올라오면 다음 날 반영돼요.</div>`;
+    return;
+  }
   const tracks=[...new Set(rows.map(r=>r.track).filter(Boolean))].sort();
   const weeks=[...new Set(rows.map(r=>r.week||'기타'))].sort((a,b)=>weekOrder(a)-weekOrder(b));
   const count=(t,w)=>rows.filter(r=>r.track===t&&(r.week||'기타')===w).length;
@@ -421,6 +548,22 @@ function renderMatrix(){
 }
 
 document.getElementById('refreshBtn').onclick=loadSheet;
+
+// 기수 탭 — 시트는 그대로 두고 화면만 바꾼다
+document.getElementById('terms').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-term]');
+  if(!b || b.dataset.term===curTermKey) return;
+  applyTerm(b.dataset.term);
+});
+
+// ?term=3 으로 3기 화면을 바로 열 수 있다 (졸업반 공유용)
+const qsTerm=new URLSearchParams(location.search).get('term');
+curTermKey=TERMS[qsTerm]?qsTerm:'4';
+TERM=TERMS[curTermKey];
+document.querySelectorAll('#terms button').forEach(b=>b.classList.toggle('on', b.dataset.term===curTermKey));
+document.getElementById('heroTitle').textContent=`${TERM.label} 과제 제출 현황 📋`;
+document.getElementById('unsubHint').textContent=TERM.hint;
+
 loadSheet();
 </script>
 </body>
