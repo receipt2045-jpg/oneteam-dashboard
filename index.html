@@ -201,33 +201,35 @@ const TERMS={
     ],
     ignore:[], dropped:[],
     // 출처: 4기_운영/과제공지_4주치.md · 강의출석은 매주 별도 인증
+    // from = 그 주차 첫 강의일. 이 날짜가 지나야 화면에 뜬다.
+    // (운영진이 다음 주차 과제를 미리 올려도 미제출 명단이 앞당겨 뜨지 않게)
     catalog:[
-      {week:'OT', items:[
+      {week:'OT', from:'2026-08-11', items:[
         {track:'강의출석', label:'OT 강의 출석', scope:'common'},
         {track:'돈관리', label:'자산 점검', scope:'common'}
       ]},
-      {week:'1주차', items:[
+      {week:'1주차', from:'2026-08-18', items:[
         {track:'강의출석', label:'1주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'고정비 점검', scope:'common'},
         {track:'SNS', label:'프로필 세팅', scope:'common'},
         {track:'내집마련', label:'절세계좌·ETF', scope:'common'},
         {track:'독서', label:'부의 인문학 1장', scope:'common'}
       ]},
-      {week:'2주차', items:[
+      {week:'2주차', from:'2026-08-25', items:[
         {track:'강의출석', label:'2주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'고정비 줄이기', scope:'common'},
         {track:'SNS', label:'대본 + 업로드', scope:'common'},
         {track:'내집마련', label:'대출 계획', scope:'common'},
         {track:'독서', label:'부의 인문학 2~3장', scope:'common'}
       ]},
-      {week:'3주차', items:[
+      {week:'3주차', from:'2026-09-01', items:[
         {track:'강의출석', label:'3주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'변동비 예산', scope:'common'},
         {track:'SNS', label:'수익화 세팅', scope:'common'},
         {track:'내집마련', label:'입지 분석', scope:'common'},
         {track:'독서', label:'부의 인문학 4~5장', scope:'common'}
       ]},
-      {week:'4주차', items:[
+      {week:'4주차', from:'2026-09-08', items:[
         {track:'강의출석', label:'4주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'한 달 결산', scope:'common'},
         {track:'SNS', label:'30일 콘텐츠 플랜', scope:'common'},
@@ -331,6 +333,15 @@ function submittedSet(week,track){
 // 데이터에 등장한 최신 주차 순번
 function maxWeekOrder(){ return Math.max(0,...rows.map(r=>weekOrder(r.week||'기타')).filter(n=>n<9000)); }
 
+// 지금 화면에 띄울 주차들
+//  - from이 있는 기수(4기): 그 날짜가 지난 주차만. 일정보다 앞서 뜨지 않는다.
+//  - from이 없는 기수(3기, 종료): 기존대로 제출 기록에 등장한 주차까지.
+function shownWeeks(){
+  const today=new Date();
+  const maxW=maxWeekOrder();
+  return TERM.catalog.filter(c=> c.from ? today>=new Date(c.from+'T00:00:00') : weekOrder(c.week)<=maxW);
+}
+
 // 이 행이 해당 기수 것인가 (작성일 기준)
 function inTerm(r,t){
   if(!r.date) return !t.from;   // 날짜 없는 행은 상한만 있는 기수(3기)에 남긴다
@@ -425,9 +436,8 @@ function applyTerm(key){
 }
 
 function renderUnsubmitted(){
-  const maxW=maxWeekOrder();
-  // 제출이 아직 없어도 첫 주차(OT)는 보여준다 — 전원 미제출로 표시
-  const shown=TERM.catalog.filter(c=>weekOrder(c.week)<=maxW);
+  // 제출이 아직 없어도 시작된 주차는 보여준다 — 전원 미제출로 표시
+  const shown=shownWeeks();
   const scopeLabel={common:'공통',sns:'SNS반',naezip:'내집반'};
   let html=shown.map(c=>{
     const items=c.items.map(it=>{
@@ -469,7 +479,7 @@ function renderStats(){
   const periodTxt=dates.length?`${fmtDate(dates[0])} ~ ${fmtDate(dates[dates.length-1])}`:'';
   document.getElementById('period').textContent=periodTxt||`${TERM.label} · 아직 제출 없음`;
   // 최근 주차에 과제 1개라도 안 한 부부 수
-  const shownW=TERM.catalog.filter(c=>weekOrder(c.week)<=maxWeekOrder());
+  const shownW=shownWeeks();
   const lastC=shownW[shownW.length-1];
   const incomplete=new Set();
   if(lastC){lastC.items.forEach(it=>{const sub=submittedSet(lastC.week,it.track);expectedFor(it.scope).forEach(h=>{if(!sub.has(h))incomplete.add(h);});});}
