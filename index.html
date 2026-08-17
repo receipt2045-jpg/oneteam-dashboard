@@ -206,13 +206,14 @@ const TERMS={
     catalog:[
       {week:'OT', from:'2026-08-11', items:[
         {track:'강의출석', label:'OT 강의 출석', scope:'common'},
-        {track:'돈관리', label:'자산 점검', scope:'common'}
+        // 자산 점검은 주차를 'OT' 대신 '1주차'로 적어 올리는 분이 많아 제목으로 찾는다
+        {track:'돈관리', label:'자산 점검', scope:'common', keys:['자산']}
       ]},
       {week:'1주차', from:'2026-08-18', items:[
         {track:'강의출석', label:'1주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'고정비 점검', scope:'common'},
-        {track:'SNS', label:'프로필 세팅', scope:'common'},
-        {track:'내집마련', label:'절세계좌·ETF', scope:'common'},
+        {track:'SNS', label:'프로필 세팅', scope:'common', keys:['프로필']},
+        {track:'내집마련', label:'절세계좌·ETF', scope:'common', keys:['절세','ETF']},
         {track:'독서', label:'부의 인문학 1장', scope:'common'}
       ]},
       {week:'2주차', from:'2026-08-25', items:[
@@ -326,9 +327,21 @@ function expectedFor(scope){
   if(!TERM.classes) return st;                 // 반 없는 기수는 전원
   return st.filter(h=> scope==='common' ? true : TERM.classes[h]===scope);
 }
-// 특정 주차·트랙을 제출한 가구 집합
-function submittedSet(week,track){
-  return new Set(rows.filter(r=>(r.week||'기타')===week && r.track===track).map(r=>householdOf(r.nick)).filter(Boolean));
+// 특정 과제를 제출한 가구 집합
+//  - 보통은 '주차 + 트랙'으로 찾는다.
+//  - 다만 주차를 잘못 적어 올리는 일이 잦다(자산 점검을 OT 대신 1주차로 쓰는 등).
+//    그래서 과제에 keys가 있으면 주차는 무시하고 '제목에 그 낱말이 있는지'로 찾는다.
+function submittedSet(week,it){
+  const track = typeof it==='string' ? it : it.track;
+  const keys = (typeof it==='object' && it.keys) ? it.keys : null;
+  return new Set(rows.filter(r=>{
+    if(r.track!==track) return false;
+    if(keys && keys.length){
+      const t=String(r.title||'').replace(/\s/g,'');
+      return keys.some(k=>t.includes(String(k).replace(/\s/g,'')));
+    }
+    return (r.week||'기타')===week;
+  }).map(r=>householdOf(r.nick)).filter(Boolean));
 }
 // 데이터에 등장한 최신 주차 순번
 function maxWeekOrder(){ return Math.max(0,...rows.map(r=>weekOrder(r.week||'기타')).filter(n=>n<9000)); }
@@ -442,7 +455,7 @@ function renderUnsubmitted(){
   let html=shown.map(c=>{
     const items=c.items.map(it=>{
       const exp=expectedFor(it.scope);
-      const sub=submittedSet(c.week,it.track);
+      const sub=submittedSet(c.week,it);
       const miss=exp.filter(h=>!sub.has(h));
       const done=exp.length-miss.length;
       const body=miss.length
@@ -482,7 +495,7 @@ function renderStats(){
   const shownW=shownWeeks();
   const lastC=shownW[shownW.length-1];
   const incomplete=new Set();
-  if(lastC){lastC.items.forEach(it=>{const sub=submittedSet(lastC.week,it.track);expectedFor(it.scope).forEach(h=>{if(!sub.has(h))incomplete.add(h);});});}
+  if(lastC){lastC.items.forEach(it=>{const sub=submittedSet(lastC.week,it);expectedFor(it.scope).forEach(h=>{if(!sub.has(h))incomplete.add(h);});});}
   const missLast=incomplete.size;
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="lbl">참여 멤버</div><div class="val">${nicks.size}<small> 명</small></div></div>
