@@ -214,28 +214,29 @@ const TERMS={
         {track:'돈관리', label:'고정비 점검', scope:'common'},
         {track:'SNS', label:'프로필 세팅', scope:'common', keys:['프로필']},
         {track:'내집마련', label:'절세계좌·ETF', scope:'common', keys:['절세','ETF']},
-        {track:'독서', label:'부의 인문학 1장', scope:'common'}
+        // 독서는 주차 칸이 제각각이라 장 번호로 찾는다 (normWeek와 이중 안전)
+        {track:'독서', label:'부의 인문학 1장', scope:'common', keys:['1장']}
       ]},
       {week:'2주차', from:'2026-08-25', items:[
         {track:'강의출석', label:'2주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'고정비 줄이기', scope:'common'},
         {track:'SNS', label:'대본 + 업로드', scope:'common'},
         {track:'내집마련', label:'대출 계획', scope:'common'},
-        {track:'독서', label:'부의 인문학 2~3장', scope:'common'}
+        {track:'독서', label:'부의 인문학 2~3장', scope:'common', keys:['2장','3장','2~3','2-3','2,3']}
       ]},
       {week:'3주차', from:'2026-09-01', items:[
         {track:'강의출석', label:'3주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'변동비 예산', scope:'common'},
         {track:'SNS', label:'수익화 세팅', scope:'common'},
         {track:'내집마련', label:'입지 분석', scope:'common'},
-        {track:'독서', label:'부의 인문학 4~5장', scope:'common'}
+        {track:'독서', label:'부의 인문학 4~5장', scope:'common', keys:['4장','5장','4~5','4-5','4,5']}
       ]},
       {week:'4주차', from:'2026-09-08', items:[
         {track:'강의출석', label:'4주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'한 달 결산', scope:'common'},
         {track:'SNS', label:'30일 콘텐츠 플랜', scope:'common'},
         {track:'내집마련', label:'후보 단지 분석·임장', scope:'common'},
-        {track:'독서', label:'부의 인문학 6장', scope:'common'}
+        {track:'독서', label:'부의 인문학 6장', scope:'common', keys:['6장']}
       ]}
     ]
   },
@@ -377,6 +378,23 @@ function parseGvizDate(v){
 const fmtDate=d=>d?`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`:'';
 const kshort=n=>n>=1000?(Math.round(n/100)/10)+'K':String(n||0);
 
+// 주차 보정: 주차 칸이 비었거나 '부의인문학'처럼 주차가 아닌 값일 때 제목에서 유추
+//  - 'N주차'가 어디든 적혀 있으면 그대로 쓴다
+//  - 독서 과제는 장 번호로 유추: 1장→1주차 · 2~3장→2주차 · 4~5장→3주차 · 6장→4주차
+//    (독서 제목이 '부부닉 / 부의인문학 / 1장' 꼴이라 주차 칸에 책 이름이 들어오는 일이 잦다)
+const CH2WEEK={1:'1주차',2:'2주차',3:'2주차',4:'3주차',5:'3주차',6:'4주차'};
+function normWeek(week,track,title){
+  const w=String(week||'').trim();
+  if(/OT/i.test(w)||/\d+\s*주차/.test(w)) return w;
+  const t=(w+' '+String(title||'')).replace(/\s/g,'');
+  let m=t.match(/(\d+)주차/); if(m) return m[1]+'주차';
+  if(track==='독서'||/인문학/.test(t)){
+    const chs=(t.match(/(\d)(?=장)/g)||[]).map(Number).filter(n=>CH2WEEK[n]);
+    if(chs.length) return CH2WEEK[Math.max(...chs)];
+  }
+  return w;
+}
+
 // 주차 정렬: OT 먼저, 그다음 숫자 오름차순, 빈값 마지막
 function weekOrder(w){
   if(!w) return 9999;
@@ -414,6 +432,7 @@ function loadSheet(){
           status:String(cell(COL.status)||'').trim()
         };
       }).filter(r=>r.nick); // 빈 행 제외
+      allRows.forEach(r=>{ r.week=normWeek(r.week,r.track,r.title); }); // 주차 보정
       applyTerm(curTermKey);
     }catch(e){
       console.error(e);
