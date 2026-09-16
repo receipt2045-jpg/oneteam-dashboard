@@ -65,6 +65,29 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:
 .mfoot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
 .mfoot .k{font-size:10px;color:var(--faint);letter-spacing:1px}
 .mfoot .v{font-size:13.5px;font-weight:500;margin-top:2px}
+.met .v small{font-size:14px;font-weight:400;color:var(--faint);letter-spacing:0}
+
+/* 달성률 막대 (멤버 카드·주차 블록 공용) */
+.pbar{height:6px;border-radius:3px;background:var(--hair);overflow:hidden;margin:2px 0 14px}
+.pbar i{display:block;height:100%;background:var(--sage);border-radius:3px;transition:width .4s ease}
+.pbar.full i{background:var(--up)}
+.pcap{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px}
+.pcap .k{font-size:10px;color:var(--faint);letter-spacing:1px}
+.pcap .v{font-size:11.5px;font-weight:600;color:var(--sage-deep)}
+.card.done{border-color:var(--sage);background:#fcfdfb}
+.card.staff .pcap .v{color:var(--faint)}
+
+/* 기수 전체 달성 요약 */
+.overall{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px 22px;margin-top:14px}
+.ov-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.ov-t{font-size:13.5px;font-weight:700;letter-spacing:-.2px}
+.ov-t span{font-weight:400;color:var(--soft);margin-left:6px;font-size:12.5px}
+.ov-n{font-size:13px;color:var(--soft);white-space:nowrap}
+.ov-n b{font-size:22px;font-weight:300;color:var(--sage-deep);letter-spacing:-.8px;margin-right:2px}
+.ov-bar{height:10px;border-radius:5px;background:var(--hair);overflow:hidden}
+.ov-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--sage),var(--sage-dark));border-radius:5px;transition:width .5s ease}
+.ov-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-size:11.5px;color:var(--soft)}
+.ov-legend b{color:var(--ink);font-weight:600}
 
 .weekblk{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:15px 18px;margin-bottom:10px}
 .weekblk .wkhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px}
@@ -136,7 +159,7 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
 <div class="wrap">
 
   <div class="terms" id="terms">
-    <button type="button" data-term="4">4기<span class="sub">진행 중</span></button>
+    <button type="button" data-term="4">4기<span class="sub">종료</span></button>
     <button type="button" data-term="3">3기<span class="sub">종료</span></button>
   </div>
 
@@ -151,6 +174,8 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
   <div class="stats" id="stats">
     <div class="stat"><div class="lbl">불러오는 중</div><div class="val">…</div></div>
   </div>
+
+  <div id="overall"></div>
 
   <div class="sec" id="sec-members"><h2>멤버별 현황</h2><span class="hint">제출 수 · 트랙 · 최근 주차</span></div>
   <div class="grid" id="members"><div class="state">시트에서 데이터를 불러오는 중이에요…</div></div>
@@ -179,7 +204,9 @@ const COL={num:0,track:1,nick:2,week:3,title:4,date:5,views:6,body:7,question:8,
 // ─────────────────────────────────────────────────────────────
 const TERMS={
   '4':{
-    label:'4기', from:'2026-08-11', to:null,
+    // closed:true = 과정이 끝난 기수. 4기는 4주차(~2026-09-14)로 완결.
+    //   to는 null로 둔다 — 뒤늦게 올라오는 회고글도 계속 집계에 들어오게.
+    label:'4기', from:'2026-08-11', to:null, closed:true,
     hint:'반 구분 없이 전원 같은 과제예요',
     // 반 배정 없음 → 모든 과제가 전원 대상
     classes:null,
@@ -240,7 +267,7 @@ const TERMS={
     ]
   },
   '3':{
-    label:'3기', from:null, to:'2026-08-10',
+    label:'3기', from:null, to:'2026-08-10', closed:true,
     hint:'공통=전원 · SNS/내집은 해당 반만',
     // 가구 → 'sns' | 'naezip' (운영진 제외 12가구)
     classes:{
@@ -343,6 +370,46 @@ function submittedSet(week,it){
     return (r.week||'기타')===week;
   }).map(r=>householdOf(r.nick)).filter(Boolean));
 }
+// ── 과제 달성 집계 ───────────────────────────────────────────
+// 화면에 뜬 주차의 과제를 한 줄씩 펼쳐 둔다.
+//   { week, it, exp:[대상 가구들], sub:Set(제출한 가구들) }
+// 통계·멤버 카드·주차 막대가 전부 이걸 나눠 쓴다.
+// (가구마다 다시 세면 시트를 수백 번 훑게 되므로 한 번만 만들어 캐시)
+let _asgnCache=null;
+function assignments(){
+  if(_asgnCache) return _asgnCache;
+  _asgnCache=[];
+  shownWeeks().forEach(c=>c.items.forEach(it=>{
+    _asgnCache.push({week:c.week, it, exp:expectedFor(it.scope), sub:submittedSet(c.week,it)});
+  }));
+  return _asgnCache;
+}
+// 가구 하나가 받은 과제 중 몇 개를 냈나 {done,total}
+//  - 3기는 SNS반/내집반이 갈려서 가구마다 total이 다르다
+function progressOf(h){
+  let done=0,total=0;
+  assignments().forEach(a=>{
+    if(!a.exp.includes(h)) return;
+    total++; if(a.sub.has(h)) done++;
+  });
+  return {done,total};
+}
+// 기수 전체 달성 현황
+//  kinds = 과제 종류 수 · total = 가구까지 곱한 전체 칸 수 · full = 전부 낸 가구 수
+function overallProgress(){
+  const A=assignments();
+  let done=0,total=0;
+  A.forEach(a=>{ total+=a.exp.length; done+=a.exp.filter(h=>a.sub.has(h)).length; });
+  const full=students().filter(h=>{const p=progressOf(h); return p.total && p.done===p.total;}).length;
+  // 한 부부가 받는 과제 수 — 반이 갈린 기수(3기)는 가구마다 다를 수 있어 범위로 잡는다
+  const per=students().map(h=>progressOf(h).total).filter(n=>n>0);
+  const perMin=per.length?Math.min(...per):0, perMax=per.length?Math.max(...per):0;
+  return {done,total,kinds:A.length,full,houses:students().length,perMin,perMax};
+}
+// "22개씩" / "12~13개씩"
+const perHouseTxt=ov=>ov.perMin===ov.perMax?`${ov.perMin}개씩`:`${ov.perMin}~${ov.perMax}개씩`;
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+
 // 데이터에 등장한 최신 주차 순번
 function maxWeekOrder(){ return Math.max(0,...rows.map(r=>weekOrder(r.week||'기타')).filter(n=>n<9000)); }
 
@@ -446,7 +513,7 @@ function loadSheet(){
 }
 
 function render(){
-  renderStats();renderMembers();renderMatrix();renderUnsubmitted();
+  renderStats();renderOverall();renderMembers();renderMatrix();renderUnsubmitted();
 }
 
 // 기수 전환 — 시트를 다시 부르지 않고 필터만 다시 건다
@@ -463,6 +530,7 @@ function applyTerm(key){
     history.replaceState(null,'',u);
   }catch(e){}
   rows=allRows.filter(r=>inTerm(r,TERM) && !isDropped(r.nick));
+  _asgnCache=null;   // 기수가 바뀌면 집계를 새로 센다
   render();
 }
 
@@ -471,11 +539,13 @@ function renderUnsubmitted(){
   const shown=shownWeeks();
   const scopeLabel={common:'공통',sns:'SNS반',naezip:'내집반'};
   let html=shown.map(c=>{
+    let wDone=0,wTotal=0;   // 그 주차 전체 칸 수 (과제 × 대상 부부)
     const items=c.items.map(it=>{
       const exp=expectedFor(it.scope);
       const sub=submittedSet(c.week,it);
       const miss=exp.filter(h=>!sub.has(h));
       const done=exp.length-miss.length;
+      wDone+=done; wTotal+=exp.length;
       const body=miss.length
         ? `<div class="misslist">${miss.map(h=>`<span class="misschip">${mask(h)}</span>`).join('')}</div>`
         : `<div class="allin">다 했어요! 🎉</div>`;
@@ -487,7 +557,12 @@ function renderUnsubmitted(){
           <span class="asgn-prog">${done}/${exp.length} 완료</span></div>
         ${body}</div>`;
     }).join('');
-    return `<div class="weekblk"><div class="wkhead"><span class="wkname">${c.week}</span></div>${items}</div>`;
+    const wr=pct(wDone,wTotal);
+    return `<div class="weekblk">
+      <div class="wkhead"><span class="wkname">${c.week}</span>
+        <span class="wkprog">과제 ${c.items.length}개 · <b>${wDone}</b>/${wTotal} 완료 · ${wr}%</span></div>
+      <div class="bar"><i style="width:${wr}%"></i></div>
+      ${items}</div>`;
   }).join('');
   // 명단과 매칭되지 않은 제출 닉네임(참고용)
   const unmatched=[...new Set(rows.map(r=>r.nick).filter(nk=>{
@@ -503,22 +578,49 @@ function renderUnsubmitted(){
 
 function renderStats(){
   const nicks=new Set(rows.map(r=>r.nick));
-  const tracks=new Set(rows.map(r=>r.track).filter(Boolean));
-  const viewsArr=rows.map(r=>r.views).filter(v=>v>0);
-  const avgV=viewsArr.length?Math.round(viewsArr.reduce((a,b)=>a+b,0)/viewsArr.length):0;
   const dates=rows.map(r=>r.date).filter(Boolean).sort((a,b)=>a-b);
   const periodTxt=dates.length?`${fmtDate(dates[0])} ~ ${fmtDate(dates[dates.length-1])}`:'';
   document.getElementById('period').textContent=periodTxt||`${TERM.label} · 아직 제출 없음`;
-  // 최근 주차에 과제 1개라도 안 한 부부 수
-  const shownW=shownWeeks();
-  const lastC=shownW[shownW.length-1];
-  const incomplete=new Set();
-  if(lastC){lastC.items.forEach(it=>{const sub=submittedSet(lastC.week,it);expectedFor(it.scope).forEach(h=>{if(!sub.has(h))incomplete.add(h);});});}
-  const missLast=incomplete.size;
+
+  const ov=overallProgress();
+  // 끝난 기수는 '완주 부부'를, 진행 중이면 '이번 주 미완료 부부'를 보여준다
+  let lastCard;
+  if(TERM.closed){
+    lastCard=`<div class="stat"><div class="lbl">전 과제 완주</div><div class="val pos">${ov.full}<small> / ${ov.houses} 부부</small></div></div>`;
+  }else{
+    const shownW=shownWeeks();
+    const lastC=shownW[shownW.length-1];
+    const incomplete=new Set();
+    if(lastC){lastC.items.forEach(it=>{const sub=submittedSet(lastC.week,it);expectedFor(it.scope).forEach(h=>{if(!sub.has(h))incomplete.add(h);});});}
+    lastCard=`<div class="stat"><div class="lbl">이번 주 미완료 부부</div><div class="val">${incomplete.size}<small> 부부</small></div></div>`;
+  }
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="lbl">참여 멤버</div><div class="val">${nicks.size}<small> 명</small></div></div>
-    <div class="stat"><div class="lbl">총 제출 과제</div><div class="val pos">${rows.length}<small> 건</small></div></div>
-    <div class="stat"><div class="lbl">이번 주 미완료 부부</div><div class="val">${missLast}<small> 부부</small></div></div>`;
+    <div class="stat"><div class="lbl">카페 제출 글</div><div class="val">${rows.length}<small> 건</small></div></div>
+    <div class="stat"><div class="lbl">과제 달성률</div><div class="val pos">${pct(ov.done,ov.total)}<small>%</small></div></div>
+    ${lastCard}`;
+}
+
+// 기수 전체 달성 — 과제가 몇 개였고 그중 몇 개를 해냈는지 한눈에
+function renderOverall(){
+  const el=document.getElementById('overall');
+  const ov=overallProgress();
+  if(!ov.total){ el.innerHTML=''; return; }
+  const p=pct(ov.done,ov.total);
+  el.innerHTML=`<div class="overall">
+    <div class="ov-head">
+      <div class="ov-t">${TERM.label} 과제 달성<span>${TERM.closed?'과정 종료':'진행 중'} · 부부당 ${perHouseTxt(ov)}</span></div>
+      <div class="ov-n"><b>${ov.done}</b>/ ${ov.total}개 완료 · ${p}%</div>
+    </div>
+    <div class="ov-bar"><i style="width:${p}%"></i></div>
+    <div class="ov-legend">
+      <span>과제 종류 <b>${ov.kinds}개</b></span>
+      <span>대상 부부 <b>${ov.houses}부부</b></span>
+      <span>완료 <b>${ov.done}개</b></span>
+      <span>미완료 <b>${ov.total-ov.done}개</b></span>
+      <span>전 과제 완주 <b>${ov.full}부부</b></span>
+    </div>
+  </div>`;
 }
 
 function renderMembers(){
@@ -537,20 +639,36 @@ function renderMembers(){
     if(r.question) m.q++;
     if(r.date&&(!m.last||r.date>m.last)) m.last=r.date;
   });
-  const members=[...map.values()].sort((a,b)=>b.subs.length-a.subs.length);
+  // 달성 현황을 붙이고 '많이 해낸 순'으로 세운다 (운영진은 과제 대상이 아니라 맨 뒤)
+  const members=[...map.values()].map(m=>{
+    const r=TERM.roster.find(x=>x.h===m.nick);
+    m.staff=!!(r&&r.staff);
+    m.prog=progressOf(m.nick);
+    return m;
+  }).sort((a,b)=>{
+    if(a.staff!==b.staff) return a.staff?1:-1;
+    if(b.prog.done!==a.prog.done) return b.prog.done-a.prog.done;
+    return b.subs.length-a.subs.length;
+  });
   document.getElementById('members').innerHTML=members.map(m=>{
-    const avgV=m.views.length?Math.round(m.views.reduce((a,b)=>a+b,0)/m.views.length):0;
     const lastWeek=[...m.weeks].sort((a,b)=>weekOrder(b)-weekOrder(a))[0]||'—';
     const trackTags=[...m.tracks].map(t=>`<span class="tag">${t}</span>`).join('')||'<span class="tag">—</span>';
     const active=m.subs.some(s=>/제출/.test(s.status));
-    return `<div class="card">
+    const p=m.prog, hasP=p.total>0, rate=pct(p.done,p.total), full=hasP&&p.done===p.total;
+    const progBlock=hasP
+      ? `<div class="pcap"><span class="k">과제 달성</span><span class="v">${full?'완주 🎉':rate+'%'}</span></div>
+         <div class="pbar ${full?'full':''}"><i style="width:${rate}%"></i></div>`
+      : `<div class="pcap"><span class="k">과제 달성</span><span class="v">운영진 · 집계 제외</span></div>`;
+    return `<div class="card${full?' done':''}${m.staff?' staff':''}">
       <div class="mhead">
         <div><div class="mname">${m.nick}</div><div class="mhandle">${m.q?('질문 '+m.q+'건'):'질문 없음'}</div></div>
         <div class="mdot ${active?'':'idle'}"></div>
       </div>
       <div class="mrow">
-        <div class="met"><div class="v">${m.subs.length}</div><div class="k">제출 과제</div></div>
+        <div class="met"><div class="v">${hasP?p.done:'—'}${hasP?`<small>/${p.total}</small>`:''}</div><div class="k">과제 완료</div></div>
+        <div class="met" style="text-align:right"><div class="v">${m.subs.length}</div><div class="k">제출 글</div></div>
       </div>
+      ${progBlock}
       <div class="tags">${trackTags}</div>
       <div class="mfoot">
         <div><div class="k">최근 주차</div><div class="v">${lastWeek}</div></div>
