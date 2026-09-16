@@ -107,6 +107,11 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:
 .scope.common{background:var(--sage-tint);color:var(--sage-deep)}
 .scope.sns{background:#fbeaf2;color:#a23b6e}
 .scope.naezip{background:#e6eefb;color:#2f5aa2}
+.scope.pick{background:#f1ecfb;color:#5b3fa0}
+.asgn-t em{font-style:normal;font-weight:500;color:var(--faint);margin:0 3px;font-size:12px}
+.pickrow{display:flex;flex-wrap:wrap;gap:14px;margin:-2px 0 9px;font-size:11.5px;color:var(--soft)}
+.pickrow b{color:var(--sage-deep);font-weight:700}
+.pickrow .both{color:var(--gold);font-weight:500}
 .unmatched{font-size:11.5px;color:var(--gold);background:#fbf3e0;border-radius:8px;padding:10px 13px;margin-top:4px}
 .matrix-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--card)}
 table.matrix{width:100%;border-collapse:collapse;min-width:520px}
@@ -207,7 +212,7 @@ const TERMS={
     // closed:true = 과정이 끝난 기수. 4기는 4주차(~2026-09-14)로 완결.
     //   to는 null로 둔다 — 뒤늦게 올라오는 회고글도 계속 집계에 들어오게.
     label:'4기', from:'2026-08-11', to:null, closed:true,
-    hint:'반 구분 없이 전원 같은 과제예요',
+    hint:'SNS · 내집마련은 둘 중 하나만 해도 완료예요',
     // 반 배정 없음 → 모든 과제가 전원 대상
     classes:null,
     roster:[
@@ -238,30 +243,39 @@ const TERMS={
       {week:'1주차', from:'2026-08-18', items:[
         {track:'강의출석', label:'1주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'고정비 점검', scope:'common'},
-        {track:'SNS', label:'프로필 세팅', scope:'common', keys:['프로필']},
-        {track:'내집마련', label:'절세계좌·ETF', scope:'common', keys:['절세','ETF']},
+        // SNS·내집마련은 택1 — 둘 중 하나만 내도 완료
+        {scope:'common', choice:[
+          {track:'SNS', label:'프로필 세팅', keys:['프로필']},
+          {track:'내집마련', label:'절세계좌·ETF', keys:['절세','ETF']}
+        ]},
         // 독서는 주차 칸이 제각각이라 장 번호로 찾는다 (normWeek와 이중 안전)
         {track:'독서', label:'부의 인문학 1장', scope:'common', keys:['1장']}
       ]},
       {week:'2주차', from:'2026-08-25', items:[
         {track:'강의출석', label:'2주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'고정비 줄이기', scope:'common'},
-        {track:'SNS', label:'대본 + 업로드', scope:'common'},
-        {track:'내집마련', label:'대출 계획', scope:'common'},
+        {scope:'common', choice:[
+          {track:'SNS', label:'대본 + 업로드'},
+          {track:'내집마련', label:'대출 계획'}
+        ]},
         {track:'독서', label:'부의 인문학 2~3장', scope:'common', keys:['2장','3장','2~3','2-3','2,3']}
       ]},
       {week:'3주차', from:'2026-09-01', items:[
         {track:'강의출석', label:'3주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'변동비 예산', scope:'common'},
-        {track:'SNS', label:'수익화 세팅', scope:'common'},
-        {track:'내집마련', label:'입지 분석', scope:'common'},
+        {scope:'common', choice:[
+          {track:'SNS', label:'수익화 세팅'},
+          {track:'내집마련', label:'입지 분석'}
+        ]},
         {track:'독서', label:'부의 인문학 4~5장', scope:'common', keys:['4장','5장','4~5','4-5','4,5']}
       ]},
       {week:'4주차', from:'2026-09-08', items:[
         {track:'강의출석', label:'4주차 강의 출석', scope:'common'},
         {track:'돈관리', label:'한 달 결산', scope:'common'},
-        {track:'SNS', label:'30일 콘텐츠 플랜', scope:'common'},
-        {track:'내집마련', label:'후보 단지 분석·임장', scope:'common'},
+        {scope:'common', choice:[
+          {track:'SNS', label:'30일 콘텐츠 플랜'},
+          {track:'내집마련', label:'후보 단지 분석·임장'}
+        ]},
         {track:'독서', label:'부의 인문학 6장', scope:'common', keys:['6장']}
       ]}
     ]
@@ -359,6 +373,13 @@ function expectedFor(scope){
 //  - 다만 주차를 잘못 적어 올리는 일이 잦다(자산 점검을 OT 대신 1주차로 쓰는 등).
 //    그래서 과제에 keys가 있으면 주차는 무시하고 '제목에 그 낱말이 있는지'로 찾는다.
 function submittedSet(week,it){
+  // 택1 과제(choice) — 묶인 트랙 중 하나라도 냈으면 완료로 친다
+  //   4기는 반을 나누지 않고 SNS·내집마련 중 관심 가는 쪽을 골라 하기 때문
+  if(it && it.choice){
+    const s=new Set();
+    it.choice.forEach(sub=>submittedSet(week,sub).forEach(h=>s.add(h)));
+    return s;
+  }
   const track = typeof it==='string' ? it : it.track;
   const keys = (typeof it==='object' && it.keys) ? it.keys : null;
   return new Set(rows.filter(r=>{
@@ -550,12 +571,26 @@ function renderUnsubmitted(){
         ? `<div class="misslist">${miss.map(h=>`<span class="misschip">${mask(h)}</span>`).join('')}</div>`
         : `<div class="allin">다 했어요! 🎉</div>`;
       // 반 배정이 없는 기수는 전부 전원 대상이라 뱃지를 생략한다
-      const badge=TERM.classes?`<span class="scope ${it.scope}">${scopeLabel[it.scope]}</span>`:'';
+      const badge=it.choice
+        ? `<span class="scope pick">택1</span>`
+        : (TERM.classes?`<span class="scope ${it.scope}">${scopeLabel[it.scope]}</span>`:'');
+      const title=it.choice
+        ? it.choice.map(x=>`${x.track} · ${x.label}`).join(' <em>또는</em> ')
+        : `${it.track} · ${it.label}`;
+      // 택1 과제는 어느 쪽을 골랐는지도 같이 보여준다
+      let pickRow='';
+      if(it.choice){
+        const picks=it.choice.map(x=>({x, s:submittedSet(c.week,x)}));
+        const both=exp.filter(h=>picks.every(p=>p.s.has(h))).length;
+        pickRow=`<div class="pickrow">
+          ${picks.map(p=>`<span>${p.x.track} <b>${exp.filter(h=>p.s.has(h)).length}</b>부부</span>`).join('')}
+          ${both?`<span class="both">둘 다 한 부부 ${both} 👏</span>`:''}</div>`;
+      }
       return `<div class="asgn">
-        <div class="asgn-h"><span class="asgn-t">${it.track} · ${it.label}</span>
+        <div class="asgn-h"><span class="asgn-t">${title}</span>
           ${badge}
           <span class="asgn-prog">${done}/${exp.length} 완료</span></div>
-        ${body}</div>`;
+        ${pickRow}${body}</div>`;
     }).join('');
     const wr=pct(wDone,wTotal);
     return `<div class="weekblk">
