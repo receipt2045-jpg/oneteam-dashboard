@@ -128,6 +128,44 @@ table.matrix tfoot th,table.matrix tfoot td{font-weight:700;color:var(--ink);bac
 .note{font-size:11.5px;color:var(--faint);line-height:1.7;margin-top:34px;padding-top:18px;border-top:1px solid var(--line)}
 footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;margin-top:44px}
 
+/* 부부별 제출 이력 (카드를 누르면 열린다) */
+.card{cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .1s}
+.card:hover{border-color:var(--sage);box-shadow:0 3px 14px rgba(55,80,47,.07)}
+.card:active{transform:translateY(1px)}
+.card:focus-visible{outline:2px solid var(--sage-dark);outline-offset:2px}
+.seemore{font-size:11px;color:var(--faint);margin-top:12px;padding-top:10px;border-top:1px solid var(--hair);text-align:center}
+.card:hover .seemore{color:var(--sage-dark)}
+
+dialog#detail{border:0;border-radius:14px;padding:0;max-width:640px;width:calc(100% - 28px);max-height:86vh;background:var(--card);color:var(--ink);box-shadow:0 18px 60px rgba(0,0,0,.22)}
+/* 머리말은 고정하고 목록만 스크롤 — [open]에만 걸어야 닫혔을 때 안 보인다 */
+dialog#detail[open]{display:flex;flex-direction:column;overflow:hidden}
+dialog#detail::backdrop{background:rgba(28,28,26,.45)}
+.dhead{flex-shrink:0;background:var(--card);border-bottom:1px solid var(--line);padding:20px 24px 16px;border-radius:14px 14px 0 0}
+.dhead-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.dtitle{font-size:19px;font-weight:700;letter-spacing:-.4px}
+.dsub{font-size:12.5px;color:var(--soft);margin-top:4px}
+.dclose{border:0;background:#f2f2ee;color:var(--soft);width:30px;height:30px;border-radius:50%;font-size:17px;line-height:1;cursor:pointer;flex-shrink:0;font-family:inherit;transition:.15s}
+.dclose:hover{background:var(--sage-soft);color:var(--sage-deep)}
+.dbody{flex:1;min-height:0;padding:6px 24px 26px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dweek{margin-top:20px}
+.dweek-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+.dweek-n{font-size:13px;font-weight:700;color:var(--sage-deep)}
+.dweek-p{font-size:11.5px;color:var(--faint)}
+.ditem{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--hair)}
+.dmark{width:17px;height:17px;border-radius:50%;flex-shrink:0;margin-top:2px;font-size:10px;line-height:17px;text-align:center;font-weight:700}
+.dmark.ok{background:var(--sage-soft);color:#21331c}
+.dmark.no{background:#f4f4f1;color:#c5c5bd}
+.dlabel{font-size:12.5px;font-weight:600}
+.ditem.miss .dlabel{color:var(--faint);font-weight:500}
+.dposts{margin-top:5px;display:flex;flex-direction:column;gap:4px}
+.dpost{font-size:12px;color:var(--soft);display:flex;flex-wrap:wrap;align-items:baseline;gap:7px}
+.dpost a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);font-weight:500}
+.dpost a:hover{color:var(--sage-deep);border-color:var(--sage)}
+.dwho{font-size:10.5px;color:var(--sage-deep);background:var(--sage-tint);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.dwhen{font-size:11px;color:var(--faint)}
+.dq{font-size:10.5px;color:var(--gold);background:#fbf3e0;border-radius:999px;padding:1px 8px}
+.dnone{font-size:12px;color:var(--faint);padding:14px 0}
+
 /* 기수 탭 */
 .terms{display:inline-flex;gap:3px;background:#f0f0ec;border-radius:999px;padding:3px;margin-bottom:20px}
 .terms button{border:0;background:transparent;font-family:inherit;font-size:13.5px;font-weight:600;color:#8a8a82;padding:8px 20px;border-radius:999px;cursor:pointer;transition:.15s;letter-spacing:-.2px}
@@ -195,6 +233,11 @@ footer{text-align:center;font-size:11px;color:var(--faint);letter-spacing:.5px;m
   <footer>원팀 프로젝트 · 결혼영수증</footer>
 </div>
 
+<dialog id="detail">
+  <div class="dhead" id="detailHead"></div>
+  <div class="dbody" id="detailBody"></div>
+</dialog>
+
 <script>
 const SHEET_ID='1Xl7oL7Ia8GWsv5VhhbZzo1lHPZIL_kNPBzFmYttUPco';
 // 컬럼 인덱스 (시트 열 순서)
@@ -238,11 +281,14 @@ const TERMS={
       {week:'OT', from:'2026-08-11', items:[
         {track:'강의출석', label:'OT 강의 출석', scope:'common'},
         // 자산 점검은 주차를 'OT' 대신 '1주차'로 적어 올리는 분이 많아 제목으로 찾는다
-        {track:'돈관리', label:'자산 점검', scope:'common', keys:['자산']}
+        //   ('자산'만으로 찾으면 4주차 '자산 로드맵'까지 딸려온다)
+        {track:'돈관리', label:'자산 점검', scope:'common', keys:['자산점검']}
       ]},
       {week:'1주차', from:'2026-08-18', items:[
         {track:'강의출석', label:'1주차 강의 출석', scope:'common'},
-        {track:'돈관리', label:'고정비 점검', scope:'common'},
+        // 돈관리는 주차마다 제목이 또렷해 제목으로 찾는 편이 정확하다
+        //   (주차만 보면 주차를 '1주차'로 적어 올린 자산 점검 글까지 여기 걸린다)
+        {track:'돈관리', label:'고정비 점검', scope:'common', keys:['고정비점검']},
         // SNS·내집마련은 택1 — 둘 중 하나만 내도 완료
         {scope:'common', choice:[
           {track:'SNS', label:'프로필 세팅', keys:['프로필']},
@@ -253,7 +299,7 @@ const TERMS={
       ]},
       {week:'2주차', from:'2026-08-25', items:[
         {track:'강의출석', label:'2주차 강의 출석', scope:'common'},
-        {track:'돈관리', label:'고정비 줄이기', scope:'common'},
+        {track:'돈관리', label:'고정비 줄이기', scope:'common', keys:['고정비줄이기']},
         {scope:'common', choice:[
           {track:'SNS', label:'대본 + 업로드'},
           {track:'내집마련', label:'대출 계획'}
@@ -262,7 +308,7 @@ const TERMS={
       ]},
       {week:'3주차', from:'2026-09-01', items:[
         {track:'강의출석', label:'3주차 강의 출석', scope:'common'},
-        {track:'돈관리', label:'변동비 예산', scope:'common'},
+        {track:'돈관리', label:'변동비 예산', scope:'common', keys:['변동비']},
         {scope:'common', choice:[
           {track:'SNS', label:'수익화 세팅'},
           {track:'내집마련', label:'입지 분석'}
@@ -271,7 +317,8 @@ const TERMS={
       ]},
       {week:'4주차', from:'2026-09-08', items:[
         {track:'강의출석', label:'4주차 강의 출석', scope:'common'},
-        {track:'돈관리', label:'한 달 결산', scope:'common'},
+        // 공지는 '한 달 결산'이었는데 실제로는 다들 '자산 로드맵'으로 올렸다
+        {track:'돈관리', label:'한 달 결산 (자산 로드맵)', scope:'common', keys:['자산로드맵','로드맵','결산']},
         {scope:'common', choice:[
           {track:'SNS', label:'30일 콘텐츠 플랜'},
           {track:'내집마련', label:'후보 단지 분석·임장'}
@@ -372,24 +419,28 @@ function expectedFor(scope){
 //  - 보통은 '주차 + 트랙'으로 찾는다.
 //  - 다만 주차를 잘못 적어 올리는 일이 잦다(자산 점검을 OT 대신 1주차로 쓰는 등).
 //    그래서 과제에 keys가 있으면 주차는 무시하고 '제목에 그 낱말이 있는지'로 찾는다.
-function submittedSet(week,it){
+function rowsFor(week,it){
   // 택1 과제(choice) — 묶인 트랙 중 하나라도 냈으면 완료로 친다
   //   4기는 반을 나누지 않고 SNS·내집마련 중 관심 가는 쪽을 골라 하기 때문
   if(it && it.choice){
-    const s=new Set();
-    it.choice.forEach(sub=>submittedSet(week,sub).forEach(h=>s.add(h)));
-    return s;
+    const seen=new Set();
+    return it.choice.flatMap(sub=>rowsFor(week,sub)).filter(r=>{
+      const k=r.num||r.title; if(seen.has(k)) return false; seen.add(k); return true;
+    });
   }
   const track = typeof it==='string' ? it : it.track;
   const keys = (typeof it==='object' && it.keys) ? it.keys : null;
-  return new Set(rows.filter(r=>{
+  return rows.filter(r=>{
     if(r.track!==track) return false;
     if(keys && keys.length){
       const t=String(r.title||'').replace(/\s/g,'');
       return keys.some(k=>t.includes(String(k).replace(/\s/g,'')));
     }
     return (r.week||'기타')===week;
-  }).map(r=>householdOf(r.nick)).filter(Boolean));
+  });
+}
+function submittedSet(week,it){
+  return new Set(rowsFor(week,it).map(r=>householdOf(r.nick)).filter(Boolean));
 }
 // ── 과제 달성 집계 ───────────────────────────────────────────
 // 화면에 뜬 주차의 과제를 한 줄씩 펼쳐 둔다.
@@ -509,6 +560,7 @@ function loadSheet(){
         const cell=i=>c[i]? (c[i].f!=null?c[i].f:c[i].v) : '';
         const rawDate=c[COL.date]?c[COL.date].v:null;
         return {
+          num:Number(c[COL.num]?c[COL.num].v:0)||0,   // 카페 글번호 — 글로 바로 가는 링크에 쓴다
           track:String(cell(COL.track)||'').trim(),
           nick:String(cell(COL.nick)||'').trim(),
           week:String(cell(COL.week)||'').trim(),
@@ -552,6 +604,8 @@ function applyTerm(key){
   }catch(e){}
   rows=allRows.filter(r=>inTerm(r,TERM) && !isDropped(r.nick));
   _asgnCache=null;   // 기수가 바뀌면 집계를 새로 센다
+  const dlg=document.getElementById('detail');
+  if(dlg && dlg.open) dlg.close();   // 다른 기수의 이력이 열린 채 남지 않게
   render();
 }
 
@@ -694,7 +748,7 @@ function renderMembers(){
       ? `<div class="pcap"><span class="k">과제 달성</span><span class="v">${full?'완주 🎉':rate+'%'}</span></div>
          <div class="pbar ${full?'full':''}"><i style="width:${rate}%"></i></div>`
       : `<div class="pcap"><span class="k">과제 달성</span><span class="v">운영진 · 집계 제외</span></div>`;
-    return `<div class="card${full?' done':''}${m.staff?' staff':''}">
+    return `<div class="card${full?' done':''}${m.staff?' staff':''}" data-h="${m.nick}" role="button" tabindex="0" aria-label="${m.nick} 제출 이력 보기">
       <div class="mhead">
         <div><div class="mname">${m.nick}</div><div class="mhandle">${m.q?('질문 '+m.q+'건'):'질문 없음'}</div></div>
         <div class="mdot ${active?'':'idle'}"></div>
@@ -709,8 +763,82 @@ function renderMembers(){
         <div><div class="k">최근 주차</div><div class="v">${lastWeek}</div></div>
         <div style="text-align:right"><div class="k">최근 제출</div><div class="v">${m.last?fmtDate(m.last):'—'}</div></div>
       </div>
+      <div class="seemore">눌러서 제출한 과제 전체 보기 →</div>
     </div>`;
   }).join('');
+}
+
+// ── 부부별 제출 이력 (카드를 누르면 열린다) ──────────────────
+// 카페 글번호로 원글에 바로 갈 수 있다 (카페 ID 31360549)
+const CAFE='https://cafe.naver.com/f-e/cafes/31360549/articles/';
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// 시트 닉네임에서 가구명을 뺀 나머지 ('바미부부 남편' → '남편')
+function whoOf(nick,h){ return String(nick||'').replace(h,'').trim()||nick; }
+function postLine(r,h){
+  const t=esc(r.title||'(제목 없음)');
+  const link=r.num?`<a href="${CAFE}${r.num}" target="_blank" rel="noopener">${t}</a>`:`<span>${t}</span>`;
+  return `<div class="dpost">${link}
+    <span class="dwho">${esc(whoOf(r.nick,h))}</span>
+    <span class="dwhen">${r.date?fmtDate(r.date):''}</span>
+    ${r.question?'<span class="dq">질문</span>':''}</div>`;
+}
+function openMember(h){
+  const mine=r=>(householdOf(r.nick)||r.nick)===h;
+  const myRows=rows.filter(mine);
+  const used=new Set();     // 과제에 붙은 글 — 나머지는 '그 외 제출'로 모은다
+  let done=0,total=0;
+  const weeksHtml=shownWeeks().map(c=>{
+    let wd=0,wt=0;
+    const items=c.items.map(it=>{
+      const got=rowsFor(c.week,it).filter(mine);
+      got.forEach(r=>used.add(r));
+      if(expectedFor(it.scope).includes(h)){ wt++; if(got.length) wd++; }
+      // 택1은 실제로 낸 쪽만 제목에 쓴다 (안 냈으면 고를 수 있던 둘을 보여준다)
+      const label=it.choice
+        ? (got.length
+            ? [...new Set(got.map(r=>r.track))].map(tr=>{
+                const sub=it.choice.find(x=>x.track===tr);
+                return sub?`${sub.track} · ${sub.label}`:tr;
+              }).join(' + ')
+            : it.choice.map(x=>`${x.track} · ${x.label}`).join(' 또는 '))
+        : `${it.track} · ${it.label}`;
+      const ok=got.length>0;
+      return `<div class="ditem${ok?'':' miss'}">
+        <span class="dmark ${ok?'ok':'no'}">${ok?'✓':'·'}</span>
+        <div style="min-width:0;flex:1">
+          <div class="dlabel">${esc(label)}${it.choice?' <span class="scope pick">택1</span>':''}</div>
+          ${ok?`<div class="dposts">${got.map(r=>postLine(r,h)).join('')}</div>`:''}
+        </div></div>`;
+    }).join('');
+    done+=wd; total+=wt;
+    return `<div class="dweek">
+      <div class="dweek-h"><span class="dweek-n">${c.week}</span><span class="dweek-p">${wd}/${wt} 완료</span></div>
+      ${items}</div>`;
+  }).join('');
+  const extra=myRows.filter(r=>!used.has(r)).sort((a,b)=>(b.date||0)-(a.date||0));
+  const rate=pct(done,total);
+
+  document.getElementById('detailHead').innerHTML=`
+    <div class="dhead-top">
+      <div>
+        <div class="dtitle">${esc(h)}</div>
+        <div class="dsub">${total?`${TERM.label} 과제 ${done}/${total} 완료 · ${rate}%`:`${TERM.label} 운영진 · 과제 집계 제외`} · 제출 글 ${myRows.length}건</div>
+      </div>
+      <button class="dclose" aria-label="닫기">✕</button>
+    </div>
+    ${total?`<div class="pbar ${done===total?'full':''}" style="margin:13px 0 0"><i style="width:${rate}%"></i></div>`:''}`;
+  document.getElementById('detailBody').innerHTML=
+    (myRows.length?'':'<div class="dnone">아직 제출한 과제가 없어요.</div>')
+    + weeksHtml
+    + (extra.length?`<div class="dweek">
+        <div class="dweek-h"><span class="dweek-n">그 외 제출</span><span class="dweek-p">${extra.length}건</span></div>
+        <div class="ditem"><span class="dmark ok">✓</span>
+          <div style="min-width:0;flex:1"><div class="dposts">${extra.map(r=>postLine(r,h)).join('')}</div></div>
+        </div></div>`:'');
+  const dlg=document.getElementById('detail');
+  dlg.scrollTop=0;
+  document.getElementById('detailBody').scrollTop=0;
+  dlg.showModal();
 }
 
 function renderMatrix(){
@@ -742,6 +870,24 @@ function renderMatrix(){
 }
 
 document.getElementById('refreshBtn').onclick=loadSheet;
+
+// 멤버 카드 → 제출 이력 (카드가 다시 그려져도 되도록 위임으로 건다)
+document.getElementById('members').addEventListener('click',e=>{
+  const c=e.target.closest('.card[data-h]');
+  if(c) openMember(c.dataset.h);
+});
+document.getElementById('members').addEventListener('keydown',e=>{
+  if(e.key!=='Enter' && e.key!==' ') return;
+  const c=e.target.closest('.card[data-h]');
+  if(c){ e.preventDefault(); openMember(c.dataset.h); }
+});
+// 닫기 — ✕ 버튼, 또는 창 바깥(백드롭) 클릭. ESC는 dialog가 알아서 처리한다
+document.getElementById('detail').addEventListener('click',e=>{
+  const dlg=e.currentTarget;
+  if(e.target.closest('.dclose')){ dlg.close(); return; }
+  const r=dlg.getBoundingClientRect();
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) dlg.close();
+});
 
 // 기수 탭 — 시트는 그대로 두고 화면만 바꾼다
 document.getElementById('terms').addEventListener('click',e=>{
