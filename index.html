@@ -316,14 +316,35 @@ function fmtD(v){ const d=new Date(v); return isNaN(d)?'':`${d.getMonth()+1}/${d
 function getKey(){ try{return sessionStorage.getItem('ot5key')||'';}catch(e){return '';} }
 function setKey(k){ try{ k?sessionStorage.setItem('ot5key',k):sessionStorage.removeItem('ot5key'); }catch(e){} }
 
+// Apps Script는 느리고(5~20초) 가끔 HTML 오류 페이지를 돌려준다 → JSON이 아니면 다시 시도
+async function getJSON(url, tries=3){
+  for(let i=0;i<tries;i++){
+    // 한 번에 15초까지만 기다리고 넘어간다 (가끔 50초씩 붙잡혀 있는다)
+    const ac=new AbortController(), to=setTimeout(()=>ac.abort(),15000);
+    try{ const r=await fetch(url+(url.includes('?')?'&':'?')+'t='+Date.now(),{signal:ac.signal}); const j=JSON.parse(await r.text()); if(j&&j.ok!==undefined) return j; }catch(e){}
+    finally{ clearTimeout(to); }
+  }
+  throw new Error('load failed');
+}
+// 지난번 받은 공개 데이터를 먼저 보여주고, 새 데이터가 오면 바꿔 그린다 (이 기기에만 저장)
+function cached(){ try{ return JSON.parse(localStorage.getItem('ot5pub')||'null'); }catch(e){ return null; } }
+function keep(d){ try{ localStorage.setItem('ot5pub', JSON.stringify({subs:d.subs,mvp:d.mvp,qa:d.qa,links:d.links})); }catch(e){} }
+
 async function load(){
   if(new URLSearchParams(location.search).has('demo')){ DATA=demoData(); ADMIN=getKey()?demoAdmin():null; return render(); }
   if(!API){ DATA={subs:[],mvp:[],qa:[],links:{}}; return render(); }
+  const k=getKey();
+  // 처음 오는 사람도 빈 화면 대신 과제·일정은 바로 보이게 (현황 숫자만 나중에 채운다)
+  if(!DATA){ const c=cached(); DATA=(c && !k)?c:{subs:[],mvp:[],qa:[],links:{},_loading:true}; render(); }
   try{
-    const r=await fetch(API+'?t='+Date.now()); DATA=await r.json();
-    const k=getKey();
-    if(k){ const a=await (await fetch(API+'?action=admin&key='+encodeURIComponent(k)+'&t='+Date.now())).json(); if(a.ok){ADMIN=a; DATA=a;} else { setKey(''); ADMIN=null; } }
-  }catch(e){ DATA=null; }
+    if(k){
+      const a=await getJSON(API+'?action=admin&key='+encodeURIComponent(k));
+      if(a.ok){ ADMIN=a; DATA=a; keep(a); }
+      else { setKey(''); ADMIN=null; DATA=await getJSON(API); keep(DATA); }
+    } else {
+      DATA=await getJSON(API); keep(DATA);
+    }
+  }catch(e){ if(!DATA || DATA._loading) DATA=null; }
   render();
 }
 async function post(body){
@@ -366,7 +387,8 @@ function homeView(){
   // MVP
   const mv=(DATA.mvp||[]);
   h+=`<section class="sec-dark"><span class="eyebrow">★ 지난주 MVP</span><div class="h2">이번 주에 제일 잘한 과제</div>`;
-  if(!mv.length) h+=`<div class="mvp-empty">첫 MVP는 1주차 마감(10/19) 뒤에 여기에 올라와요.<br>과제를 낼 때 공유 동의를 O로 해 주시면 MVP 후보가 돼요.</div>`;
+  if(DATA._loading) h+=`<div class="mvp-empty">불러오는 중이에요…</div>`;
+  else if(!mv.length) h+=`<div class="mvp-empty">첫 MVP는 1주차 마감(10/19) 뒤에 여기에 올라와요.<br>과제를 낼 때 공유 동의를 O로 해 주시면 MVP 후보가 돼요.</div>`;
   mv.forEach((m,i)=>{
     const t=parseTask(m.task), tn=t?TRACKS[t.track].name:'과제', task=t&&TASKS[t.track][t.week]?TASKS[t.track][t.week].name:m.task;
     const quote=m.quote||String(m.body||'').split('\n').filter(Boolean).slice(0,2).join(' ');
@@ -397,7 +419,7 @@ function board(cw){
   const sum=wk.reduce((a,p)=>a+p.done,0), full=wk.filter(p=>p.done===3).length;
   const hs=wk.filter(p=>p.house).length, sn=wk.filter(p=>p.sns).length;
   const shown=boardAll?rows:rows.slice(0,8);
-  let h=`<span class="eyebrow">5기 ${n}부부</span><div class="h2">${cw}주차, <span class="hl">다들 여기까지</span> 왔어요</div>
+  let h=`<span class="eyebrow">5기 ${n}부부${DATA._loading?' · 불러오는 중…':''}</span><div class="h2">${cw}주차, <span class="hl">다들 여기까지</span> 왔어요</div>
     <div class="stats"><div><b>${Math.round(sum/(n*3)*100)}%</b><span>이번 주 달성</span></div><div><b>${full}</b><span>다 한 부부</span></div><div><b>${hs} · ${sn}</b><span>내집 · SNS</span></div></div>
     <div class="seg"><button class="${boardMode==='week'?'on':''}" onclick="boardMode='week';render()">이번 주</button><button class="${boardMode==='all'?'on':''}" onclick="boardMode='all';render()">${cw>1?'1~'+cw+'주 전체':'전체'}</button></div>
     <div style="margin-top:12px">`;
@@ -483,7 +505,7 @@ function qaView(){
   const list=DATA.qa||[];
   let h=`<section class="sec-alt"><span class="eyebrow">Q&amp;A</span><div class="h1">물어봐 주신 것들</div>
     <div class="body1">과제를 낼 때 탈리 맨 아래 칸에 질문을 남겨주세요. 답은 닉네임 없이 여기 올라와요.</div>`;
-  if(!list.length) h+=`<div class="empty">아직 올라온 질문이 없어요</div>`;
+  if(!list.length) h+=`<div class="empty">${DATA._loading?'불러오는 중이에요…':'아직 올라온 질문이 없어요'}</div>`;
   list.forEach(q=>{
     const t=parseTask(q.task), tag=t?`${t.week}주차 ${TRACKS[t.track].name}`:'';
     h+=`<div class="qa"><div class="qt">${esc(q.q)}</div>${q.a?`<div class="at">${esc(q.a)}</div>`:`<div class="at wait">답변을 준비하고 있어요</div>`}
@@ -502,8 +524,9 @@ function adminPanel(cw){
   const unans=rows.filter(r=>r.q && !r.answer);
   const cand=rows.filter(r=>r.shareOk && !r.isMvp).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,12);
   let h=`<div class="admin"><h3>🔒 결영님만 보여요 <button onclick="logout()">나가기</button></h3>
+    ${!cw?`<div class="sub">미제출 명단은 1주차(10/13)부터 떠요</div>`:`
     <div class="sub">${wk}주차 하나도 안 낸 부부 · ${zero.length}</div>${zero.map(r=>`<span class="chip">${esc(r)}</span>`).join('')||'<span class="chip ok">없어요</span>'}
-    <div class="sub">${wk}주차 덜 낸 부부 · ${part.length}</div>${part.map(r=>`<span class="chip" style="background:#FAEEDA;color:#633806">${esc(r)} ${progress(r,wk).done}/3</span>`).join('')||'<span class="chip ok">없어요</span>'}
+    <div class="sub">${wk}주차 덜 낸 부부 · ${part.length}</div>${part.map(r=>`<span class="chip" style="background:#FAEEDA;color:#633806">${esc(r)} ${progress(r,wk).done}/3</span>`).join('')||'<span class="chip ok">없어요</span>'}`}
     <div class="sub">답 안 단 질문 · ${unans.length}</div>`;
   unans.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><div style="margin-top:4px">${esc(r.q)}</div>
     <textarea id="ans-${esc(r.id)}" placeholder="답변을 쓰면 Q&A에 닉네임 없이 올라가요"></textarea>
