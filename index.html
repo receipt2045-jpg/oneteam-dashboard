@@ -100,6 +100,7 @@ button{font-family:inherit}
 .ex .best pre{background:none;padding:0;margin-top:7px;max-height:9.5em;overflow:hidden;position:relative}
 .ex .best.open pre{max-height:none}
 .ex .best .rd{margin-top:4px;font-size:12px;font-weight:600;color:var(--acc);background:none;border:0;cursor:pointer;padding:0}
+.ex .shot{display:block;width:100%;max-height:520px;object-fit:cover;object-position:top;border:1px solid var(--border);border-radius:10px}
 .ex .bnote{font-size:11.5px;color:var(--mute);margin-top:-2px}
 .replay{display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--border);text-decoration:none;color:inherit}
 .replay:last-child{border-bottom:1px solid var(--border)}
@@ -591,6 +592,9 @@ function example(k,n,id){
   let h=`<div class="ex" id="${id}"><h4>이렇게 하세요</h4><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
     <h4>제출 양식 — 복사해서 탈리에 붙여넣기</h4><pre>${esc(t.form)}</pre><button class="copy" onclick="copyForm(this)">양식 복사</button>`;
   if(t.ex) h+=`<h4>결영이네 예시</h4><pre>${esc(t.ex)}</pre>`;
+  // 모아불리 화면 — 예시 데이터로 찍은 캡처(실제 금액 아님). 누르면 전체 크기
+  const SHOT={'money|1':'img/moabuli-asset.png','money|2':'img/moabuli-monthly.png','money|4':'img/moabuli-roadmap.png'}[k+'|'+n];
+  if(SHOT) h+=`<h4>모아불리 화면 예시</h4><a href="${SHOT}" target="_blank" rel="noopener"><img class="shot" src="${SHOT}" loading="lazy" alt="모아불리 화면 예시"></a><div class="bnote" style="margin-top:4px">예시 데이터예요 · 누르면 크게 보여요</div>`;
   h+=bestOf(k,n);
   if(t.warn) h+=`<div class="warn">⚠️ ${esc(t.warn)}</div>`;
   if(t.tbd) h+=`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`;
