@@ -197,7 +197,7 @@ footer a{color:var(--text-lt);margin:0 6px}
     <div class="timer" id="timer"><span class="l" id="tl">마감까지</span><span class="c" id="tc">--</span></div>
     <nav class="menu" id="menu">
       <a href="#home" data-v="home">5기</a>
-      <a href="#mine" data-v="mine">우리 부부</a>
+      <a href="#mine" data-v="mine">피드백</a>
       <a href="#week" data-v="week">이번 주</a>
       <a href="#read" data-v="read">독서</a>
       <a href="#money" data-v="money">돈관리</a>
@@ -422,7 +422,7 @@ function render(){
   const v=(location.hash||'#home').slice(1);
   view=['home','week','read','money','house','sns','qa','mine','admin'].includes(v)?v:'home';
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===view));
-  const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent=(MINE||getMine())?'우리 부부':'로그인';
+  const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
   const el=document.getElementById('view');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
   el.innerHTML = view==='home'?homeView() : view==='week'?weekView() : view==='qa'?qaView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
@@ -625,7 +625,7 @@ function mineView(){
     if(c && !mineErr){ MINE=c; MINE._stale=true; setTimeout(()=>openMine(saved.h,saved.code,true),0); return mineView(); }
     if(saved && !mineBusy && !mineErr) setTimeout(()=>openMine(saved.h,saved.code),0);
     const busy=mineBusy||(saved&&!mineErr);
-    return `<section class="sec login"><span class="eyebrow">우리 부부</span><div class="h1">로그인하고<br><span class="hl">받은 피드백</span> 보기</div>
+    return `<section class="sec login"><span class="eyebrow">피드백</span><div class="h1">로그인하고<br><span class="hl">받은 피드백</span> 보기</div>
       <div class="box">
         <label for="mH">아이디</label>
         <select id="mH" class="${(saved?saved.h:mineIdDraft)?'':'empty'}" onchange="this.classList.toggle('empty',!this.value)"><option value="">부부 이름 고르기</option>${ROSTER.map(r=>`<option${(saved?saved.h:mineIdDraft)===r?' selected':''}>${esc(r)}</option>`).join('')}</select>
@@ -670,7 +670,7 @@ function adminPanel(cw){
   unans.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><div style="margin-top:4px">${esc(r.q)}</div>
     <textarea id="ans-${esc(r.id)}" placeholder="답변을 쓰면 Q&A에 닉네임 없이 올라가요"></textarea>
     <div class="row2"><select id="by-${esc(r.id)}"><option>머니그랩</option><option>결영</option></select><button class="sbtn" onclick="saveAnswer('${esc(r.id)}',this)">저장</button></div></div>`; });
-  // 피드백 — 초안기가 넣은 초안이 미리 채워져 있다. 고쳐서 보내면 그 부부 '우리 부부' 탭에 뜬다
+  // 피드백 — 초안기가 넣은 초안이 미리 채워져 있다. 고쳐서 보내면 그 부부 '피드백' 탭에 뜬다
   const waitFb=rows.filter(r=>!r.feedback).sort((a,b)=>new Date(a.at)-new Date(b.at));
   const nDraft=waitFb.filter(r=>r.draft).length;
   h+=`<div class="sub">피드백 기다리는 과제 · ${waitFb.length}${nDraft?` (초안 ${nDraft})`:''}</div><div style="font-size:12px;color:var(--text-lt);line-height:1.6">새로 들어온 과제는 매일 밤 11시 50분에 결영님 PC의 Claude가 3·4기 실제 피드백과 수정 규칙으로 초안을 채워둬요(PC와 Claude 앱이 켜져 있을 때). 급하면 Claude에게 '초안 써줘'라고 하세요.</div>`;
@@ -679,7 +679,7 @@ function adminPanel(cw){
     h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div>
     <details><summary>과제 내용</summary><pre style="white-space:pre-wrap;font-family:inherit;margin-top:4px;color:var(--text-md)">${esc(r.body)}</pre>${files}${r.link?`<a href="${esc(r.link)}" target="_blank" rel="noopener" style="font-size:12px;color:var(--acc)">SNS 링크 ›</a>`:''}</details>
     <div id="gnote-${esc(r.id)}" style="font-size:11.5px;color:var(--warn);margin-top:6px">${r.requested?'다시 요청됨 · 오늘 밤 11시 50분에 새 초안으로 바뀌어요':r.draft?'AI 초안이에요. [★확인 필요] 표시와 숫자를 보고 고쳐서 보내주세요':'초안 준비 중 · 오늘 밤 11시 50분에 채워져요'}</div>
-    <textarea id="fb-${esc(r.id)}" style="min-height:110px" placeholder="피드백을 쓰면 이 부부의 '우리 부부' 탭에 떠요">${esc(r.draft)}</textarea>
+    <textarea id="fb-${esc(r.id)}" style="min-height:110px" placeholder="피드백을 쓰면 이 부부의 '피드백' 탭에 떠요">${esc(r.draft)}</textarea>
     <div class="row2">${r.draft||r.requested?`<button class="sbtn ghost" onclick="reqFb(['${esc(r.id)}'],this)" ${r.requested?'disabled':''}>${r.requested?'요청됨':'초안 다시 요청'}</button>`:''}<select id="fbby-${esc(r.id)}"><option>결영</option><option>머니그랩</option></select><button class="sbtn" onclick="sendFb('${esc(r.id)}',this)">보내기</button></div></div>`;
   });
   if(waitFb.length>6) h+=`<button class="more" onclick="fbShowAll=!fbShowAll;render()">${fbShowAll?`접기 ${chev(true)}`:`${waitFb.length-6}개 더 보기 ${chev(false)}`}</button>`;
