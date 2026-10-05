@@ -139,8 +139,10 @@ button{font-family:inherit}
 .login .box{background:#fff;border:1px solid var(--border);border-radius:16px;padding:22px 18px 18px;margin-top:22px}
 .login label{display:block;font-size:12.5px;font-weight:700;color:var(--text);margin:14px 0 6px}
 .login label:first-child{margin-top:0}
-.login input[type=text],.login input[type=password]{width:100%;font-family:inherit;font-size:16px;border:1px solid var(--border);border-radius:10px;padding:13px 14px;background:var(--bg);outline:none}
-.login input:focus{border-color:var(--acc);background:#fff}
+.login select,.login input[type=password]{width:100%;font-family:inherit;font-size:16px;border:1px solid var(--border);border-radius:10px;padding:13px 14px;background:var(--bg);outline:none}
+.login input:focus,.login select:focus{border-color:var(--acc);background:#fff}
+.login select{-webkit-appearance:none;appearance:none;color:var(--text);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:16px;padding-right:40px}
+.login select.empty{color:var(--mute)}
 .login .keep{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-md);margin-top:12px}
 .login .keep input{width:16px;height:16px;accent-color:var(--acc)}
 .login .help{font-size:12px;color:var(--text-lt);text-align:center;margin-top:14px;line-height:1.6}
@@ -594,7 +596,7 @@ const normId=v=>String(v||'').replace(/\s/g,'').toLowerCase();
 function submitMine(){
   const raw=document.getElementById('mH').value, c=document.getElementById('mC').value.replace(/\D/g,'');
   mineKeep=document.getElementById('mK').checked;
-  if(!raw.trim()){ mineErr='아이디(부부 이름)를 넣어주세요'; return render(); }
+  if(!raw.trim()){ mineErr='아이디(부부 이름)를 골라주세요'; return render(); }
   const h=ROSTER.find(r=>normId(r)===normId(raw));
   if(!h){ mineErr='아이디를 확인해 주세요. 탈리에 내실 때 고르는 부부 이름이에요.'; mineIdDraft=raw; return render(); }
   if(c.length!==4){ mineErr='비밀번호는 휴대폰 번호 뒷자리 4개예요'; mineIdDraft=h; return render(); }
@@ -610,14 +612,14 @@ function mineView(){
     return `<section class="sec login"><span class="eyebrow">우리 부부</span><div class="h1">로그인하고<br><span class="hl">받은 피드백</span> 보기</div>
       <div class="box">
         <label for="mH">아이디</label>
-        <input type="text" id="mH" autocomplete="username" placeholder="부부 이름 (예: 라부부)" value="${esc(saved?saved.h:mineIdDraft)}">
+        <select id="mH" class="${(saved?saved.h:mineIdDraft)?'':'empty'}" onchange="this.classList.toggle('empty',!this.value)"><option value="">부부 이름 고르기</option>${ROSTER.map(r=>`<option${(saved?saved.h:mineIdDraft)===r?' selected':''}>${esc(r)}</option>`).join('')}</select>
         <label for="mC">비밀번호</label>
         <input type="password" id="mC" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="휴대폰 번호 뒷자리 4개" onkeydown="if(event.key==='Enter')submitMine()">
         <label class="keep"><input type="checkbox" id="mK" ${mineKeep?'checked':''}>로그인 상태 유지</label>
         <div class="err">${busy?'<span style="color:var(--text-lt)">로그인하는 중이에요…</span>':esc(mineErr)}</div>
         <button class="btn" style="width:100%;border:0;cursor:pointer;margin-top:4px" onclick="submitMine()">로그인</button>
       </div>
-      <div class="help">아이디는 탈리에 과제 낼 때 고르는 부부 이름,<br>비밀번호는 부부 중 한 분의 휴대폰 번호 뒷자리예요.</div></section>`;
+      <div class="help">아이디는 우리 부부 이름을 고르고,<br>비밀번호는 부부 중 한 분의 휴대폰 번호 뒷자리를 넣어주세요.</div></section>`;
   }
   const rows=(MINE.rows||[]).slice().sort((a,b)=>new Date(a.at)-new Date(b.at));
   const got=rows.filter(r=>r.feedback).length;
