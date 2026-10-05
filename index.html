@@ -225,8 +225,7 @@ const FORM = 'https://tally.so/r/RG70yv';
 const OT = {date:'10/6', title:'OT · 통장은 각자, 돈 관리는 함께', url:'https://www.youtube.com/live/BBDZVrWvAUc'};
 
 // 탈리 '부부 닉네임' 목록과 같아야 한다
-const ROSTER = ['라부부','송파부부','오유부부','용영','희찬부부','웃슴부부','우나비아',
-  '뚜띠부부','토마토부부','치킨사과뿌','쥬바르','옥슈슈','보다부부','연민부부','하루에하나씩'];
+const ROSTER = ['오유부부','용영','희찬부부','웃슴부부','우나비아','뚜띠부부','옥슈슈'];
 
 // 주차: open = 그 주 과제가 열리는 날(화요일 라이브), due = 마감(월 23:59)
 const WEEKS = [
@@ -765,12 +764,12 @@ function demoData(){
   const T=(w,k)=>`${w}주차 - ${TRACKS[k].name} (${TASKS[k][w].name})`;
   const subs=[]; let id=0;
   const add=(h,w,k,who,body,share,q,qOk)=>subs.push({id:'d'+(++id),h,task:T(w,k),at:new Date(kst(W(w).open)+86400000*(1+id%4)).toISOString(),who,body:body||TASKS[k][w].ex||TASKS[k][w].form,shareOk:share!==false,q:q||'',qOk:!!qOk,file:'',link:k==='sns'?'https://www.threads.net/@example':''});
-  ['라부부','송파부부','오유부부','용영','희찬부부'].forEach((h,i)=>{ add(h,1,'read','아내'); add(h,1,'money','남편'); add(h,1,i%2?'sns':'house','아내'); });
-  ['웃슴부부','우나비아','뚜띠부부'].forEach(h=>{ add(h,1,'money','아내',null,true,'전세보증금도 자산에 넣나요?',true); add(h,1,'house','남편'); });
-  ['토마토부부','치킨사과뿌'].forEach(h=>add(h,1,'read','둘이 같이'));
-  add('라부부',1,'sns','남편',null,true,'부부 얼굴이 안 나와도 되나요?',true);
+  ['오유부부','용영','희찬부부'].forEach((h,i)=>{ add(h,1,'read','아내'); add(h,1,'money','남편'); add(h,1,i%2?'sns':'house','아내'); });
+  ['웃슴부부','우나비아'].forEach(h=>{ add(h,1,'money','아내',null,true,'전세보증금도 자산에 넣나요?',true); add(h,1,'house','남편'); });
+  ['뚜띠부부'].forEach(h=>add(h,1,'read','둘이 같이'));
+  add('오유부부',1,'sns','남편',null,true,'부부 얼굴이 안 나와도 되나요?',true);
   const qa=[{id:'d6',task:T(1,'money'),q:'전세보증금도 자산에 넣나요?',a:'네, 돌려받을 돈이라 자산이에요. 대출이 끼어 있으면 부채에도 같이 적어주세요.',by:'머니그랩',at:''},{id:'d18',task:T(1,'sns'),q:'부부 얼굴이 안 나와도 되나요?',a:'',by:'',at:''}];
-  const mvp=[{id:'d2',h:'라부부',who:'남편',task:T(1,'money'),quote:'숫자를 펼쳐놓고 나서야 대화가 시작되더라고요. 남편이 먼저 다음 달 예산 얘기를 꺼냈어요.',body:TASKS.money[1].ex,link:''}];
+  const mvp=[{id:'d2',h:'오유부부',who:'남편',task:T(1,'money'),quote:'숫자를 펼쳐놓고 나서야 대화가 시작되더라고요. 남편이 먼저 다음 달 예산 얘기를 꺼냈어요.',body:TASKS.money[1].ex,link:''}];
   return {subs,qa,mvp,links:{'1|내집마련':'https://youtu.be/example'},rows:subs.map(s=>Object.assign({},s,{answer:s.id==='d6'?'네, 자산이에요':'',isMvp:s.id==='d2'}))};
 }
 function demoAdmin(){ DATA.rows.forEach((r,i)=>{ if(i%3===0) r.draft='(초안) 고정비를 이렇게 펼쳐보신 것만으로도 절반은 하신 거예요. 저희도 통신비부터 줄였어요.'; if(i%4===1){ r.feedback='잘 하셨어요!'; r.feedbackBy='결영'; } }); return DATA; }
