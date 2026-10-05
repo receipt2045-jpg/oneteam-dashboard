@@ -93,6 +93,14 @@ button{font-family:inherit}
 .ex .copy{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:var(--acc);background:var(--acc-soft);border:0;border-radius:7px;padding:5px 10px;cursor:pointer}
 .ex .warn{font-size:12.5px;color:var(--warn);background:var(--warn-bg);border-radius:9px;padding:9px 11px;margin-top:10px;line-height:1.6}
 .ex .tbd{font-size:12px;color:var(--mute);margin-top:8px}
+/* 4기 잘한 과제 */
+.ex .best{border:1px solid var(--border);border-radius:10px;padding:11px 12px;margin-top:8px}
+.ex .best .w{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-md)}
+.ex .best .w b{font-size:11px;color:var(--acc);background:var(--acc-soft);border-radius:5px;padding:2px 7px}
+.ex .best pre{background:none;padding:0;margin-top:7px;max-height:9.5em;overflow:hidden;position:relative}
+.ex .best.open pre{max-height:none}
+.ex .best .rd{margin-top:4px;font-size:12px;font-weight:600;color:var(--acc);background:none;border:0;cursor:pointer;padding:0}
+.ex .bnote{font-size:11.5px;color:var(--mute);margin-top:-2px}
 .replay{display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--border);text-decoration:none;color:inherit}
 .replay:last-child{border-bottom:1px solid var(--border)}
 .replay .d{width:46px;flex-shrink:0;font-size:12px;color:var(--text-lt);line-height:1.3}
@@ -337,8 +345,8 @@ const TASKS = {
 };
 // 강의 출석 — 4기 카페처럼 "OO 라이브 출석했습니다" + 배운 점. 주차마다 같은 양식
 const LIVE_TASK = n => ({name:'라이브 출석',
-  how:['내가 고른 과정 라이브 보기 — 화요일 내집마련 · 목요일 SNS (못 오면 다시보기)','"OO 라이브 출석했습니다" 한 줄','배운 점과 우리 부부에게 적용할 점 두세 줄'],
-  form:`${n}주차 (내집마련/SNS) 라이브 출석했습니다.\n\n배운 점 :\n\n우리 부부에게 적용할 점 :`,
+  how:['내가 고른 과정 라이브 보기 — 화요일 내집마련 · 목요일 SNS (못 오면 다시보기)','"OO 라이브 출석했습니다" 한 줄','알게 된 점과 실천할 점 두세 줄'],
+  form:`${n}주차 (내집마련/SNS) 라이브 출석했습니다.\n\n알게 된 점 :\n\n실천할 점 :`,
   ex:'OT 강의 출석했습니다.\n생활비는 비과세라 부부간 증여에 해당하지 않는 점을 활용\n생활비 통장은 함께 쓸 예정이다.'});
 TASKS.live = {1:LIVE_TASK(1), 2:LIVE_TASK(2), 3:LIVE_TASK(3), 4:LIVE_TASK(4)};
 const TRACK_OF = {'독서':'read','돈관리':'money','내집마련':'house','SNS':'sns','강의':'live','강의출석':'live'};
@@ -521,7 +529,8 @@ function replays(){
   });
   return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
     out.map(r=>`<a class="replay" href="${esc(r.url)}" target="_blank" rel="noopener"><span class="d">${r.day}<b>${r.d}</b></span><span class="t">${esc(r.t)}</span><span class="go">▶ 보기</span></a>`).join('')+
-    `</div><div class="note" style="text-align:left">녹화본은 한 달간 볼 수 있어요.</div></section>`;
+    `</div><div class="note" style="text-align:left">녹화본은 한 달간 볼 수 있어요.</div>
+    <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',1,'ex-live')}${example('live',Math.max(1,curWeek(NOW())),'ex-live')}</div></section>`;
 }
 
 // 이번 주 해야 할 일 — 모든 화면 맨 위. 로그인한 부부면 낸 것에 ✓
@@ -570,11 +579,19 @@ function buttons(k,n,id){
   }
   return `<div class="btns"><button class="b fill" id="btn-${id}" onclick="toggleEx('${id}')">과제 예시 ▾</button>${live}</div>`;
 }
+let BEST={};
+fetch('best_examples.json').then(r=>r.ok?r.json():{}).then(j=>{ BEST=j||{}; if(DATA) render(); }).catch(()=>{});
+function bestOf(k,n){
+  const list=BEST[k==='live'?'live':k+'|'+n]||[];
+  if(!list.length) return '';
+  return `<h4>★ 4기 잘한 과제</h4><div class="bnote">4기 카페 글이에요 · 닉네임과 금액은 가렸어요</div>`+list.map(e=>`<div class="best"><div class="w"><b>${esc(e.who)}</b><span>${esc(e.why)}</span></div><pre>${esc(e.body)}</pre>${String(e.body).split('\n').length>6||String(e.body).length>220?`<button class="rd" onclick="const b=this.parentNode;b.classList.toggle('open');this.textContent=b.classList.contains('open')?'접기 ▴':'전체 읽기 ▾'">전체 읽기 ▾</button>`:''}</div>`).join('');
+}
 function example(k,n,id){
   const t=TASKS[k][n];
   let h=`<div class="ex" id="${id}"><h4>이렇게 하세요</h4><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
     <h4>제출 양식 — 복사해서 탈리에 붙여넣기</h4><pre>${esc(t.form)}</pre><button class="copy" onclick="copyForm(this)">양식 복사</button>`;
   if(t.ex) h+=`<h4>결영이네 예시</h4><pre>${esc(t.ex)}</pre>`;
+  h+=bestOf(k,n);
   if(t.warn) h+=`<div class="warn">⚠️ ${esc(t.warn)}</div>`;
   if(t.tbd) h+=`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`;
   return h+`<button class="more" onclick="toggleEx('${id}')">접기 ${chev(true)}</button></div>`;
