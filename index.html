@@ -418,12 +418,12 @@ function choiceOf(h){
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
   const v=(location.hash||'#home').slice(1);
-  view=['home','week','read','money','house','sns','qa','mine'].includes(v)?v:'home';
+  view=['home','week','read','money','house','sns','qa','mine','admin'].includes(v)?v:'home';
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===view));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent=(MINE||getMine())?'우리 부부':'로그인';
   const el=document.getElementById('view');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
-  el.innerHTML = view==='home'?homeView() : view==='week'?weekView() : view==='qa'?qaView() : view==='mine'?mineView() : trackView(view);
+  el.innerHTML = view==='home'?homeView() : view==='week'?weekView() : view==='qa'?qaView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
 }
 
 // 5기 (첫 화면): MVP → 부부 진행판
@@ -721,14 +721,32 @@ async function saveLink(btn){
   r.ok?(toast('링크를 저장했어요'),load()):toast('저장하지 못했어요');
 }
 function logout(){ setKey(''); ADMIN=null; openDetail=null; load(); }
-document.getElementById('adminLink').addEventListener('click',async e=>{
+// 운영진 로그인 — 페이지 안 화면 (prompt는 카톡 안 브라우저에서 안 뜰 수 있다)
+let adminBusy=false, adminErr='';
+function adminLogin(){
+  if(ADMIN){ setTimeout(()=>{ location.hash='#home'; },0); return ''; }
+  return `<section class="sec login"><span class="eyebrow">운영진</span><div class="h1">결영님 화면<br><span class="hl">로그인</span></div>
+    <div class="box">
+      <label for="aK">운영진 비밀번호</label>
+      <input type="password" id="aK" inputmode="numeric" autocomplete="current-password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')submitAdmin()">
+      <div class="err">${adminBusy?'<span style="color:var(--text-lt)">확인하는 중이에요… 길면 10초쯤 걸려요</span>':esc(adminErr)}</div>
+      <button class="btn" style="width:100%;border:0;cursor:pointer;margin-top:4px" onclick="submitAdmin()" ${adminBusy?'disabled':''}>로그인</button>
+    </div></section>`;
+}
+async function submitAdmin(){
+  const k=(document.getElementById('aK').value||'').trim();
+  if(!k){ adminErr='비밀번호를 넣어주세요'; return render(); }
+  adminBusy=true; adminErr=''; render();
+  setKey(k); await load();
+  adminBusy=false;
+  if(ADMIN){ toast('운영진으로 들어왔어요'); location.hash='#home'; window.scrollTo(0,0); }
+  else { setKey(''); adminErr='비밀번호가 맞지 않거나 연결이 늦어요. 다시 해 주세요.'; render(); }
+}
+document.getElementById('adminLink').addEventListener('click',e=>{
   e.preventDefault();
-  if(ADMIN){ location.hash='#home'; return; }
-  const k=prompt('운영진 비밀번호'); if(!k) return;
-  setKey(k.trim()); await load();
-  if(!ADMIN){ toast('비밀번호가 맞지 않아요'); } else { location.hash='#home'; window.scrollTo(0,0); }
+  location.hash = ADMIN ? '#home' : '#admin';
+  window.scrollTo(0,0);
 });
-
 let toastT; function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2200); }
 
 // ─────────────────────────────────────────────────────────────
