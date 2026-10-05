@@ -354,16 +354,24 @@ function fmtD(v){ const d=new Date(v); return isNaN(d)?'':`${d.getMonth()+1}/${d
 function getKey(){ try{return sessionStorage.getItem('ot5key')||'';}catch(e){return '';} }
 function setKey(k){ try{ k?sessionStorage.setItem('ot5key',k):sessionStorage.removeItem('ot5key'); }catch(e){} }
 
-// Apps Script는 느리고(5~20초) 가끔 HTML 오류 페이지를 돌려준다 → JSON이 아니면 다시 시도
-async function getJSON(url, tries=3){
-  for(let i=0;i<tries;i++){
-    // 한 번에 15초까지만 기다리고 넘어간다 (가끔 50초씩 붙잡혀 있는다)
-    const ac=new AbortController(), to=setTimeout(()=>ac.abort(),15000);
-    try{ const r=await fetch(url+(url.includes('?')?'&':'?')+'t='+Date.now(),{signal:ac.signal}); const j=JSON.parse(await r.text()); if(j&&j.ok!==undefined) return j; }catch(e){}
-    finally{ clearTimeout(to); }
-  }
-  throw new Error('load failed');
+// Apps Script는 쉬다 깨어날 때 15~40초 걸리고 가끔 404(HTML)를 준다.
+//   → 6초 안에 답이 없으면 같은 요청을 하나 더 보내고(최대 3개), 먼저 온 JSON을 쓴다.
+function getJSON(url){
+  return new Promise((resolve,reject)=>{
+    let done=false, running=0, sent=0;
+    const fire=()=>{
+      if(done||sent>=3) return; sent++; running++;
+      const ac=new AbortController(), to=setTimeout(()=>ac.abort(),40000);
+      fetch(url+(url.includes('?')?'&':'?')+'t='+Date.now()+'_'+sent,{signal:ac.signal})
+        .then(r=>r.text()).then(t=>{ const j=JSON.parse(t); if(j&&j.ok!==undefined&&!done){ done=true; resolve(j); } else throw 0; })
+        .catch(()=>{ if(!done) fire(); })
+        .finally(()=>{ clearTimeout(to); running--; if(!done&&running===0&&sent>=3) reject(new Error('load failed')); });
+    };
+    fire(); setTimeout(fire,6000); setTimeout(fire,14000);
+  });
 }
+// 미리 깨우기 — 응답은 안 기다린다
+function warm(){ if(API && !DEMO) fetch(API+'?action=warm&t='+Date.now()).catch(()=>{}); }
 // 지난번 받은 공개 데이터를 먼저 보여주고, 새 데이터가 오면 바꿔 그린다 (이 기기에만 저장)
 function cached(){ try{ return JSON.parse(localStorage.getItem('ot5pub')||'null'); }catch(e){ return null; } }
 function keep(d){ try{ localStorage.setItem('ot5pub', JSON.stringify({subs:d.subs,mvp:d.mvp,qa:d.qa,links:d.links})); }catch(e){} }
@@ -580,16 +588,18 @@ function qaView(){
 // ─────────────────────────────────────────────────────────────
 let MINE=null, mineErr='', mineBusy=false;
 function getMine(){ try{ return JSON.parse(localStorage.getItem('ot5mine')||sessionStorage.getItem('ot5mine')||'null'); }catch(e){ return null; } }
-function setMine(v){ try{ localStorage.removeItem('ot5mine'); sessionStorage.removeItem('ot5mine'); if(v) (mineKeep?localStorage:sessionStorage).setItem('ot5mine',JSON.stringify(v)); }catch(e){} }
+function setMine(v){ try{ localStorage.removeItem('ot5mine'); sessionStorage.removeItem('ot5mine'); localStorage.removeItem('ot5mineData'); if(v) (mineKeep?localStorage:sessionStorage).setItem('ot5mine',JSON.stringify(v)); }catch(e){} }
+function keepMineData(r){ try{ if(mineKeep && getMine()) localStorage.setItem('ot5mineData',JSON.stringify(r)); }catch(e){} }
+function cachedMine(h){ try{ const c=JSON.parse(localStorage.getItem('ot5mineData')||'null'); return c&&c.h===h?c:null; }catch(e){ return null; } }
 const MINE_ERR={code:'비밀번호가 맞지 않아요. 부부 중 한 분의 휴대폰 번호 뒷자리 4개예요.',nocode:'아직 비밀번호가 등록되지 않았어요. 결영이네에 알려주세요.',locked:'여러 번 틀려서 잠깐 막혔어요. 10분 뒤에 다시 해 주세요.'};
-async function openMine(h,code){
-  mineBusy=true; mineErr=''; render();
+async function openMine(h,code,quiet){
+  mineBusy=true; mineErr=''; if(!quiet) render();
   try{
     const r = (API && !DEMO) ? await getJSON(API+'?action=mine&h='+encodeURIComponent(h)+'&code='+encodeURIComponent(code)) : demoMine(h);
-    if(r.ok){ MINE=r; setMine({h,code}); }
+    if(r.ok){ MINE=r; setMine({h,code}); keepMineData(r); }
     else { MINE=null; setMine(null); mineIdDraft=h; mineErr=MINE_ERR[r.error]||'다시 해 주세요.'; }
-  }catch(e){ mineErr='불러오지 못했어요. 잠시 뒤에 다시 해 주세요.'; }
-  mineBusy=false; render();
+  }catch(e){ if(!quiet) mineErr='불러오지 못했어요. 잠시 뒤에 다시 해 주세요.'; }
+  mineBusy=false; if(view==='mine') render();
 }
 // 아이디는 부부 이름 — 띄어쓰기·대소문자 차이는 봐준다
 const normId=v=>String(v||'').replace(/\s/g,'').toLowerCase();
@@ -607,6 +617,10 @@ function leaveMine(){ MINE=null; mineErr=''; mineIdDraft=''; setMine(null); rend
 function mineView(){
   if(!MINE){
     const saved=getMine();
+    warm();
+    // 전에 로그인한 폰이면 지난 화면을 바로 띄우고 새 내용은 뒤에서 받는다
+    const c=saved&&cachedMine(saved.h);
+    if(c && !mineErr){ MINE=c; MINE._stale=true; setTimeout(()=>openMine(saved.h,saved.code,true),0); return mineView(); }
     if(saved && !mineBusy && !mineErr) setTimeout(()=>openMine(saved.h,saved.code),0);
     const busy=mineBusy||(saved&&!mineErr);
     return `<section class="sec login"><span class="eyebrow">우리 부부</span><div class="h1">로그인하고<br><span class="hl">받은 피드백</span> 보기</div>
@@ -623,7 +637,7 @@ function mineView(){
   }
   const rows=(MINE.rows||[]).slice().sort((a,b)=>new Date(a.at)-new Date(b.at));
   const got=rows.filter(r=>r.feedback).length;
-  let h=`<section class="sec"><div class="who-bar"><span><b>${esc(MINE.h)}</b>님 로그인 중</span><button onclick="leaveMine()">로그아웃</button></div>
+  let h=`<section class="sec"><div class="who-bar"><span><b>${esc(MINE.h)}</b>님 로그인 중${MINE._stale?' <span style="color:var(--text-lt);font-size:12px">· 새 내용 확인 중…</span>':''}</span><button onclick="leaveMine()">로그아웃</button></div>
     <div class="h1">낸 과제 <span class="hl">${rows.length}개</span>,<br>피드백 ${got}개</div>
     <div class="body1">피드백은 마감 뒤 며칠 안에 하나씩 달려요.</div><div style="margin-top:14px">`;
   if(!rows.length) h+=`<div class="empty">아직 낸 과제가 없어요</div>`;
@@ -737,6 +751,7 @@ function demoMine(h){ const rows=(DATA.rows||[]).filter(r=>r.h===h).map((r,i)=>O
 
 window.addEventListener('hashchange',()=>{ render(); window.scrollTo(0,0); });
 tick(); setInterval(tick,1000);
+warm();
 load();
 </script>
 </body>

@@ -1,0 +1,15 @@
+name: warm-apps-script
+# 과제방 Apps Script가 쉬다 깨어나면 15~40초 걸리고 가끔 404가 난다 → 5분마다 깨워둔다
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: |
+          for i in 1 2; do
+            curl -sL -m 60 "https://script.google.com/macros/s/AKfycbwgd0RCjm2Zi5m0Cf7UMYvl8eWtBEbg36PRPvWEcnyjvQOkZfvLo6ZvvbD9rMYGgRHgMQ/exec?action=warm&t=$(date +%s)" | head -c 80 && break
+          done
