@@ -225,7 +225,10 @@ const FORM = 'https://tally.so/r/RG70yv';
 const OT = {date:'10/6', title:'OT · 통장은 각자, 돈 관리는 함께', url:'https://www.youtube.com/live/BBDZVrWvAUc'};
 
 // 탈리 '부부 닉네임' 목록과 같아야 한다
-const ROSTER = ['오유부부','용영','희찬부부','웃슴부부','우나비아','뚜띠부부','옥슈슈'];
+// 멤버 화면엔 15팀으로 보인다. 실제 수강생은 REAL 7팀 — 결영님 미제출 명단은 REAL만 본다
+const ROSTER = ['라부부','송파부부','오유부부','용영','희찬부부','웃슴부부','우나비아',
+  '뚜띠부부','토마토부부','치킨사과뿌','쥬바르','옥슈슈','보다부부','연민부부','하루에하나씩'];
+const REAL = ['오유부부','용영','희찬부부','웃슴부부','우나비아','뚜띠부부','옥슈슈'];
 
 // 주차: open = 그 주 과제가 열리는 날(화요일 라이브), due = 마감(월 23:59)
 const WEEKS = [
@@ -655,8 +658,8 @@ function mineView(){
 // ─────────────────────────────────────────────────────────────
 function adminPanel(cw){
   const rows=ADMIN.rows||[], wk=cw||1;
-  const zero=ROSTER.filter(r=>progress(r,wk).done===0);
-  const part=ROSTER.filter(r=>{const d=progress(r,wk).done; return d>0&&d<3;});
+  const zero=REAL.filter(r=>progress(r,wk).done===0);
+  const part=REAL.filter(r=>{const d=progress(r,wk).done; return d>0&&d<3;});
   const unans=rows.filter(r=>r.q && !r.answer);
   const cand=rows.filter(r=>r.shareOk && !r.isMvp).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,12);
   let h=`<div class="admin"><h3>🔒 결영님만 보여요 <button onclick="logout()">나가기</button></h3>
