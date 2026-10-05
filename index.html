@@ -349,7 +349,8 @@ const LIVE_TASK = n => ({name:'라이브 출석',
   how:['내가 고른 과정 라이브 보기 — 화요일 내집마련 · 목요일 SNS (못 오면 다시보기)','"OO 라이브 출석했습니다" 한 줄','알게 된 점과 실천할 점 두세 줄'],
   form:`${n}주차 (내집마련/SNS) 라이브 출석했습니다.\n\n알게 된 점 :\n\n실천할 점 :`,
   ex:'OT 강의 출석했습니다.\n생활비는 비과세라 부부간 증여에 해당하지 않는 점을 활용\n생활비 통장은 함께 쓸 예정이다.'});
-TASKS.live = {1:LIVE_TASK(1), 2:LIVE_TASK(2), 3:LIVE_TASK(3), 4:LIVE_TASK(4)};
+TASKS.live = {0:Object.assign(LIVE_TASK(0),{name:'OT 강의 출석',how:['OT 라이브(또는 다시보기) 보기','"OT 강의 출석했습니다" 한 줄','알게 된 점과 실천할 점 두세 줄'],form:'OT 강의 출석했습니다.\n\n알게 된 점 :\n\n실천할 점 :'}),
+  1:LIVE_TASK(1), 2:LIVE_TASK(2), 3:LIVE_TASK(3), 4:LIVE_TASK(4)};
 const TRACK_OF = {'독서':'read','돈관리':'money','내집마련':'house','SNS':'sns','강의':'live','강의출석':'live'};
 
 // ─────────────────────────────────────────────────────────────
@@ -361,6 +362,8 @@ const kst = (d, end) => new Date(d + (end ? 'T23:59:59' : 'T00:00:00') + '+09:00
 function curWeek(now){ let c=0; WEEKS.forEach(w=>{ if(now>=kst(w.open)) c=w.n; }); return c; }
 function nextDue(now){ return WEEKS.find(w=>now<=kst(w.due,true)); }
 const W = n => WEEKS[n-1];
+// 과제 내용은 여기까지만 공개 (결영님 결정 10/6: 일단 1주차까지). 다음 주차를 열 때 숫자만 올린다
+const SHOW_UPTO = 1;
 
 // 마감 타이머 — 1초마다. 마감이 지나면 다음 주차 마감으로 넘어간다
 function tick(){
@@ -384,7 +387,10 @@ const DEMO = new URLSearchParams(location.search).has('demo');
 let DATA=null, ADMIN=null;
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // "2주차 - 내집마련 (우리 집 월 상환선)" → {week:2, track:'house'}
-function parseTask(t){ const m=String(t||'').match(/^(\d)\s*주차\s*-\s*(\S+)/); return m?{week:+m[1], track:TRACK_OF[m[2]]}:null; }
+function parseTask(t){
+  if(/^OT\s*-\s*강의/.test(String(t||''))) return {week:0, track:'live'};
+  const m=String(t||'').match(/^(\d)\s*주차\s*-\s*(\S+)/); return m?{week:+m[1], track:TRACK_OF[m[2]]}:null; }
+const wkName = w => w ? w+'주차' : 'OT';
 function fmtD(v){ const d=new Date(v); return isNaN(d)?'':`${d.getMonth()+1}/${d.getDate()}`; }
 function getKey(){ try{return sessionStorage.getItem('ot5key')||'';}catch(e){return '';} }
 function setKey(k){ try{ k?sessionStorage.setItem('ot5key',k):sessionStorage.removeItem('ot5key'); }catch(e){} }
@@ -476,7 +482,7 @@ function homeView(){
   mv.forEach((m,i)=>{
     const t=parseTask(m.task), tn=t?TRACKS[t.track].name:'과제', task=t&&TASKS[t.track][t.week]?TASKS[t.track][t.week].name:m.task;
     const quote=m.quote||String(m.body||'').split('\n').filter(Boolean).slice(0,2).join(' ');
-    h+=`<div class="mvp" id="mvp${i}"><div class="who"><span class="tag">${t?t.week+'주차 · ':''}${esc(tn)}</span><span>${esc(m.h)}${m.who?' · '+esc(m.who):''}</span></div>
+    h+=`<div class="mvp" id="mvp${i}"><div class="who"><span class="tag">${t?wkName(t.week)+' · ':''}${esc(tn)}</span><span>${esc(m.h)}${m.who?' · '+esc(m.who):''}</span></div>
       <div class="tt">${esc(task)}</div><div class="qt">"${esc(quote)}"</div>
       <div class="full">${esc(m.body)}${m.link?`\n\n<a href="${esc(m.link)}" target="_blank" rel="noopener" style="color:var(--acc-lt)">게시물 보기 ›</a>`:''}</div>
       <button class="rd" onclick="this.parentNode.classList.toggle('open');this.textContent=this.parentNode.classList.contains('open')?'접기 ▴':'전체 읽기 ▾'">전체 읽기 ▾</button></div>`;
@@ -490,9 +496,11 @@ function homeView(){
 function board(cw){
   const n=ROSTER.length;
   if(!cw){
-    return `<span class="eyebrow">5기 ${n}부부</span><div class="h2">1주차는 <span class="hl">10월 13일</span>에 시작해요</div>
-      <div class="body1">OT 주는 과제가 없어요. 1주차부터 한 주에 4개 — 강의 출석·독서·돈관리·내집마련/SNS 중 하나.</div>
-      <div style="margin-top:14px">${ROSTER.map(r=>`<div class="cp"><span class="n"><span class="nn">${esc(r)}</span></span><span class="bar"><i style="width:0"></i></span><span class="v">0/4</span></div>`).join('')}</div>`;
+    const ot=ROSTER.map(r=>({h:r,ok:progress(r,0).live})).sort((a,b)=>b.ok-a.ok||ROSTER.indexOf(a.h)-ROSTER.indexOf(b.h));
+    const nOk=ot.filter(x=>x.ok).length;
+    return `<span class="eyebrow">5기 ${n}부부${DATA._loading?' · 불러오는 중…':''}</span><div class="h2">OT 출석 <span class="hl">${nOk}/${n}</span> 부부</div>
+      <div class="body1">OT 주 과제는 강의 출석 하나예요. 1주차(10/13)부터는 한 주에 4개 — 강의 출석·독서·돈관리·내집마련/SNS 중 하나.</div>
+      <div style="margin-top:14px">${ot.map(x=>`<div class="cp${x.ok?' done':''}${ADMIN?' click':''}" ${ADMIN?`onclick="openDetail=openDetail===${JSON.stringify(x.h).replace(/"/g,'&quot;')}?null:${JSON.stringify(x.h).replace(/"/g,'&quot;')};render()"`:''}><span class="n"><span class="nn">${esc(x.h)}</span></span><span class="bar"><i style="width:${x.ok?100:0}%"></i></span><span class="v">${x.ok?1:0}/1</span></div>${ADMIN&&openDetail===x.h?detailOf(x.h):''}`).join('')}</div>`;
   }
   // 이번 주 / 전체
   const rows=ROSTER.map(r=>{
@@ -531,7 +539,7 @@ function replays(){
   return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
     out.map(r=>`<a class="replay" href="${esc(r.url)}" target="_blank" rel="noopener"><span class="d">${r.day}<b>${r.d}</b></span><span class="t">${esc(r.t)}</span><span class="go">▶ 보기</span></a>`).join('')+
     `</div><div class="note" style="text-align:left">녹화본은 한 달간 볼 수 있어요.</div>
-    <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',1,'ex-live')}${example('live',Math.max(1,curWeek(NOW())),'ex-live')}</div></section>`;
+    <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',1,'ex-live')}${example('live',curWeek(NOW()),'ex-live')}</div></section>`;
 }
 
 // 이번 주 해야 할 일 — 모든 화면 맨 위. 로그인한 부부면 낸 것에 ✓
@@ -547,9 +555,10 @@ function banner(){
   const open=bannerOpen;
   if(!cw){
     if(now>kst(W(1).open)) return '';
-    return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0"><b>OT 주 해야 할 일</b><span>1주차는 10/13(화)부터</span></span><i>${open?chev(true):chev(false)}</i></button>
-      ${open?`<ul>${li('OT',esc(OT.title)+' 다시보기',esc(OT.url),false,'target="_blank" rel="noopener"')}${li('독서','『부의 인문학』 준비하기','#read',false)}</ul>
-      <div class="ft"><span>OT 주는 낼 과제가 없어요</span></div>`:''}</section>`;
+    const ok=me?progress(me,0).live:false;
+    return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0"><b>OT 주 해야 할 일</b><span>1주차는 10/13(화)부터</span></span><i>${me?(ok?'1/1 ':'0/1 '):''}${open?chev(true):chev(false)}</i></button>
+      ${open?`<ul>${li('출석','OT 듣고 강의 출석 올리기 <small style="color:var(--text-lt)">(다시보기 OK)</small>',esc(OT.url),ok,'target="_blank" rel="noopener"')}${li('독서','『부의 인문학』 준비하기','#read',false)}</ul>
+      <div class="ft"><span>${me?`${esc(me)} 기준 · 탈리에서 'OT - 강의 출석'으로 내요`:"탈리에서 'OT - 강의 출석'으로 내요"}</span><a class="sb" href="${FORM}" target="_blank" rel="noopener">출석 올리기</a></div>`:''}</section>`;
   }
   if(!nextDue(now)) return '';
   const w=W(cw), [,m,d]=w.due.split('-').map(Number), p=me?progress(me,cw):null;
@@ -621,6 +630,7 @@ function trackView(k){
   WEEKS.forEach(w=>{
     const t=TASKS[k][w.n], id=`exT-${k}-${w.n}`, open=now>=kst(w.open), isCur=w.n===cw, [,m,d]=w.due.split('-').map(Number);
     const state=isCur?'지금 진행 중':open?'지난 주차 · 늦게 내도 돼요':`${fmtD(kst(w.open))}에 열려요`;
+    if(w.n>SHOW_UPTO){ h+=`<div class="wrow lock"><div class="w"><b>${w.n}주차</b><span>${fmtD(kst(w.open))}에 열려요 · 마감 ${m}/${d}</span></div><div class="t">공개 예정이에요</div></div>`; return; }
     h+=`<div class="wrow${open?'':' lock'}"><div class="w"><b>${w.n}주차</b><span>${state} · 마감 ${m}/${d}</span></div>
       <div class="t">${esc(t.name)}</div>${buttons(k,w.n,id)}${example(k,w.n,id)}</div>`;
   });
@@ -634,7 +644,7 @@ function qaView(){
     <div class="body1">과제를 낼 때 탈리 맨 아래 칸에 질문을 남겨주세요. 답은 닉네임 없이 여기 올라와요.</div>`;
   if(!list.length) h+=`<div class="empty">${DATA._loading?'불러오는 중이에요…':'아직 올라온 질문이 없어요'}</div>`;
   list.forEach(q=>{
-    const t=parseTask(q.task), tag=t?`${t.week}주차 ${TRACKS[t.track].name}`:'';
+    const t=parseTask(q.task), tag=t?`${wkName(t.week)} ${TRACKS[t.track].name}`:'';
     h+=`<div class="qa"><div class="qt">${esc(q.q)}</div>${q.a?`<div class="at">${esc(q.a)}</div>`:`<div class="at wait">답변을 준비하고 있어요</div>`}
       <div class="meta">${esc(tag)}${q.by?' · '+esc(q.by):''}</div></div>`;
   });
@@ -701,7 +711,7 @@ function mineView(){
     <div class="body1">피드백은 마감 뒤 며칠 안에 하나씩 달려요.</div><div style="margin-top:14px">`;
   if(!rows.length) h+=`<div class="empty">아직 낸 과제가 없어요</div>`;
   rows.forEach(r=>{
-    const t=parseTask(r.task), name=t&&TASKS[t.track][t.week]?`${t.week}주차 ${TRACKS[t.track].name} · ${TASKS[t.track][t.week].name}`:r.task;
+    const t=parseTask(r.task), name=t&&TASKS[t.track][t.week]?(t.week?`${t.week}주차 ${TRACKS[t.track].name} · ${TASKS[t.track][t.week].name}`:TASKS[t.track][0].name):r.task;
     h+=`<div class="mrow"><div class="t">${esc(name)}</div><div class="m">${fmtD(r.at)} 제출${r.who?' · '+esc(r.who):''}</div>
       <details><summary>내가 쓴 글 보기</summary><pre>${esc(r.body)}</pre>${r.link?`<a href="${esc(r.link)}" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--acc)">게시물 ›</a>`:''}</details>
       ${r.feedback?`<div class="fb"><b>${esc(r.feedbackBy||'결영이네')}의 피드백</b>${esc(r.feedback)}</div>`:`<div class="fb wait">피드백을 준비하고 있어요</div>`}
@@ -720,7 +730,7 @@ function adminPanel(cw){
   const unans=rows.filter(r=>r.q && !r.answer);
   const cand=rows.filter(r=>r.shareOk && !r.isMvp).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,12);
   let h=`<div class="admin"><h3>🔒 결영님만 보여요 <button onclick="logout()">나가기</button></h3>
-    ${!cw?`<div class="sub">미제출 명단은 1주차(10/13)부터 떠요</div>`:`
+    ${!cw?`<div class="sub">OT 출석 안 한 부부 · ${REAL.filter(r=>!progress(r,0).live).length}</div>${REAL.filter(r=>!progress(r,0).live).map(r=>`<span class="chip">${esc(r)}</span>`).join('')||'<span class="chip ok">없어요</span>'}`:`
     <div class="sub">${wk}주차 하나도 안 낸 부부 · ${zero.length}</div>${zero.map(r=>`<span class="chip">${esc(r)}</span>`).join('')||'<span class="chip ok">없어요</span>'}
     <div class="sub">${wk}주차 덜 낸 부부 · ${part.length}</div>${part.map(r=>`<span class="chip" style="background:#FAEEDA;color:#633806">${esc(r)} ${progress(r,wk).done}/${PER}</span>`).join('')||'<span class="chip ok">없어요</span>'}`}
     <div class="sub">답 안 단 질문 · ${unans.length}</div>`;
