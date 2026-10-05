@@ -76,6 +76,12 @@ button{font-family:inherit}
 .ex .copy{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:var(--acc);background:var(--acc-soft);border:0;border-radius:7px;padding:5px 10px;cursor:pointer}
 .ex .warn{font-size:12.5px;color:var(--warn);background:var(--warn-bg);border-radius:9px;padding:9px 11px;margin-top:10px;line-height:1.6}
 .ex .tbd{font-size:12px;color:var(--mute);margin-top:8px}
+.replay{display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--border);text-decoration:none;color:inherit}
+.replay:last-child{border-bottom:1px solid var(--border)}
+.replay .d{width:46px;flex-shrink:0;font-size:12px;color:var(--text-lt);line-height:1.3}
+.replay .d b{display:block;font-size:17px;color:var(--acc);letter-spacing:-.03em}
+.replay .t{flex:1;font-size:14.5px;font-weight:600;letter-spacing:-.03em;line-height:1.45}
+.replay .go{font-size:12.5px;font-weight:700;color:var(--acc);white-space:nowrap}
 
 /* 과정별 주차 줄 */
 .wrow{padding:16px 0;border-top:1px solid var(--border)}
@@ -115,7 +121,8 @@ button{font-family:inherit}
 .cp .v{width:38px;text-align:right;font-size:13px;color:var(--text-md);font-variant-numeric:tabular-nums}
 .cp.done .v{color:var(--acc);font-weight:700}
 .cp.click{cursor:pointer}
-.more{display:block;width:100%;background:none;border:0;border-bottom:1px solid var(--border);padding:12px 0;font-size:13.5px;font-weight:600;color:var(--acc);cursor:pointer}
+.more{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:#F1F2F4;border:0;border-radius:12px;padding:14px;margin-top:12px;font-family:inherit;font-size:14.5px;font-weight:700;color:#4B5160;cursor:pointer}
+.more svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 
 /* Q&A */
 .qa{background:var(--bg);border-radius:12px;padding:15px 16px;margin-top:10px}
@@ -126,6 +133,19 @@ button{font-family:inherit}
 .qa .at.wait{color:var(--mute)}
 .qa .meta{font-size:11.5px;color:var(--text-lt);margin-top:5px}
 .empty{font-size:14px;color:var(--text-lt);padding:22px 0;text-align:center}
+
+/* 우리 부부 */
+.login select,.login input{width:100%;font-family:inherit;font-size:15px;border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:8px;background:#fff}
+.login .err{font-size:13px;color:var(--miss);margin-top:8px;min-height:18px}
+.mrow{border-top:1px solid var(--border);padding:16px 0}
+.mrow .t{font-size:15.5px;font-weight:700;letter-spacing:-.03em}
+.mrow .m{font-size:12px;color:var(--text-lt);margin-top:2px}
+.mrow details{margin-top:8px}
+.mrow summary,.aq summary{font-size:12.5px;color:var(--acc);font-weight:600;cursor:pointer}
+.mrow pre{white-space:pre-wrap;font-family:inherit;font-size:13px;color:var(--text-md);line-height:1.7;margin-top:6px}
+.fb{background:var(--acc-soft);border-radius:12px;padding:13px 14px;margin-top:10px;font-size:14px;line-height:1.75;white-space:pre-wrap}
+.fb b{display:block;font-size:12px;color:var(--acc);margin-bottom:4px}
+.fb.wait{background:var(--bg);color:var(--mute);font-size:13px}
 
 /* 결영님 화면 */
 .admin{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:14px;padding:16px;margin-top:4px}
@@ -164,6 +184,7 @@ footer a{color:var(--text-lt);margin:0 6px}
     <div class="timer" id="timer"><span class="l" id="tl">마감까지</span><span class="c" id="tc">--</span></div>
     <nav class="menu" id="menu">
       <a href="#home" data-v="home">5기</a>
+      <a href="#mine" data-v="mine">우리 부부</a>
       <a href="#week" data-v="week">이번 주</a>
       <a href="#read" data-v="read">독서</a>
       <a href="#money" data-v="money">돈관리</a>
@@ -187,6 +208,8 @@ footer a{color:var(--text-lt);margin:0 6px}
 // 시트 → 과제방 통로 (Apps Script 웹앱 주소). 비어 있으면 '준비 중'으로 뜬다.
 const API = 'https://script.google.com/macros/s/AKfycbwgd0RCjm2Zi5m0Cf7UMYvl8eWtBEbg36PRPvWEcnyjvQOkZfvLo6ZvvbD9rMYGgRHgMQ/exec';
 const FORM = 'https://tally.so/r/RG70yv';
+// OT 라이브 (10/6 화, 결영) — 과제는 없고 다시보기만
+const OT = {date:'10/6', title:'OT · 통장은 각자, 돈 관리는 함께', url:'https://www.youtube.com/live/BBDZVrWvAUc'};
 
 // 탈리 '부부 닉네임' 목록과 같아야 한다
 const ROSTER = ['라부부','송파부부','오유부부','용영','희찬부부','웃슴부부','우나비아',
@@ -308,6 +331,8 @@ function tick(){
 // ─────────────────────────────────────────────────────────────
 // 데이터
 // ─────────────────────────────────────────────────────────────
+// ?demo — 시트 없이 예시 데이터로 화면을 본다
+const DEMO = new URLSearchParams(location.search).has('demo');
 let DATA=null, ADMIN=null;
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // "2주차 - 내집마련 (우리 집 월 상환선)" → {week:2, track:'house'}
@@ -331,7 +356,7 @@ function cached(){ try{ return JSON.parse(localStorage.getItem('ot5pub')||'null'
 function keep(d){ try{ localStorage.setItem('ot5pub', JSON.stringify({subs:d.subs,mvp:d.mvp,qa:d.qa,links:d.links})); }catch(e){} }
 
 async function load(){
-  if(new URLSearchParams(location.search).has('demo')){ DATA=demoData(); ADMIN=getKey()?demoAdmin():null; return render(); }
+  if(DEMO){ DATA=demoData(); ADMIN=getKey()?demoAdmin():null; return render(); }
   if(!API){ DATA={subs:[],mvp:[],qa:[],links:{}}; return render(); }
   const k=getKey();
   // 처음 오는 사람도 빈 화면 대신 과제·일정은 바로 보이게 (현황 숫자만 나중에 채운다)
@@ -372,11 +397,11 @@ function choiceOf(h){
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
   const v=(location.hash||'#home').slice(1);
-  view=['home','week','read','money','house','sns','qa'].includes(v)?v:'home';
+  view=['home','week','read','money','house','sns','qa','mine'].includes(v)?v:'home';
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===view));
   const el=document.getElementById('view');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
-  el.innerHTML = view==='home'?homeView() : view==='week'?weekView() : view==='qa'?qaView() : trackView(view);
+  el.innerHTML = view==='home'?homeView() : view==='week'?weekView() : view==='qa'?qaView() : view==='mine'?mineView() : trackView(view);
 }
 
 // 5기 (첫 화면): MVP → 부부 진행판
@@ -430,8 +455,23 @@ function board(cw){
       <span class="bar"><i style="width:${w}%"></i></span><span class="v">${r.done}/${r.total}</span></div>`;
     if(ADMIN && openDetail===r.h) h+=detailOf(r.h);
   });
-  if(rows.length>8) h+=`<button class="more" onclick="boardAll=!boardAll;render()">${boardAll?'접기 ▴':`${n}부부 모두 보기 ▾`}</button>`;
+  if(rows.length>8) h+=`<button class="more" onclick="boardAll=!boardAll;render()">${boardAll?`접기 ${chev(true)}`:`${n}부부 모두 보기 ${chev(false)}`}</button>`;
   return h+`</div>`;
+}
+
+// 라이브 다시보기 목록 — OT + 링크가 들어온 주차 라이브
+function replays(){
+  const L=DATA.links||{}, out=[{d:OT.date, day:'화', t:OT.title, url:OT.url}];
+  WEEKS.forEach(w=>{
+    ['내집마련','SNS'].forEach(tr=>{
+      const u=L[w.n+'|'+tr]; if(!u) return;
+      const k=tr==='SNS'?'sns':'house';
+      out.push({d:tr==='SNS'?w.thu:w.tue, day:TRACKS[k].live, t:`${w.n}주차 ${tr} · ${TASKS[k][w.n].name}`, url:u});
+    });
+  });
+  return `<section class="sec-alt"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
+    out.map(r=>`<a class="replay" href="${esc(r.url)}" target="_blank" rel="noopener"><span class="d">${r.day}<b>${r.d}</b></span><span class="t">${esc(r.t)}</span><span class="go">▶ 보기</span></a>`).join('')+
+    `</div><div class="note" style="text-align:left">녹화본은 한 달간 볼 수 있어요.</div></section>`;
 }
 
 // 이번 주 화면
@@ -439,12 +479,12 @@ function weekView(){
   const now=NOW(), cw=curWeek(now);
   if(!cw){
     return `<section class="sec"><span class="eyebrow">OT 주 · 10/6 ~ 10/12</span><div class="h1">이번 주는<br><span class="hl">과제가 없어요</span></div>
-      <div class="body1">『부의 인문학』만 준비해 두세요. 1주차 과제는 10월 13일(화)에 열려요.</div></section>`+weekCards(1,true);
+      <div class="body1">『부의 인문학』만 준비해 두세요. 1주차 과제는 10월 13일(화)에 열려요.</div></section>`+replays()+weekCards(1,true);
   }
   const w=W(cw), [,m,d]=w.due.split('-').map(Number);
   return `<section class="sec" style="padding-bottom:0"><span class="eyebrow">${cw}주차 · 마감 ${m}/${d}(월) 23:59</span>
     <div class="h1">이번 주엔 <span class="hl">세 가지</span>만<br>하면 돼요</div>
-    <div class="body1">독서·돈관리는 모두, 내집마련·SNS는 하나만 골라요.<br>바쁜 주엔 회고 한 줄만 남겨도 인증돼요.</div></section>`+weekCards(cw,false);
+    <div class="body1">독서·돈관리는 모두, 내집마련·SNS는 하나만 골라요.<br>바쁜 주엔 회고 한 줄만 남겨도 인증돼요.</div></section>`+weekCards(cw,false)+replays();
 }
 function weekCards(n,preview){
   let h=`<section class="sec" style="padding-top:${preview?'0':'14px'}">`;
@@ -468,7 +508,7 @@ function buttons(k,n,id){
     live = url ? `<a class="b" href="${esc(url)}" target="_blank" rel="noopener">▶ ${tr.live} ${day} 라이브</a>`
                : `<span class="b off">${tr.live} ${day} 라이브 · ${now<kst(w.open)?'예정':'링크 준비 중'}</span>`;
   }
-  return `<div class="btns"><button class="b fill" onclick="toggleEx('${id}',this)">과제 예시 ▾</button>${live}</div>`;
+  return `<div class="btns"><button class="b fill" id="btn-${id}" onclick="toggleEx('${id}')">과제 예시 ▾</button>${live}</div>`;
 }
 function example(k,n,id){
   const t=TASKS[k][n];
@@ -477,9 +517,15 @@ function example(k,n,id){
   if(t.ex) h+=`<h4>결영이네 예시</h4><pre>${esc(t.ex)}</pre>`;
   if(t.warn) h+=`<div class="warn">⚠️ ${esc(t.warn)}</div>`;
   if(t.tbd) h+=`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`;
-  return h+`</div>`;
+  return h+`<button class="more" onclick="toggleEx('${id}')">접기 ${chev(true)}</button></div>`;
 }
-function toggleEx(id,btn){ const e=document.getElementById(id); e.classList.toggle('open'); btn.textContent=e.classList.contains('open')?'과제 예시 ▴':'과제 예시 ▾'; }
+// 꺾쇠 아이콘 (up=true면 위로)
+const chev = up => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${up?'M6 15l6-6 6 6':'M6 9l6 6 6-6'}"/></svg>`;
+function toggleEx(id){
+  const e=document.getElementById(id), btn=document.getElementById('btn-'+id), open=e.classList.toggle('open');
+  if(btn) btn.textContent=open?'과제 예시 ▴':'과제 예시 ▾';
+  if(!open) (btn||e).scrollIntoView({block:'center',behavior:'smooth'});
+}
 function copyForm(btn){
   const txt=btn.previousElementSibling.textContent;
   const done=()=>toast('양식을 복사했어요. 탈리 "과제 내용"에 붙여넣으세요');
@@ -515,6 +561,56 @@ function qaView(){
 }
 
 // ─────────────────────────────────────────────────────────────
+// 우리 부부 — 닉네임 + 폰 번호 뒷자리 4개로 우리 과제와 받은 피드백만 본다
+//   번호 확인은 Apps Script가 한다. 이 기기에 닉네임·번호를 기억해 둔다(나가기로 지움).
+// ─────────────────────────────────────────────────────────────
+let MINE=null, mineErr='', mineBusy=false;
+function getMine(){ try{ return JSON.parse(localStorage.getItem('ot5mine')||'null'); }catch(e){ return null; } }
+function setMine(v){ try{ v?localStorage.setItem('ot5mine',JSON.stringify(v)):localStorage.removeItem('ot5mine'); }catch(e){} }
+const MINE_ERR={code:'번호가 맞지 않아요. 부부 중 한 분의 폰 번호 뒷자리 4개예요.',nocode:'아직 번호가 등록되지 않았어요. 결영이네에 알려주세요.',locked:'여러 번 틀려서 잠깐 막혔어요. 10분 뒤에 다시 해 주세요.'};
+async function openMine(h,code){
+  mineBusy=true; mineErr=''; render();
+  try{
+    const r = (API && !DEMO) ? await getJSON(API+'?action=mine&h='+encodeURIComponent(h)+'&code='+encodeURIComponent(code)) : demoMine(h);
+    if(r.ok){ MINE=r; setMine({h,code}); }
+    else { MINE=null; setMine(null); mineErr=MINE_ERR[r.error]||'다시 해 주세요.'; }
+  }catch(e){ mineErr='불러오지 못했어요. 잠시 뒤에 다시 해 주세요.'; }
+  mineBusy=false; render();
+}
+function submitMine(){
+  const h=document.getElementById('mH').value, c=document.getElementById('mC').value.replace(/\D/g,'');
+  if(!h){ mineErr='닉네임을 골라주세요'; return render(); }
+  if(c.length!==4){ mineErr='번호 4자리를 넣어주세요'; return render(); }
+  openMine(h,c);
+}
+function leaveMine(){ MINE=null; mineErr=''; setMine(null); render(); }
+function mineView(){
+  if(!MINE){
+    const saved=getMine();
+    if(saved && !mineBusy && !mineErr) setTimeout(()=>openMine(saved.h,saved.code),0);
+    return `<section class="sec login"><span class="eyebrow">우리 부부</span><div class="h1">우리 과제와<br><span class="hl">받은 피드백</span></div>
+      <div class="body1">닉네임을 고르고, 부부 중 한 분의 폰 번호 뒷자리 4개를 넣어주세요. 다른 부부 피드백은 보이지 않아요.</div>
+      <select id="mH"><option value="">닉네임 고르기</option>${ROSTER.map(r=>`<option${saved&&saved.h===r?' selected':''}>${esc(r)}</option>`).join('')}</select>
+      <input id="mC" inputmode="numeric" maxlength="4" placeholder="폰 번호 뒷자리 4개" onkeydown="if(event.key==='Enter')submitMine()">
+      <div class="err">${(mineBusy||(saved&&!mineErr))?'<span style="color:var(--text-lt)">불러오는 중이에요…</span>':esc(mineErr)}</div>
+      <button class="btn" style="width:100%;border:0;cursor:pointer;margin-top:6px" onclick="submitMine()">열기</button></section>`;
+  }
+  const rows=(MINE.rows||[]).slice().sort((a,b)=>new Date(a.at)-new Date(b.at));
+  const got=rows.filter(r=>r.feedback).length;
+  let h=`<section class="sec"><span class="eyebrow">우리 부부 · ${esc(MINE.h)}</span><div class="h1">낸 과제 <span class="hl">${rows.length}개</span>,<br>피드백 ${got}개</div>
+    <div class="body1">피드백은 마감 뒤 며칠 안에 하나씩 달려요.</div><div style="margin-top:14px">`;
+  if(!rows.length) h+=`<div class="empty">아직 낸 과제가 없어요</div>`;
+  rows.forEach(r=>{
+    const t=parseTask(r.task), name=t&&TASKS[t.track][t.week]?`${t.week}주차 ${TRACKS[t.track].name} · ${TASKS[t.track][t.week].name}`:r.task;
+    h+=`<div class="mrow"><div class="t">${esc(name)}</div><div class="m">${fmtD(r.at)} 제출${r.who?' · '+esc(r.who):''}</div>
+      <details><summary>내가 쓴 글 보기</summary><pre>${esc(r.body)}</pre>${r.link?`<a href="${esc(r.link)}" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--acc)">게시물 ›</a>`:''}</details>
+      ${r.feedback?`<div class="fb"><b>${esc(r.feedbackBy||'결영이네')}의 피드백</b>${esc(r.feedback)}</div>`:`<div class="fb wait">피드백을 준비하고 있어요</div>`}
+      ${r.q?`<div class="fb" style="background:var(--bg)"><b>질문</b>${esc(r.q)}${r.answer?`<b style="margin-top:8px">답</b>${esc(r.answer)}`:''}</div>`:''}</div>`;
+  });
+  return h+`</div><button class="more" onclick="leaveMine()">다른 부부로 보기 · 나가기</button></section>`;
+}
+
+// ─────────────────────────────────────────────────────────────
 // 결영님 화면 (비밀번호가 맞을 때만 서버가 상세를 내려준다)
 // ─────────────────────────────────────────────────────────────
 function adminPanel(cw){
@@ -531,6 +627,19 @@ function adminPanel(cw){
   unans.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><div style="margin-top:4px">${esc(r.q)}</div>
     <textarea id="ans-${esc(r.id)}" placeholder="답변을 쓰면 Q&A에 닉네임 없이 올라가요"></textarea>
     <div class="row2"><select id="by-${esc(r.id)}"><option>머니그랩</option><option>결영</option></select><button class="sbtn" onclick="saveAnswer('${esc(r.id)}',this)">저장</button></div></div>`; });
+  // 피드백 — 초안기가 넣은 초안이 미리 채워져 있다. 고쳐서 보내면 그 부부 '우리 부부' 탭에 뜬다
+  const waitFb=rows.filter(r=>!r.feedback).sort((a,b)=>new Date(a.at)-new Date(b.at));
+  const nDraft=waitFb.filter(r=>r.draft).length;
+  h+=`<div class="sub">피드백 기다리는 과제 · ${waitFb.length}${nDraft?` (초안 ${nDraft})`:''}</div>`;
+  waitFb.slice(0,fbShowAll?999:6).forEach(r=>{
+    const files=r.file?String(r.file).split(/[\s,]+/).filter(u=>/^https?:/.test(u)).map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener" style="font-size:12px;color:var(--acc)">캡처 ${i+1} ›</a> `).join(''):'';
+    h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div>
+    <details><summary>과제 내용</summary><pre style="white-space:pre-wrap;font-family:inherit;margin-top:4px;color:var(--text-md)">${esc(r.body)}</pre>${files}${r.link?`<a href="${esc(r.link)}" target="_blank" rel="noopener" style="font-size:12px;color:var(--acc)">SNS 링크 ›</a>`:''}</details>
+    ${r.draft?'<div style="font-size:11.5px;color:var(--warn);margin-top:6px">초안기가 쓴 초안이에요. 고쳐서 보내주세요</div>':''}
+    <textarea id="fb-${esc(r.id)}" style="min-height:110px" placeholder="피드백을 쓰면 이 부부의 '우리 부부' 탭에 떠요">${esc(r.draft)}</textarea>
+    <div class="row2"><select id="fbby-${esc(r.id)}"><option>결영</option><option>머니그랩</option></select><button class="sbtn" onclick="sendFb('${esc(r.id)}',this)">보내기</button></div></div>`;
+  });
+  if(waitFb.length>6) h+=`<button class="more" onclick="fbShowAll=!fbShowAll;render()">${fbShowAll?`접기 ${chev(true)}`:`${waitFb.length-6}개 더 보기 ${chev(false)}`}</button>`;
   h+=`<div class="sub">MVP 후보 (공유 동의 O) · ${cand.length}</div>`;
   if(!cand.length) h+=`<div style="font-size:12.5px;color:var(--text-lt)">아직 없어요</div>`;
   cand.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><pre style="white-space:pre-wrap;font-family:inherit;margin-top:4px;color:var(--text-md)">${esc(String(r.body).slice(0,220))}${String(r.body).length>220?'…':''}</pre>
@@ -549,7 +658,14 @@ function detailOf(h){
     <pre>${esc(r.body)}</pre>
     ${r.file?String(r.file).split(/[\s,]+/).filter(u=>/^https?:/.test(u)).map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener">캡처 ${i+1} ›</a> `).join(''):''}
     ${r.link?`<a href="${esc(r.link)}" target="_blank" rel="noopener">SNS 링크 ›</a>`:''}
-    ${r.q?`<pre><b>질문</b> ${esc(r.q)}${r.answer?`\n<b>답</b> ${esc(r.answer)}`:''}</pre>`:''}</div>`).join('')}</div>`;
+    ${r.q?`<pre><b>질문</b> ${esc(r.q)}${r.answer?`\n<b>답</b> ${esc(r.answer)}`:''}</pre>`:''}
+    ${r.feedback?`<pre><b>보낸 피드백 (${esc(r.feedbackBy)})</b> ${esc(r.feedback)}</pre>`:''}</div>`).join('')}</div>`;
+}
+let fbShowAll=false;
+async function sendFb(id,btn){
+  const text=document.getElementById('fb-'+id).value.trim(); if(!text) return toast('피드백을 먼저 써 주세요');
+  btn.disabled=true; const r=await post({op:'feedback',id,text,who:document.getElementById('fbby-'+id).value}); btn.disabled=false;
+  r.ok?(toast('피드백을 보냈어요'),load()):toast('보내지 못했어요. 다시 해 주세요');
 }
 async function saveAnswer(id,btn){
   const text=document.getElementById('ans-'+id).value.trim(); if(!text) return toast('답변을 먼저 써 주세요');
@@ -589,7 +705,8 @@ function demoData(){
   const mvp=[{id:'d2',h:'라부부',who:'남편',task:T(1,'money'),quote:'숫자를 펼쳐놓고 나서야 대화가 시작되더라고요. 남편이 먼저 다음 달 예산 얘기를 꺼냈어요.',body:TASKS.money[1].ex,link:''}];
   return {subs,qa,mvp,links:{'1|내집마련':'https://youtu.be/example'},rows:subs.map(s=>Object.assign({},s,{answer:s.id==='d6'?'네, 자산이에요':'',isMvp:s.id==='d2'}))};
 }
-function demoAdmin(){ return DATA; }
+function demoAdmin(){ DATA.rows.forEach((r,i)=>{ if(i%3===0) r.draft='(초안) 고정비를 이렇게 펼쳐보신 것만으로도 절반은 하신 거예요. 저희도 통신비부터 줄였어요.'; if(i%4===1){ r.feedback='잘 하셨어요!'; r.feedbackBy='결영'; } }); return DATA; }
+function demoMine(h){ const rows=(DATA.rows||[]).filter(r=>r.h===h).map((r,i)=>Object.assign({},r,{feedback:i===0?'숫자를 펼쳐놓은 것부터 대단해요. 다음 주엔 고정비를 같이 봐요.':'',feedbackBy:'결영'})); return {ok:true,h,rows}; }
 
 window.addEventListener('hashchange',()=>{ render(); window.scrollTo(0,0); });
 tick(); setInterval(tick,1000);
