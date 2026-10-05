@@ -570,7 +570,7 @@ function banner(){
     if(now>kst(W(1).open)) return '';
     const ok=me?progress(me,0).live:false;
     return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0"><b>OT 주 해야 할 일</b><span>1주차는 10/13(화)부터</span></span><i>${me?(ok?'1/1 ':'0/1 '):''}${open?chev(true):chev(false)}</i></button>
-      ${open?`<ul>${li('출석','OT 듣고 강의 출석 올리기 <small style="color:var(--text-lt)">(다시보기 OK)</small>',esc(OT.url),ok,'target="_blank" rel="noopener"')}${li('독서','『부의 인문학』 준비하기','#read',false)}</ul>
+      ${open?`<ul>${li('OT','OT 강의 듣기 <small style="color:var(--text-lt)">(다시보기 OK)</small>',esc(OT.url),ok,'target="_blank" rel="noopener"')}${li('출석','OT 과제 · 강의 출석 올리기','#ex/live/0',ok)}${li('독서','『부의 인문학』 준비하기','#read',false)}</ul>
       <div class="ft"><span>${me?`${esc(me)} 기준 · 탈리에서 'OT - 강의 출석'으로 내요`:"탈리에서 'OT - 강의 출석'으로 내요"}</span><a class="sb" href="${FORM}" target="_blank" rel="noopener">출석 올리기</a></div>`:''}</section>`;
   }
   if(!nextDue(now)) return '';
