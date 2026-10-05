@@ -110,6 +110,18 @@ button{font-family:inherit}
 .replay .go{font-size:12.5px;font-weight:700;color:var(--acc);white-space:nowrap}
 
 /* 과정별 주차 줄 */
+/* 과제 예시 페이지 (#ex/과정/주차) — 단계마다 띠를 바꿔 구분, 아래에 제출 버튼 고정 */
+.back{display:inline-flex;align-items:center;gap:2px;font-size:13.5px;font-weight:600;color:var(--text-lt);text-decoration:none;margin-bottom:14px}
+.exh{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:700;letter-spacing:-.03em;margin-bottom:12px}
+.exh span{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;font-size:12.5px;display:grid;place-items:center}
+.exsub{font-size:12.5px;color:var(--text-lt);margin:-6px 0 10px}
+.ex.flat{display:block;margin:0;border:0;padding:0}
+.ex.flat pre{background:var(--white);border:1px solid var(--border)}
+.sec .ex.flat pre{background:var(--bg);border:0}
+.ex.flat .best pre{background:none;border:0;padding:0}
+.exbar{position:sticky;bottom:0;display:flex;gap:8px;background:var(--white);border-top:1px solid var(--border);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.exbar .b{flex:0 0 auto;padding:13px 16px;font-size:14px}
+.exbar .b.fill{flex:1;font-size:15px}
 .wrow{padding:16px 0;border-top:1px solid var(--border)}
 .wrow:last-child{border-bottom:1px solid var(--border)}
 .wrow .w{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-lt)}
@@ -459,14 +471,15 @@ function choiceOf(h){
 // ─────────────────────────────────────────────────────────────
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
-  const v=(location.hash||'#home').slice(1);
-  view=['home','read','money','house','sns','qa','mine','admin'].includes(v)?v:'home';
-  document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===view));
+  const v=(location.hash||'#home').slice(1), exm=v.match(/^ex\/(read|money|house|sns|live)\/(\d)$/);
+  view=exm?'ex':['home','read','money','house','sns','qa','mine','admin'].includes(v)?v:'home';
+  const tab=exm?(exm[1]==='live'?'home':exm[1]):view;
+  document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
-  const bn=document.getElementById('banner'); if(bn) bn.innerHTML=DATA?banner():'';
+  const bn=document.getElementById('banner'); if(bn) bn.innerHTML=DATA&&view!=='ex'?banner():'';
   const el=document.getElementById('view');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
-  el.innerHTML = view==='home'?homeView() : view==='qa'?qaView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
+  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
 }
 
 // 5기 (첫 화면): MVP → 부부 진행판
@@ -539,7 +552,7 @@ function replays(){
   return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
     out.map(r=>`<a class="replay" href="${esc(r.url)}" target="_blank" rel="noopener"><span class="d">${r.day}<b>${r.d}</b></span><span class="t">${esc(r.t)}</span><span class="go">▶ 보기</span></a>`).join('')+
     `</div><div class="note" style="text-align:left">녹화본은 한 달간 볼 수 있어요.</div>
-    <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',1,'ex-live')}${example('live',curWeek(NOW()),'ex-live')}</div></section>`;
+    <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',curWeek(NOW()),'ex-live')}</div></section>`;
 }
 
 // 이번 주 해야 할 일 — 모든 화면 맨 위. 로그인한 부부면 낸 것에 ✓
@@ -567,9 +580,9 @@ function banner(){
   const cnt=p?`${p.done}/${PER}`:'';
   if(!open) return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${cnt?cnt+' ':''}${chev(false)}</i></button></section>`;
   return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${cnt?cnt+' ':''}${chev(true)}</i></button><ul>
-    ${li('출석',`고른 과정 라이브 보고 한 줄 <small style="color:var(--text-lt)">(화 내집 · 목 SNS)</small>`,'javascript:void 0',p&&p.live,'onclick="goReplays()"')}
-    ${li('독서',t('read'),'#read',p&&p.read)}
-    ${li('돈관리',t('money'),'#money',p&&p.money)}
+    ${li('출석',`고른 과정 라이브 보고 한 줄 <small style="color:var(--text-lt)">(화 내집 · 목 SNS)</small>`,`#ex/live/${cw}`,p&&p.live)}
+    ${li('독서',t('read'),`#ex/read/${cw}`,p&&p.read)}
+    ${li('돈관리',t('money'),`#ex/money/${cw}`,p&&p.money)}
     ${li('택1',`${t('house')} <small style="color:var(--text-lt)">내집</small> / ${t('sns')} <small style="color:var(--text-lt)">SNS</small>`,p&&p.sns&&!p.house?'#sns':'#house',p&&p.pick)}
   </ul><div class="ft"><span>${me?`${esc(me)} 기준 · 낸 과제에 ✓`:'피드백 탭에서 로그인하면 낸 과제에 ✓가 떠요'}</span><a class="sb" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a></div></section>`;
 }
@@ -587,14 +600,18 @@ function buttons(k,n,id){
     live = url ? `<a class="b" href="${esc(url)}" target="_blank" rel="noopener">▶ ${tr.live} ${day} 라이브</a>`
                : `<span class="b off">${tr.live} ${day} 라이브 · ${now<kst(w.open)?'예정':'링크 준비 중'}</span>`;
   }
-  return `<div class="btns"><button class="b fill" id="btn-${id}" onclick="toggleEx('${id}')">과제 예시 ▾</button>${live}</div>`;
+  return `<div class="btns"><a class="b fill" href="#ex/${k}/${n}">과제 예시 보기 ›</a>${live}</div>`;
 }
 let BEST={};
 fetch('best_examples.json').then(r=>r.ok?r.json():{}).then(j=>{ BEST=j||{}; if(DATA) render(); }).catch(()=>{});
 function bestOf(k,n){
+  const c=bestCards(k,n);
+  return c?`<h4>★ 4기 잘한 과제</h4><div class="bnote">4기 카페 글이에요 · 닉네임과 금액은 가렸어요</div>`+c:'';
+}
+function bestCards(k,n){
   const list=BEST[k==='live'?'live':k+'|'+n]||[];
   if(!list.length) return '';
-  return `<h4>★ 4기 잘한 과제</h4><div class="bnote">4기 카페 글이에요 · 닉네임과 금액은 가렸어요</div>`+list.map(e=>`<div class="best"><div class="w"><b>${esc(e.who)}</b><span>${esc(e.why)}</span></div><pre>${esc(e.body)}</pre>${String(e.body).split('\n').length>6||String(e.body).length>220?`<button class="rd" onclick="const b=this.parentNode;b.classList.toggle('open');this.textContent=b.classList.contains('open')?'접기 ▴':'전체 읽기 ▾'">전체 읽기 ▾</button>`:''}</div>`).join('');
+  return list.map(e=>`<div class="best"><div class="w"><b>${esc(e.who)}</b><span>${esc(e.why)}</span></div><pre>${esc(e.body)}</pre>${String(e.body).split('\n').length>6||String(e.body).length>220?`<button class="rd" onclick="const b=this.parentNode;b.classList.toggle('open');this.textContent=b.classList.contains('open')?'접기 ▴':'전체 읽기 ▾'">전체 읽기 ▾</button>`:''}</div>`).join('');
 }
 function example(k,n,id){
   const t=TASKS[k][n];
@@ -608,6 +625,34 @@ function example(k,n,id){
   if(t.warn) h+=`<div class="warn">⚠️ ${esc(t.warn)}</div>`;
   if(t.tbd) h+=`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`;
   return h+`<button class="more" onclick="toggleEx('${id}')">접기 ${chev(true)}</button></div>`;
+}
+// 과제 예시 페이지 — 1 이렇게 하세요 → 2 제출 양식 → 3 결영이네 예시 → 4 4기 잘한 과제, 아래에 제출 버튼
+function exView(k,n){
+  const t=TASKS[k]&&TASKS[k][n];
+  if(!t || (n>SHOW_UPTO)) return `<section class="sec"><a class="back" href="#${k in TRACKS&&k!=='live'?k:'home'}">‹ 돌아가기</a><div class="h2">아직 공개 전인 과제예요</div></section>`;
+  const tr=TRACKS[k], back=k==='live'?'home':k, w=n?W(n):null, due=w?w.due.split('-').map(Number):null;
+  const SHOT={'money|1':'img/moabuli-asset.png','money|2':'img/moabuli-monthly.png','money|4':'img/moabuli-roadmap.png'}[k+'|'+n];
+  let live='';
+  if(tr.live && w){ const day=tr.live==='화'?w.tue:w.thu, url=(DATA.links||{})[n+'|'+tr.name];
+    live=`<div class="btns">${url?`<a class="b" href="${esc(url)}" target="_blank" rel="noopener">▶ ${tr.live} ${day} 라이브 보기</a>`:`<span class="b off">${tr.live} ${day} 라이브 · ${NOW()<kst(w.open)?'예정':'링크 준비 중'}</span>`}</div>`; }
+  let h=`<section class="sec" style="padding-bottom:24px"><a class="back" href="#${back}">‹ ${k==='live'?'5기':esc(tr.name)}</a>
+    <span class="eyebrow">${wkName(n)} · ${esc(tr.name)}${due?` · 마감 ${due[1]}/${due[2]}(월) 23:59`:''}</span>
+    <div class="h1">${esc(t.name)}</div>${live}</section>`;
+  h+=`<section class="sec-alt"><div class="exh"><span>1</span>이렇게 하세요</div><div class="ex flat"><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${t.warn?`<div class="warn">⚠️ ${esc(t.warn)}</div>`:''}${t.tbd?`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`:''}</div></section>`;
+  h+=`<section class="sec"><div class="exh"><span>2</span>제출 양식</div><div class="exsub">복사해서 탈리 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div></section>`;
+  if(t.ex||SHOT){
+    h+=`<section class="sec-alt"><div class="exh"><span>3</span>결영이네 예시</div><div class="ex flat">${t.ex?`<pre>${esc(t.ex)}</pre>`:''}`;
+    if(SHOT) h+=`<h4>모아불리 화면</h4><a href="${SHOT}" target="_blank" rel="noopener"><img class="shot" src="${SHOT}" loading="lazy" alt="모아불리 화면 예시"></a><div class="bnote" style="margin-top:4px">예시 데이터예요 · 누르면 크게 보여요</div>`;
+    h+=`</div></section>`;
+  }
+  const bc=bestCards(k,n);
+  if(bc) h+=`<section class="sec"><div class="exh"><span>${t.ex||SHOT?4:3}</span>4기 잘한 과제</div><div class="exsub">4기 카페 글이에요 · 닉네임과 금액은 가렸어요</div><div class="ex flat">${bc}</div></section>`;
+  h+=`<div class="exbar"><button class="b" onclick="copyTxt(document.getElementById('exForm').textContent)">양식 복사</button><a class="b fill" href="${FORM}" target="_blank" rel="noopener">과제 제출하러 가기 ›</a></div>`;
+  return h;
+}
+function copyTxt(txt){
+  const done=()=>toast('양식을 복사했어요. 탈리 "과제 내용"에 붙여넣으세요');
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(done,()=>fallbackCopy(txt,done)); else fallbackCopy(txt,done);
 }
 // 꺾쇠 아이콘 (up=true면 위로)
 const chev = up => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${up?'M6 15l6-6 6 6':'M6 9l6 6 6-6'}"/></svg>`;
@@ -632,7 +677,7 @@ function trackView(k){
     const state=isCur?'지금 진행 중':open?'지난 주차 · 늦게 내도 돼요':`${fmtD(kst(w.open))}에 열려요`;
     if(w.n>SHOW_UPTO){ h+=`<div class="wrow lock"><div class="w"><b>${w.n}주차</b><span>${fmtD(kst(w.open))}에 열려요 · 마감 ${m}/${d}</span></div><div class="t">공개 예정이에요</div></div>`; return; }
     h+=`<div class="wrow${open?'':' lock'}"><div class="w"><b>${w.n}주차</b><span>${state} · 마감 ${m}/${d}</span></div>
-      <div class="t">${esc(t.name)}</div>${buttons(k,w.n,id)}${example(k,w.n,id)}</div>`;
+      <div class="t">${esc(t.name)}</div>${buttons(k,w.n,id)}</div>`;
   });
   return h+`</div><a class="btn" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a></section>`;
 }
