@@ -43,6 +43,23 @@ button{font-family:inherit}
 .menu a.on{color:var(--acc);border-bottom-color:var(--acc)}
 
 .sec{padding:32px 22px;background:var(--white)}
+/* 이번 주 해야 할 일 배너 — 모든 화면 맨 위 */
+.todo{background:var(--acc-soft);border-bottom:1px solid var(--border);padding:14px 20px 16px}
+.todo .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:none;border:0;cursor:pointer;text-align:left;color:var(--text);padding:0}
+.todo .hd b{font-size:15px;font-weight:700;letter-spacing:-.03em}
+.todo .hd span{font-size:12px;color:var(--text-md);font-weight:500;margin-left:6px}
+.todo .hd i{font-style:normal;font-size:12px;font-weight:700;color:var(--acc);background:#fff;border-radius:99px;padding:3px 9px;white-space:nowrap;display:inline-flex;align-items:center;gap:2px}
+.todo .hd i svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4}
+.todo ul{list-style:none;margin-top:10px;display:grid;gap:6px}
+.todo li a{display:flex;align-items:center;gap:10px;text-decoration:none;background:#fff;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.45}
+.todo li .ck{flex-shrink:0;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--acc-lt);display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+.todo li.ok .ck{background:var(--acc);border-color:var(--acc)}
+.todo li.ok .tx{color:var(--mute);text-decoration:line-through}
+.todo li .k{flex-shrink:0;font-size:11px;font-weight:700;color:var(--acc);background:var(--acc-soft);border-radius:5px;padding:2px 7px}
+.todo li .tx{flex:1;min-width:0}
+.todo li .go{flex-shrink:0;color:var(--mute);font-size:13px}
+.todo .ft{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:12px;color:var(--text-md)}
+.todo .ft a.sb{flex-shrink:0;text-decoration:none;background:var(--acc);color:#fff;font-weight:700;font-size:13px;border-radius:99px;padding:8px 14px}
 .sec-alt{padding:32px 22px;background:var(--bg)}
 .sec-dark{padding:32px 22px 30px;background:var(--dark);color:#fff}
 .eyebrow{font-size:12.5px;font-weight:600;color:var(--acc);display:block;margin-bottom:8px}
@@ -198,7 +215,6 @@ footer a{color:var(--text-lt);margin:0 6px}
     <nav class="menu" id="menu">
       <a href="#home" data-v="home">5기</a>
       <a href="#mine" data-v="mine">피드백</a>
-      <a href="#week" data-v="week">이번 주</a>
       <a href="#read" data-v="read">독서</a>
       <a href="#money" data-v="money">돈관리</a>
       <a href="#house" data-v="house">내집마련</a>
@@ -206,6 +222,7 @@ footer a{color:var(--text-lt);margin:0 6px}
       <a href="#qa" data-v="qa">Q&amp;A</a>
     </nav>
   </div>
+  <div id="banner"></div>
   <main id="view"><div class="state">불러오는 중이에요…</div></main>
   <footer>
     원팀 프로젝트 5기 · 결영이네<br>
@@ -244,7 +261,8 @@ const TRACKS = {
   read:  {name:'독서',     must:true,  live:null, desc:'『부의 인문학』 한 권을 4주에 걸쳐 읽어요. 라이브 없이 세 줄만 남기면 돼요.'},
   money: {name:'돈관리',   must:true,  live:null, desc:'모두 하는 과제예요. 라이브 없이 예시를 보고 따라 하면 돼요.'},
   house: {name:'내집마련', must:false, live:'화', who:'머니그랩', desc:'SNS와 둘 중 하나를 골라요. 화요일 밤 머니그랩 라이브.'},
-  sns:   {name:'SNS',      must:false, live:'목', who:'결영',     desc:'내집마련과 둘 중 하나를 골라요. 목요일 밤 결영 라이브.'}
+  sns:   {name:'SNS',      must:false, live:'목', who:'결영',     desc:'내집마련과 둘 중 하나를 골라요. 목요일 밤 결영 라이브.'},
+  live:  {name:'강의 출석', must:true,  live:null, desc:'내가 고른 과정 라이브(화 내집마련 · 목 SNS)를 보고 한 줄 남겨요. 못 오면 다시보기로 봐도 돼요.'}
 };
 
 // 과제 이름은 탈리 '어떤 과제를 내시나요?' 목록과 같은 말로 쓴다
@@ -317,7 +335,13 @@ const TASKS = {
       ex:'과제 2. 수익 모델 적용 대본\n맞벌이 부부 집안일, 아직도 주말로 미루세요?\n주말에 쉬고 싶은데 집안일 밀려있으면 한숨 나오잖아요.\n1. 타이머 10분 맞추기 (타이머 맞추는 모습 노출)\n2. 구역 분담 — 남편은 바닥 (제품 노출), 아내는 식기세척기 (세제 노출)\n3. 타이머 울리면 무조건 끝\n저희 부부가 정착한 10분 청소용품들, 정리본 받아가세요!'}
   }
 };
-const TRACK_OF = {'독서':'read','돈관리':'money','내집마련':'house','SNS':'sns'};
+// 강의 출석 — 4기 카페처럼 "OO 라이브 출석했습니다" + 배운 점. 주차마다 같은 양식
+const LIVE_TASK = n => ({name:'라이브 출석',
+  how:['내가 고른 과정 라이브 보기 — 화요일 내집마련 · 목요일 SNS (못 오면 다시보기)','"OO 라이브 출석했습니다" 한 줄','배운 점과 우리 부부에게 적용할 점 두세 줄'],
+  form:`${n}주차 (내집마련/SNS) 라이브 출석했습니다.\n\n배운 점 :\n\n우리 부부에게 적용할 점 :`,
+  ex:'OT 강의 출석했습니다.\n생활비는 비과세라 부부간 증여에 해당하지 않는 점을 활용\n생활비 통장은 함께 쓸 예정이다.'});
+TASKS.live = {1:LIVE_TASK(1), 2:LIVE_TASK(2), 3:LIVE_TASK(3), 4:LIVE_TASK(4)};
+const TRACK_OF = {'독서':'read','돈관리':'money','내집마련':'house','SNS':'sns','강의':'live','강의출석':'live'};
 
 // ─────────────────────────────────────────────────────────────
 // 날짜
@@ -401,13 +425,14 @@ async function post(body){
   return r.json();
 }
 
-// 부부 하나의 주차별 완료 {read,money,pick,track} — 택1은 내집·SNS 중 하나만 내도 완료
+// 부부 하나의 주차별 완료 {live,read,money,pick} — 한 주 4개. 택1은 내집·SNS 중 하나만 내도 완료
 function progress(h, week){
   const mine=(DATA.subs||[]).filter(s=>s.h===h).map(s=>parseTask(s.task)).filter(Boolean).filter(t=>t.week===week);
   const has=k=>mine.some(t=>t.track===k);
-  return {read:has('read'), money:has('money'), house:has('house'), sns:has('sns'), get pick(){return this.house||this.sns;},
-    get done(){return (this.read?1:0)+(this.money?1:0)+(this.pick?1:0);}};
+  return {live:has('live'), read:has('read'), money:has('money'), house:has('house'), sns:has('sns'), get pick(){return this.house||this.sns;},
+    get done(){return (this.live?1:0)+(this.read?1:0)+(this.money?1:0)+(this.pick?1:0);}};
 }
+const PER = 4;  // 한 주 과제 수
 function choiceOf(h){
   let hs=0, sn=0;
   (DATA.subs||[]).filter(s=>s.h===h).forEach(s=>{const t=parseTask(s.task); if(!t)return; if(t.track==='house')hs++; if(t.track==='sns')sn++;});
@@ -420,12 +445,13 @@ function choiceOf(h){
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
   const v=(location.hash||'#home').slice(1);
-  view=['home','week','read','money','house','sns','qa','mine','admin'].includes(v)?v:'home';
+  view=['home','read','money','house','sns','qa','mine','admin'].includes(v)?v:'home';
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===view));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
+  const bn=document.getElementById('banner'); if(bn) bn.innerHTML=DATA?banner():'';
   const el=document.getElementById('view');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
-  el.innerHTML = view==='home'?homeView() : view==='week'?weekView() : view==='qa'?qaView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
+  el.innerHTML = view==='home'?homeView() : view==='qa'?qaView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
 }
 
 // 5기 (첫 화면): MVP → 부부 진행판
@@ -449,27 +475,27 @@ function homeView(){
   h+=`</section>`;
   // 진행판
   h+=`<section class="sec">${board(cw)}<a class="btn" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a><div class="note">과제 하나에 한 번씩 · 금액은 가려도 돼요</div></section>`;
-  return h;
+  return h+replays();
 }
 
 function board(cw){
   const n=ROSTER.length;
   if(!cw){
     return `<span class="eyebrow">5기 ${n}부부</span><div class="h2">1주차는 <span class="hl">10월 13일</span>에 시작해요</div>
-      <div class="body1">OT 주는 과제가 없어요. 『부의 인문학』만 준비해 두세요.</div>
-      <div style="margin-top:14px">${ROSTER.map(r=>`<div class="cp"><span class="n"><span class="nn">${esc(r)}</span></span><span class="bar"><i style="width:0"></i></span><span class="v">0/3</span></div>`).join('')}</div>`;
+      <div class="body1">OT 주는 과제가 없어요. 1주차부터 한 주에 4개 — 강의 출석·독서·돈관리·내집마련/SNS 중 하나.</div>
+      <div style="margin-top:14px">${ROSTER.map(r=>`<div class="cp"><span class="n"><span class="nn">${esc(r)}</span></span><span class="bar"><i style="width:0"></i></span><span class="v">0/4</span></div>`).join('')}</div>`;
   }
   // 이번 주 / 전체
   const rows=ROSTER.map(r=>{
-    if(boardMode==='week'){ const p=progress(r,cw); return {h:r,done:p.done,total:3}; }
-    let d=0; for(let w=1;w<=cw;w++) d+=progress(r,w).done; return {h:r,done:d,total:cw*3};
+    if(boardMode==='week'){ const p=progress(r,cw); return {h:r,done:p.done,total:PER}; }
+    let d=0; for(let w=1;w<=cw;w++) d+=progress(r,w).done; return {h:r,done:d,total:cw*PER};
   }).sort((a,b)=>b.done-a.done||ROSTER.indexOf(a.h)-ROSTER.indexOf(b.h));
   const wk=ROSTER.map(r=>progress(r,cw));
-  const sum=wk.reduce((a,p)=>a+p.done,0), full=wk.filter(p=>p.done===3).length;
+  const sum=wk.reduce((a,p)=>a+p.done,0), full=wk.filter(p=>p.done===PER).length;
   const hs=wk.filter(p=>p.house).length, sn=wk.filter(p=>p.sns).length;
   const shown=boardAll?rows:rows.slice(0,8);
   let h=`<span class="eyebrow">5기 ${n}부부${DATA._loading?' · 불러오는 중…':''}</span><div class="h2">${cw}주차, <span class="hl">다들 여기까지</span> 왔어요</div>
-    <div class="stats"><div><b>${Math.round(sum/(n*3)*100)}%</b><span>이번 주 달성</span></div><div><b>${full}</b><span>다 한 부부</span></div><div><b>${hs} · ${sn}</b><span>내집 · SNS</span></div></div>
+    <div class="stats"><div><b>${Math.round(sum/(n*PER)*100)}%</b><span>이번 주 달성</span></div><div><b>${full}</b><span>다 한 부부</span></div><div><b>${hs} · ${sn}</b><span>내집 · SNS</span></div></div>
     <div class="seg"><button class="${boardMode==='week'?'on':''}" onclick="boardMode='week';render()">이번 주</button><button class="${boardMode==='all'?'on':''}" onclick="boardMode='all';render()">${cw>1?'1~'+cw+'주 전체':'전체'}</button></div>
     <div style="margin-top:12px">`;
   shown.forEach(r=>{
@@ -493,30 +519,40 @@ function replays(){
       out.push({d:tr==='SNS'?w.thu:w.tue, day:TRACKS[k].live, t:`${w.n}주차 ${tr} · ${TASKS[k][w.n].name}`, url:u});
     });
   });
-  return `<section class="sec-alt"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
+  return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
     out.map(r=>`<a class="replay" href="${esc(r.url)}" target="_blank" rel="noopener"><span class="d">${r.day}<b>${r.d}</b></span><span class="t">${esc(r.t)}</span><span class="go">▶ 보기</span></a>`).join('')+
     `</div><div class="note" style="text-align:left">녹화본은 한 달간 볼 수 있어요.</div></section>`;
 }
 
-// 이번 주 화면
-function weekView(){
-  const now=NOW(), cw=curWeek(now);
-  if(!cw){
-    return `<section class="sec"><span class="eyebrow">OT 주 · 10/6 ~ 10/12</span><div class="h1">이번 주는<br><span class="hl">과제가 없어요</span></div>
-      <div class="body1">『부의 인문학』만 준비해 두세요. 1주차 과제는 10월 13일(화)에 열려요.</div></section>`+replays()+weekCards(1,true);
-  }
-  const w=W(cw), [,m,d]=w.due.split('-').map(Number);
-  return `<section class="sec" style="padding-bottom:0"><span class="eyebrow">${cw}주차 · 마감 ${m}/${d}(월) 23:59</span>
-    <div class="h1">이번 주엔 <span class="hl">세 가지</span>만<br>하면 돼요</div>
-    <div class="body1">독서·돈관리는 모두, 내집마련·SNS는 하나만 골라요.<br>바쁜 주엔 회고 한 줄만 남겨도 인증돼요.</div></section>`+weekCards(cw,false)+replays();
+// 이번 주 해야 할 일 — 모든 화면 맨 위. 로그인한 부부면 낸 것에 ✓
+let bannerOpen = (()=>{ try{ return localStorage.getItem('ot5banner')!=='0'; }catch(e){ return true; } })();
+function toggleBanner(){ bannerOpen=!bannerOpen; try{ localStorage.setItem('ot5banner',bannerOpen?'1':'0'); }catch(e){} render(); }
+function goReplays(){
+  const go=()=>{ const e=document.getElementById('replays'); if(e) e.scrollIntoView({behavior:'smooth'}); };
+  if(view!=='home'){ location.hash='#home'; setTimeout(go,150); } else go();
 }
-function weekCards(n,preview){
-  let h=`<section class="sec" style="padding-top:${preview?'0':'14px'}">`;
-  if(preview) h+=`<span class="eyebrow">미리 보기 · 1주차</span>`;
-  h+=taskCard('read',n,'독서 · 필수')+taskCard('money',n,'돈관리 · 필수');
-  h+=`<div class="card"><span class="lb g">둘 중 하나만 골라요</span>${taskInner('house',n)}<div class="or-line"></div>${taskInner('sns',n)}</div>`;
-  h+=`<a class="btn" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a><div class="note">과제 하나에 한 번씩 · 금액은 가려도 돼요</div></section>`;
-  return h;
+function banner(){
+  const now=NOW(), cw=curWeek(now), me=(getMine()||{}).h;
+  const li=(k,tx,href,ok,extra)=>`<li class="${ok?'ok':''}"><a href="${href}" ${extra||''}><span class="ck">${ok?'✓':''}</span><span class="k">${k}</span><span class="tx">${tx}</span><span class="go">›</span></a></li>`;
+  const open=bannerOpen;
+  if(!cw){
+    if(now>kst(W(1).open)) return '';
+    return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0"><b>OT 주 해야 할 일</b><span>1주차는 10/13(화)부터</span></span><i>${open?chev(true):chev(false)}</i></button>
+      ${open?`<ul>${li('OT',esc(OT.title)+' 다시보기',esc(OT.url),false,'target="_blank" rel="noopener"')}${li('독서','『부의 인문학』 준비하기','#read',false)}</ul>
+      <div class="ft"><span>OT 주는 낼 과제가 없어요</span></div>`:''}</section>`;
+  }
+  if(!nextDue(now)) return '';
+  const w=W(cw), [,m,d]=w.due.split('-').map(Number), p=me?progress(me,cw):null;
+  const t=k=>esc(TASKS[k][cw].name);
+  const head=`<b>${cw}주차 해야 할 일</b><span>마감 ${m}/${d}(월) 23:59</span>`;
+  const cnt=p?`${p.done}/${PER}`:'';
+  if(!open) return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${cnt?cnt+' ':''}${chev(false)}</i></button></section>`;
+  return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${cnt?cnt+' ':''}${chev(true)}</i></button><ul>
+    ${li('출석',`고른 과정 라이브 보고 한 줄 <small style="color:var(--text-lt)">(화 내집 · 목 SNS)</small>`,'javascript:void 0',p&&p.live,'onclick="goReplays()"')}
+    ${li('독서',t('read'),'#read',p&&p.read)}
+    ${li('돈관리',t('money'),'#money',p&&p.money)}
+    ${li('택1',`${t('house')} <small style="color:var(--text-lt)">내집</small> / ${t('sns')} <small style="color:var(--text-lt)">SNS</small>`,p&&p.sns&&!p.house?'#sns':'#house',p&&p.pick)}
+  </ul><div class="ft"><span>${me?`${esc(me)} 기준 · 낸 과제에 ✓`:'피드백 탭에서 로그인하면 낸 과제에 ✓가 떠요'}</span><a class="sb" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a></div></section>`;
 }
 function taskCard(k,n,label){ return `<div class="card"><span class="lb">${label}</span>${taskInner(k,n)}</div>`; }
 function taskInner(k,n){
@@ -659,13 +695,13 @@ function mineView(){
 function adminPanel(cw){
   const rows=ADMIN.rows||[], wk=cw||1;
   const zero=REAL.filter(r=>progress(r,wk).done===0);
-  const part=REAL.filter(r=>{const d=progress(r,wk).done; return d>0&&d<3;});
+  const part=REAL.filter(r=>{const d=progress(r,wk).done; return d>0&&d<PER;});
   const unans=rows.filter(r=>r.q && !r.answer);
   const cand=rows.filter(r=>r.shareOk && !r.isMvp).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,12);
   let h=`<div class="admin"><h3>🔒 결영님만 보여요 <button onclick="logout()">나가기</button></h3>
     ${!cw?`<div class="sub">미제출 명단은 1주차(10/13)부터 떠요</div>`:`
     <div class="sub">${wk}주차 하나도 안 낸 부부 · ${zero.length}</div>${zero.map(r=>`<span class="chip">${esc(r)}</span>`).join('')||'<span class="chip ok">없어요</span>'}
-    <div class="sub">${wk}주차 덜 낸 부부 · ${part.length}</div>${part.map(r=>`<span class="chip" style="background:#FAEEDA;color:#633806">${esc(r)} ${progress(r,wk).done}/3</span>`).join('')||'<span class="chip ok">없어요</span>'}`}
+    <div class="sub">${wk}주차 덜 낸 부부 · ${part.length}</div>${part.map(r=>`<span class="chip" style="background:#FAEEDA;color:#633806">${esc(r)} ${progress(r,wk).done}/${PER}</span>`).join('')||'<span class="chip ok">없어요</span>'}`}
     <div class="sub">답 안 단 질문 · ${unans.length}</div>`;
   unans.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><div style="margin-top:4px">${esc(r.q)}</div>
     <textarea id="ans-${esc(r.id)}" placeholder="답변을 쓰면 Q&A에 닉네임 없이 올라가요"></textarea>
@@ -768,6 +804,7 @@ function demoData(){
   ['오유부부','용영','희찬부부'].forEach((h,i)=>{ add(h,1,'read','아내'); add(h,1,'money','남편'); add(h,1,i%2?'sns':'house','아내'); });
   ['웃슴부부','우나비아'].forEach(h=>{ add(h,1,'money','아내',null,true,'전세보증금도 자산에 넣나요?',true); add(h,1,'house','남편'); });
   ['뚜띠부부'].forEach(h=>add(h,1,'read','둘이 같이'));
+  ['오유부부','용영','웃슴부부'].forEach(h=>add(h,1,'live','아내'));
   add('오유부부',1,'sns','남편',null,true,'부부 얼굴이 안 나와도 되나요?',true);
   const qa=[{id:'d6',task:T(1,'money'),q:'전세보증금도 자산에 넣나요?',a:'네, 돌려받을 돈이라 자산이에요. 대출이 끼어 있으면 부채에도 같이 적어주세요.',by:'머니그랩',at:''},{id:'d18',task:T(1,'sns'),q:'부부 얼굴이 안 나와도 되나요?',a:'',by:'',at:''}];
   const mvp=[{id:'d2',h:'오유부부',who:'남편',task:T(1,'money'),quote:'숫자를 펼쳐놓고 나서야 대화가 시작되더라고요. 남편이 먼저 다음 달 예산 얘기를 꺼냈어요.',body:TASKS.money[1].ex,link:''}];
