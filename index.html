@@ -381,7 +381,7 @@ const TASKS = {
     1:{name:'인스타 계정 방향성 체크',
       submit:{url:SNS_FORM, label:'방향성 체크 폼 열기'}, noBest:true,
       how:['목요일 SNS 라이브(또는 다시보기)를 보면서 같이 채우기','방향성 체크 폼에 강의에서 고른 답 그대로 옮겨 적기','닉네임은 과제방 부부 이름 그대로 (예: 라부부) — 그래야 진행판에 ✓가 떠요','결영님이 1:1 레포트로 답해드려요'],
-      form:'과제방 탈리가 아니라 방향성 체크 폼(tally.so/r/aQXK9B)으로 내요. 이 폼 하나만 내면 SNS 과제 완료예요.'},
+      form:'과제방 제출 폼이 아니라 방향성 체크 폼(tally.so/r/aQXK9B)으로 내요. 이 폼 하나만 내면 SNS 과제 완료예요.'},
     2:{name:'대본 쓰기',
       how:['우리 집 후킹 문구 5개 쓰기','그중 하나로 대본 1개 쓰기 — 후킹 → 공감 → 방법 → 마무리','영상 만들어 올리기'],
       form:'(우리집 후킹 문구 5개)\n1.\n2.\n3.\n4.\n5.\n\n(대본)\n(1) 후킹 :\n(2) 공감 :\n(3) 방법 :\n(4) 마무리 :',
@@ -682,7 +682,7 @@ function bestCards(k,n){
 function example(k,n,id){
   const t=TASKS[k][n];
   let h=`<div class="ex" id="${id}"><h4>이렇게 하세요</h4><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
-    <h4>제출 양식 — 복사해서 탈리에 붙여넣기</h4><pre>${esc(t.form)}</pre><button class="copy" onclick="copyForm(this)">양식 복사</button>`;
+    <h4>제출 양식 — 복사해서 제출 폼에 붙여넣기</h4><pre>${esc(t.form)}</pre><button class="copy" onclick="copyForm(this)">양식 복사</button>`;
   if(t.ex) h+=`<h4>결영이네 예시</h4><pre>${esc(t.ex)}</pre>`;
   // 모아불리 화면 — 예시 데이터로 찍은 캡처(실제 금액 아님). 누르면 전체 크기
   const SHOT={'money|1':'img/moabuli-asset-tab.png','money|2':'img/moabuli-monthly.png','money|4':'img/moabuli-roadmap.png'}[k+'|'+n];
@@ -706,7 +706,7 @@ function exView(k,n){
     <div class="h1">${esc(t.name)}</div>${live}</section>`;
   h+=`<div class="exgrid"><div class="exL">`;
   h+=`<section class="sec-alt"><div class="exh"><span>1</span>이렇게 하세요</div><div class="ex flat"><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${t.link?`<div class="btns" style="max-width:260px"><a class="b" href="${esc(t.link.url)}" target="_blank" rel="noopener">${esc(t.link.label)} ›</a></div>`:''}${t.warn?`<div class="warn">⚠️ ${esc(t.warn)}</div>`:''}${t.tbd?`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`:''}</div></section>`;
-  h+=`<section class="sec"><div class="exh"><span>2</span>${t.submit?'제출 방법':t.fields?'탈리에서 채울 칸':'제출 양식'}</div>${t.submit?`<div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`:t.fields?`<div class="exsub">탈리에서 이 과제를 고르면 아래 칸이 나와요</div><div class="ex flat"><ol>${t.fields.map(f=>`<li>${esc(f)}</li>`).join('')}</ol></div>`:`<div class="exsub">복사해서 탈리 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`}</section>`;
+  h+=`<section class="sec"><div class="exh"><span>2</span>${t.submit?'제출 방법':t.fields?'제출할 때 채울 칸':'제출 양식'}</div>${t.submit?`<div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`:t.fields?`<div class="exsub">'과제 제출하러 가기'에서 이 과제를 고르면 아래 칸이 나와요</div><div class="ex flat"><ol>${t.fields.map(f=>`<li>${esc(f)}</li>`).join('')}</ol></div>`:`<div class="exsub">복사해서 제출 폼 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`}</section>`;
   h+=`</div><div class="exR">`;
   if(t.ex||SHOT){
     h+=`<section class="sec-alt"><div class="exh"><span>3</span>결영이네 예시</div><div class="ex flat">${t.ex?`<pre>${esc(t.ex)}</pre>`:''}`;
@@ -722,7 +722,7 @@ function exView(k,n){
   return h;
 }
 function copyTxt(txt){
-  const done=()=>toast('양식을 복사했어요. 탈리 "과제 내용"에 붙여넣으세요');
+  const done=()=>toast('양식을 복사했어요. 제출 폼 "과제 내용"에 붙여넣으세요');
   if(navigator.clipboard) navigator.clipboard.writeText(txt).then(done,()=>fallbackCopy(txt,done)); else fallbackCopy(txt,done);
 }
 // 꺾쇠 아이콘 (up=true면 위로)
@@ -734,7 +734,7 @@ function toggleEx(id){
 }
 function copyForm(btn){
   const txt=btn.previousElementSibling.textContent;
-  const done=()=>toast('양식을 복사했어요. 탈리 "과제 내용"에 붙여넣으세요');
+  const done=()=>toast('양식을 복사했어요. 제출 폼 "과제 내용"에 붙여넣으세요');
   if(navigator.clipboard) navigator.clipboard.writeText(txt).then(done,()=>fallbackCopy(txt,done)); else fallbackCopy(txt,done);
 }
 function fallbackCopy(txt,done){ const a=document.createElement('textarea'); a.value=txt; document.body.appendChild(a); a.select(); try{document.execCommand('copy');done();}catch(e){} a.remove(); }
@@ -759,7 +759,7 @@ function trackView(k){
 function qaView(){
   const list=DATA.qa||[];
   let h=`<section class="sec-alt"><span class="eyebrow">Q&amp;A</span><div class="h1">물어봐 주신 것들</div>
-    <div class="body1">과제를 낼 때 탈리 맨 아래 칸에 질문을 남겨주세요. 답은 닉네임 없이 여기 올라와요.</div>`;
+    <div class="body1">과제를 낼 때 제출 폼 맨 아래 칸에 질문을 남겨주세요. 답은 닉네임 없이 여기 올라와요.</div>`;
   if(!list.length) h+=`<div class="empty">${DATA._loading?'불러오는 중이에요…':'아직 올라온 질문이 없어요'}</div>`;
   list.forEach(q=>{
     const t=parseTask(q.task), tag=t?`${wkName(t.week)} ${TRACKS[t.track].name}`:'';
@@ -795,7 +795,7 @@ function submitMine(){
   mineKeep=document.getElementById('mK').checked;
   if(!raw.trim()){ mineErr='아이디(부부 이름)를 골라주세요'; return render(); }
   const h=ROSTER.find(r=>normId(r)===normId(raw));
-  if(!h){ mineErr='아이디를 확인해 주세요. 탈리에 내실 때 고르는 부부 이름이에요.'; mineIdDraft=raw; return render(); }
+  if(!h){ mineErr='아이디를 확인해 주세요. 과제를 낼 때 고르는 부부 이름이에요.'; mineIdDraft=raw; return render(); }
   if(c.length!==4){ mineErr='비밀번호는 휴대폰 번호 뒷자리 4개예요'; mineIdDraft=h; return render(); }
   openMine(h,c);
 }
