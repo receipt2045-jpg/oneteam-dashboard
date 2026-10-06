@@ -227,6 +227,32 @@ footer{padding:28px 22px 40px;text-align:center;font-size:12px;color:var(--text-
 footer a{color:var(--text-lt);margin:0 6px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--dark);color:#fff;font-size:13px;padding:9px 16px;border-radius:99px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
 .toast.on{opacity:1}
+.homegrid,.exgrid{display:block}
+body[data-v=ex] #banner{display:none}
+
+/* PC — 왼쪽 세로 메뉴 · 가운데 본문 · 오른쪽 이번 주 할 일(따라옴) */
+@media (min-width:960px){
+  body{background:var(--bg)}
+  .page{max-width:1240px;display:grid;grid-template-columns:200px minmax(0,1fr) 340px;grid-template-areas:"timer timer timer" "menu view side" "menu foot side";align-items:start;background:var(--white)}
+  .top{display:contents}
+  .timer{grid-area:timer;position:sticky;top:0;z-index:20;padding:12px 28px}
+  .menu{grid-area:menu;position:sticky;top:58px;flex-direction:column;gap:2px;padding:18px 12px;border-bottom:0;border-right:1px solid var(--border);min-height:calc(100vh - 58px);overflow:visible}
+  .menu a{padding:11px 14px;border-bottom:0;border-radius:9px;font-size:14.5px}
+  .menu a.on{background:var(--acc-soft);color:var(--acc)}
+  main#view{grid-area:view;min-width:0}
+  footer{grid-area:foot}
+  body[data-v=ex] #banner,#banner{display:block;grid-area:side;position:sticky;top:58px;padding:18px 18px 0;border-left:1px solid var(--border);min-height:calc(100vh - 58px)}
+  .todo{border:0;border-radius:14px}
+  .sec,.sec-alt,.sec-dark{padding:36px 36px}
+  /* 5기 첫 화면: MVP | 진행판 */
+  .homegrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
+  /* 과제 예시: 하는 법·양식 | 예시 */
+  .exgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  .exgrid>div{min-width:0}
+  .exgrid .exL{position:sticky;top:58px}
+  .exbar{justify-content:flex-end}
+  .exbar .b.fill{flex:0 0 auto;padding:13px 28px}
+}
 </style>
 </head>
 <body>
@@ -397,6 +423,8 @@ function tick(){
 // ─────────────────────────────────────────────────────────────
 // ?demo — 시트 없이 예시 데이터로 화면을 본다
 const DEMO = new URLSearchParams(location.search).has('demo');
+// ?demo&now=2026-10-15 — 그날 화면으로 (데모에서만)
+if(DEMO && new URLSearchParams(location.search).get('now')) window.__NOW=new Date(new URLSearchParams(location.search).get('now')+'T12:00:00+09:00').getTime();
 let DATA=null, ADMIN=null;
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // "2주차 - 내집마련 (우리 집 월 상환선)" → {week:2, track:'house'}
@@ -477,7 +505,8 @@ function render(){
   const tab=exm?(exm[1]==='live'?'home':exm[1]):view;
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
-  const bn=document.getElementById('banner'); if(bn) bn.innerHTML=DATA&&view!=='ex'?banner():'';
+  document.body.dataset.v=view;
+  const bn=document.getElementById('banner'); if(bn) bn.innerHTML=DATA?banner():'';
   const el=document.getElementById('view');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
   el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
@@ -490,6 +519,7 @@ function homeView(){
   if(ADMIN) h+=`<div class="sec" style="padding-bottom:6px">${adminPanel(cw)}</div>`;
   // MVP
   const mv=(DATA.mvp||[]);
+  h+=`<div class="homegrid">`;
   h+=`<section class="sec-dark"><span class="eyebrow">★ 지난주 MVP</span><div class="h2">이번 주에 제일 잘한 과제</div>`;
   if(DATA._loading) h+=`<div class="mvp-empty">불러오는 중이에요…</div>`;
   else if(!mv.length) h+=`<div class="mvp-empty">첫 MVP는 1주차 마감(10/19) 뒤에 여기에 올라와요.<br>과제를 낼 때 공유 동의를 O로 해 주시면 MVP 후보가 돼요.</div>`;
@@ -504,7 +534,7 @@ function homeView(){
   h+=`</section>`;
   // 진행판
   h+=`<section class="sec">${board(cw)}<a class="btn" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a><div class="note">과제 하나에 한 번씩 · 금액은 가려도 돼요</div></section>`;
-  return h+replays();
+  return h+`</div>`+replays();
 }
 
 function board(cw){
@@ -639,8 +669,10 @@ function exView(k,n){
   let h=`<section class="sec" style="padding-bottom:24px"><a class="back" href="#${back}">‹ ${k==='live'?'5기':esc(tr.name)}</a>
     <span class="eyebrow">${wkName(n)} · ${esc(tr.name)}${due?` · 마감 ${due[1]}/${due[2]}(월) 23:59`:''}</span>
     <div class="h1">${esc(t.name)}</div>${live}</section>`;
+  h+=`<div class="exgrid"><div class="exL">`;
   h+=`<section class="sec-alt"><div class="exh"><span>1</span>이렇게 하세요</div><div class="ex flat"><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${t.warn?`<div class="warn">⚠️ ${esc(t.warn)}</div>`:''}${t.tbd?`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`:''}</div></section>`;
   h+=`<section class="sec"><div class="exh"><span>2</span>제출 양식</div><div class="exsub">복사해서 탈리 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div></section>`;
+  h+=`</div><div class="exR">`;
   if(t.ex||SHOT){
     h+=`<section class="sec-alt"><div class="exh"><span>3</span>결영이네 예시</div><div class="ex flat">${t.ex?`<pre>${esc(t.ex)}</pre>`:''}`;
     if(SHOT) h+=`<h4>모아불리 화면</h4><a href="${SHOT}" target="_blank" rel="noopener"><img class="shot" src="${SHOT}" loading="lazy" alt="모아불리 화면 예시"></a><div class="bnote" style="margin-top:4px">예시 데이터예요 · 누르면 크게 보여요</div>`;
@@ -648,6 +680,7 @@ function exView(k,n){
   }
   const bc=bestCards(k,n);
   if(bc) h+=`<section class="sec"><div class="exh"><span>${t.ex||SHOT?4:3}</span>4기 잘한 과제</div><div class="exsub">4기 카페 글이에요 · 닉네임과 금액은 가렸어요</div><div class="ex flat">${bc}</div></section>`;
+  h+=`</div></div>`;
   h+=`<div class="exbar"><button class="b" onclick="copyTxt(document.getElementById('exForm').textContent)">양식 복사</button><a class="b fill" href="${FORM}" target="_blank" rel="noopener">과제 제출하러 가기 ›</a></div>`;
   return h;
 }
