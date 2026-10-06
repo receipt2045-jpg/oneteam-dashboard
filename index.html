@@ -296,6 +296,7 @@ body[data-v=ex] #banner{display:none}
 const API = 'https://script.google.com/macros/s/AKfycbwgd0RCjm2Zi5m0Cf7UMYvl8eWtBEbg36PRPvWEcnyjvQOkZfvLo6ZvvbD9rMYGgRHgMQ/exec';
 const FORM = 'https://tally.so/r/RG70yv';
 // OT 라이브 (10/6 화, 결영) — 과제는 없고 다시보기만
+const SNS_FORM = 'https://tally.so/r/aQXK9B';  // SNS 1주차 방향성 체크 폼 (결영님 레포트용)
 const BOOK = {title:'부의 인문학 (20만부 기념 개정증보판)', sub:'슈퍼리치의 서재에서 찾아낸 부자의 길', url:'https://link.yes24.com/a/LdR52SPkT8'};
 const OT = {date:'10/6', title:'OT · 통장은 각자, 돈 관리는 함께', url:'https://www.youtube.com/live/BBDZVrWvAUc'};
 
@@ -377,10 +378,10 @@ const TASKS = {
       warn:'점검 리포트 신청은 과제보다 빨라요 — 11월 9일(월) 23:59까지예요.'}
   },
   sns:{
-    1:{name:'프로필 세팅',
-      how:['우리 계정의 컨셉과 타깃 정하기','인스타 계정 만들고 소개글 쓰기','아이디·컨셉·타깃·소개글을 적어 내기'],
-      form:'· 아이디 :\n· 컨셉 :\n· 타깃 :\n· 소개글 :\n\n(프로필 캡처 첨부)',
-      ex:'· 아이디 : @haetae_couple (해태커플)\n· 컨셉 : 흙수저 신혼부부의 짠테크\n· 타깃 : 부모님 도움 없이 자산을 만들어가는 신혼부부\n· 소개글 :\n  4년 만에 1억 모은 신혼부부\n  둘이서 함께하는 부의 첫걸음\n  매주 절약·투자 꿀팁 공유\n  + 리틀리 링크'},
+    1:{name:'인스타 계정 방향성 체크',
+      submit:{url:SNS_FORM, label:'방향성 체크 폼 열기'}, noBest:true,
+      how:['목요일 SNS 라이브(또는 다시보기)를 보면서 같이 채우기','방향성 체크 폼에 강의에서 고른 답 그대로 옮겨 적기','닉네임은 과제방 부부 이름 그대로 (예: 라부부) — 그래야 진행판에 ✓가 떠요','결영님이 1:1 레포트로 답해드려요'],
+      form:'과제방 탈리가 아니라 방향성 체크 폼(tally.so/r/aQXK9B)으로 내요. 이 폼 하나만 내면 SNS 과제 완료예요.'},
     2:{name:'대본 쓰기',
       how:['우리 집 후킹 문구 5개 쓰기','그중 하나로 대본 1개 쓰기 — 후킹 → 공감 → 방법 → 마무리','영상 만들어 올리기'],
       form:'(우리집 후킹 문구 5개)\n1.\n2.\n3.\n4.\n5.\n\n(대본)\n(1) 후킹 :\n(2) 공감 :\n(3) 방법 :\n(4) 마무리 :',
@@ -470,6 +471,22 @@ function warm(){ if(API && !DEMO) fetch(API+'?action=warm&t='+Date.now()).catch(
 function cached(){ try{ return JSON.parse(localStorage.getItem('ot5pub')||'null'); }catch(e){ return null; } }
 function keep(d){ try{ localStorage.setItem('ot5pub', JSON.stringify({subs:d.subs,mvp:d.mvp,qa:d.qa,links:d.links})); }catch(e){} }
 
+const normName = v => String(v||'').replace(/[\s@]/g,'').toLowerCase();
+function rosterOf(name){
+  const n=normName(name), bare=x=>x.replace(/부부$/,'');
+  return ROSTER.find(r=>normName(r)===n) || ROSTER.find(r=>bare(normName(r))===bare(n)) || null;
+}
+function withSns(d){
+  if(!d || d._sns || !d.sns) return d;
+  d._sns=true; d.snsUnmatched=[];
+  d.sns.forEach(x=>{
+    const h=rosterOf(x.h), t=new Date(x.at).getTime();
+    const w=WEEKS.find(w=>t<=kst(w.due,true)) || WEEKS[WEEKS.length-1];
+    if(h) d.subs=(d.subs||[]).concat([{id:'sns-'+x.id, h, task:`${w.n}주차 - SNS (방향성 체크)`, at:x.at}]);
+    else d.snsUnmatched.push(x);
+  });
+  return d;
+}
 async function load(){
   if(DEMO){ DATA=demoData(); ADMIN=(getKey()||new URLSearchParams(location.search).has('admin'))?demoAdmin():null; return render(); }
   if(!API){ DATA={subs:[],mvp:[],qa:[],links:{}}; return render(); }
@@ -479,10 +496,10 @@ async function load(){
   try{
     if(k){
       const a=await getJSON(API+'?action=admin&key='+encodeURIComponent(k));
-      if(a.ok){ ADMIN=a; DATA=a; keep(a); }
-      else { setKey(''); ADMIN=null; DATA=await getJSON(API); keep(DATA); }
+      if(a.ok){ ADMIN=a; DATA=withSns(a); keep(a); }
+      else { setKey(''); ADMIN=null; DATA=withSns(await getJSON(API)); keep(DATA); }
     } else {
-      DATA=await getJSON(API); keep(DATA);
+      DATA=withSns(await getJSON(API)); keep(DATA);
     }
   }catch(e){ if(!DATA || DATA._loading) DATA=null; }
   render();
@@ -683,17 +700,18 @@ function exView(k,n){
     <div class="h1">${esc(t.name)}</div>${live}</section>`;
   h+=`<div class="exgrid"><div class="exL">`;
   h+=`<section class="sec-alt"><div class="exh"><span>1</span>이렇게 하세요</div><div class="ex flat"><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${t.link?`<div class="btns" style="max-width:260px"><a class="b" href="${esc(t.link.url)}" target="_blank" rel="noopener">${esc(t.link.label)} ›</a></div>`:''}${t.warn?`<div class="warn">⚠️ ${esc(t.warn)}</div>`:''}${t.tbd?`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`:''}</div></section>`;
-  h+=`<section class="sec"><div class="exh"><span>2</span>제출 양식</div><div class="exsub">복사해서 탈리 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div></section>`;
+  h+=`<section class="sec"><div class="exh"><span>2</span>${t.submit?'제출 방법':'제출 양식'}</div>${t.submit?'':`<div class="exsub">복사해서 탈리 '과제 내용' 칸에 붙여넣고 채우세요</div>`}<div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div></section>`;
   h+=`</div><div class="exR">`;
   if(t.ex||SHOT){
     h+=`<section class="sec-alt"><div class="exh"><span>3</span>결영이네 예시</div><div class="ex flat">${t.ex?`<pre>${esc(t.ex)}</pre>`:''}`;
     if(SHOT) h+=`<h4>모아불리 화면</h4><a href="${SHOT}" target="_blank" rel="noopener"><img class="shot" src="${SHOT}" loading="lazy" alt="모아불리 화면 예시"></a><div class="bnote" style="margin-top:4px">예시 데이터예요 · 누르면 크게 보여요</div>`;
     h+=`</div></section>`;
   }
-  const bc=bestCards(k,n);
+  const bc=t.noBest?'':bestCards(k,n);
   if(bc) h+=`<section class="sec"><div class="exh"><span>${t.ex||SHOT?4:3}</span>4기 잘한 과제</div><div class="exsub">4기 카페 글이에요 · 닉네임과 금액은 가렸어요</div><div class="ex flat">${bc}</div></section>`;
   h+=`</div></div>`;
-  h+=`<div class="exbar"><button class="b" onclick="copyTxt(document.getElementById('exForm').textContent)">양식 복사</button><a class="b fill" href="${FORM}" target="_blank" rel="noopener">과제 제출하러 가기 ›</a></div>`;
+  if(t.submit) h+=`<div class="exbar"><a class="b fill" href="${t.submit.url}" target="_blank" rel="noopener">${esc(t.submit.label)} ›</a></div>`;
+  else h+=`<div class="exbar"><button class="b" onclick="copyTxt(document.getElementById('exForm').textContent)">양식 복사</button><a class="b fill" href="${FORM}" target="_blank" rel="noopener">과제 제출하러 가기 ›</a></div>`;
   return h;
 }
 function copyTxt(txt){
@@ -826,6 +844,7 @@ function adminPanel(cw){
     ${!cw?`<div class="sub">OT 출석 안 한 부부 · ${REAL.filter(r=>!progress(r,0).live).length}</div>${REAL.filter(r=>!progress(r,0).live).map(r=>`<span class="chip">${esc(r)}</span>`).join('')||'<span class="chip ok">없어요</span>'}`:`
     <div class="sub">${wk}주차 하나도 안 낸 부부 · ${zero.length}</div>${zero.map(r=>`<span class="chip">${esc(r)}</span>`).join('')||'<span class="chip ok">없어요</span>'}
     <div class="sub">${wk}주차 덜 낸 부부 · ${part.length}</div>${part.map(r=>`<span class="chip" style="background:#FAEEDA;color:#633806">${esc(r)} ${progress(r,wk).done}/${PER}</span>`).join('')||'<span class="chip ok">없어요</span>'}`}
+    ${(DATA.snsUnmatched||[]).length?`<div class="sub">SNS 방향성 체크 · 이름 확인 필요 ${DATA.snsUnmatched.length}</div><div style="font-size:12px;color:var(--text-lt)">과제방 부부 이름과 안 맞아서 진행판에 안 잡혔어요. 시트 '방향성체크' 탭 닉네임을 부부 이름으로 고치면 잡혀요.</div>${DATA.snsUnmatched.map(x=>`<span class="chip">${esc(x.h)} · ${fmtD(x.at)}</span>`).join('')}`:''}
     <div class="sub">답 안 단 질문 · ${unans.length}</div>`;
   unans.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><div style="margin-top:4px">${esc(r.q)}</div>
     <textarea id="ans-${esc(r.id)}" placeholder="답변을 쓰면 Q&A에 닉네임 없이 올라가요"></textarea>
