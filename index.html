@@ -260,6 +260,7 @@ footer a{color:var(--text-lt);margin:0 6px}
 const API = 'https://script.google.com/macros/s/AKfycbwgd0RCjm2Zi5m0Cf7UMYvl8eWtBEbg36PRPvWEcnyjvQOkZfvLo6ZvvbD9rMYGgRHgMQ/exec';
 const FORM = 'https://tally.so/r/RG70yv';
 // OT 라이브 (10/6 화, 결영) — 과제는 없고 다시보기만
+const BOOK = {title:'부의 인문학 (20만부 기념 개정증보판)', sub:'슈퍼리치의 서재에서 찾아낸 부자의 길', url:'https://link.yes24.com/a/LdR52SPkT8'};
 const OT = {date:'10/6', title:'OT · 통장은 각자, 돈 관리는 함께', url:'https://www.youtube.com/live/BBDZVrWvAUc'};
 
 // 탈리 '부부 닉네임' 목록과 같아야 한다
@@ -570,7 +571,7 @@ function banner(){
     if(now>kst(W(1).open)) return '';
     const ok=me?progress(me,0).live:false;
     return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0"><b>OT 주 해야 할 일</b><span>1주차는 10/13(화)부터</span></span><i>${me?(ok?'1/1 ':'0/1 '):''}${open?chev(true):chev(false)}</i></button>
-      ${open?`<ul>${li('OT','OT 강의 듣기 <small style="color:var(--text-lt)">(다시보기 OK)</small>',esc(OT.url),ok,'target="_blank" rel="noopener"')}${li('출석','OT 과제 · 강의 출석 올리기','#ex/live/0',ok)}${li('독서','『부의 인문학』 준비하기','#read',false)}</ul>
+      ${open?`<ul>${li('OT','OT 강의 듣기 <small style="color:var(--text-lt)">(다시보기 OK)</small>',esc(OT.url),ok,'target="_blank" rel="noopener"')}${li('출석','OT 과제 · 강의 출석 올리기','#ex/live/0',ok)}${li('독서','『부의 인문학』 사서 준비하기 <small style="color:var(--text-lt)">(20만부 기념 개정증보판)</small>',BOOK.url,false,'target="_blank" rel="noopener"')}</ul>
       <div class="ft"><span>${me?`${esc(me)} 기준 · 낸 과제에 ✓`:'피드백 탭에서 로그인하면 낸 과제에 ✓가 떠요'}</span></div>`:''}</section>`;
   }
   if(!nextDue(now)) return '';
@@ -671,7 +672,9 @@ function fallbackCopy(txt,done){ const a=document.createElement('textarea'); a.v
 // 과정별 화면 (독서·돈관리·내집마련·SNS)
 function trackView(k){
   const tr=TRACKS[k], now=NOW(), cw=curWeek(now);
-  let h=`<section class="sec"><span class="eyebrow">과정별 바로가기</span><div class="h1">${tr.name}</div><div class="body1">${tr.desc}</div><div style="margin-top:18px">`;
+  let h=`<section class="sec"><span class="eyebrow">과정별 바로가기</span><div class="h1">${tr.name}</div><div class="body1">${tr.desc}</div>`;
+  if(k==='read') h+=`<a class="card" href="${BOOK.url}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><span class="lb">5기 책</span><div class="nm">${esc(BOOK.title)}</div><div class="ds">${esc(BOOK.sub)}</div><div style="margin-top:8px;font-size:13px;font-weight:700;color:var(--acc)">예스24에서 사기 ›</div></a>`;
+  h+=`<div style="margin-top:18px">`;
   WEEKS.forEach(w=>{
     const t=TASKS[k][w.n], id=`exT-${k}-${w.n}`, open=now>=kst(w.open), isCur=w.n===cw, [,m,d]=w.due.split('-').map(Number);
     const state=isCur?'지금 진행 중':open?'지난 주차 · 늦게 내도 돼요':`${fmtD(kst(w.open))}에 열려요`;
