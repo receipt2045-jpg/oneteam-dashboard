@@ -403,6 +403,12 @@ const LIVE_TASK = n => ({name:'라이브 출석',
   ex:'OT 강의 출석했습니다.\n생활비는 비과세라 부부간 증여에 해당하지 않는 점을 활용\n생활비 통장은 함께 쓸 예정이다.'});
 TASKS.live = {0:Object.assign(LIVE_TASK(0),{name:'OT 강의 출석',how:['OT 라이브(또는 다시보기) 보기','"OT 강의 출석했습니다" 한 줄','알게 된 점과 실천할 점 두세 줄'],form:'OT 강의 출석했습니다.\n\n알게 된 점 :\n\n실천할 점 :'}),
   1:LIVE_TASK(1), 2:LIVE_TASK(2), 3:LIVE_TASK(3), 4:LIVE_TASK(4)};
+// 탈리 과제별 칸 (10/6~). 2~4주차 돈관리·내집·SNS는 아직 '과제 내용' 한 칸이라 양식 복사 그대로
+const READ_FIELDS = ['독서 기록 — 서술형으로 자유롭게 한 칸'];
+[1,2,3,4].forEach(n=>{ TASKS.read[n].fields=READ_FIELDS; TASKS.live[n].fields=['어느 라이브를 봤나요? (화 내집마련 / 목 SNS)','알게 된 점','실천할 점']; });
+TASKS.live[0].fields=['알게 된 점','실천할 점'];
+TASKS.money[1].fields=['총자산 · 총부채 · 순자산 (선택 · 가려도 돼요)','올해 목표','10년 뒤 목표','모아불리 자산 화면 캡처 (필수)'];
+TASKS.house[1].fields=['투자 목표','비상금 계좌 (계좌 / 명의 / 매달 얼마)','목돈·잔금 계좌','노후 계좌','이번 달에 열 계좌'];
 const TRACK_OF = {'독서':'read','돈관리':'money','내집마련':'house','SNS':'sns','강의':'live','강의출석':'live'};
 
 // ─────────────────────────────────────────────────────────────
@@ -700,7 +706,7 @@ function exView(k,n){
     <div class="h1">${esc(t.name)}</div>${live}</section>`;
   h+=`<div class="exgrid"><div class="exL">`;
   h+=`<section class="sec-alt"><div class="exh"><span>1</span>이렇게 하세요</div><div class="ex flat"><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${t.link?`<div class="btns" style="max-width:260px"><a class="b" href="${esc(t.link.url)}" target="_blank" rel="noopener">${esc(t.link.label)} ›</a></div>`:''}${t.warn?`<div class="warn">⚠️ ${esc(t.warn)}</div>`:''}${t.tbd?`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`:''}</div></section>`;
-  h+=`<section class="sec"><div class="exh"><span>2</span>${t.submit?'제출 방법':'제출 양식'}</div>${t.submit?'':`<div class="exsub">복사해서 탈리 '과제 내용' 칸에 붙여넣고 채우세요</div>`}<div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div></section>`;
+  h+=`<section class="sec"><div class="exh"><span>2</span>${t.submit?'제출 방법':t.fields?'탈리에서 채울 칸':'제출 양식'}</div>${t.submit?`<div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`:t.fields?`<div class="exsub">탈리에서 이 과제를 고르면 아래 칸이 나와요</div><div class="ex flat"><ol>${t.fields.map(f=>`<li>${esc(f)}</li>`).join('')}</ol></div>`:`<div class="exsub">복사해서 탈리 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`}</section>`;
   h+=`</div><div class="exR">`;
   if(t.ex||SHOT){
     h+=`<section class="sec-alt"><div class="exh"><span>3</span>결영이네 예시</div><div class="ex flat">${t.ex?`<pre>${esc(t.ex)}</pre>`:''}`;
@@ -711,6 +717,7 @@ function exView(k,n){
   if(bc) h+=`<section class="sec"><div class="exh"><span>${t.ex||SHOT?4:3}</span>4기 잘한 과제</div><div class="exsub">4기 카페 글이에요 · 닉네임과 금액은 가렸어요</div><div class="ex flat">${bc}</div></section>`;
   h+=`</div></div>`;
   if(t.submit) h+=`<div class="exbar"><a class="b fill" href="${t.submit.url}" target="_blank" rel="noopener">${esc(t.submit.label)} ›</a></div>`;
+  else if(t.fields) h+=`<div class="exbar"><a class="b fill" href="${FORM}" target="_blank" rel="noopener">과제 제출하러 가기 ›</a></div>`;
   else h+=`<div class="exbar"><button class="b" onclick="copyTxt(document.getElementById('exForm').textContent)">양식 복사</button><a class="b fill" href="${FORM}" target="_blank" rel="noopener">과제 제출하러 가기 ›</a></div>`;
   return h;
 }
