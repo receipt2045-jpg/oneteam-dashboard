@@ -302,9 +302,9 @@ const OT = {time:'10/6(화) 밤 9시', date:'10/6', title:'OT · 통장은 각�
 
 // 탈리 '부부 닉네임' 목록과 같아야 한다
 // 멤버 화면엔 15팀으로 보인다. 실제 수강생은 REAL 7팀 — 결영님 미제출 명단은 REAL만 본다
-const ROSTER = ['라부부','송파부부','오유부부','용영','희찬부부','웇슫부부','우나비아',
+const ROSTER = ['라부부','송파부부','오유부부','용영','희찬부부','웆슨부부','우나비아',
   '뚜띠부부','토마토부부','치킨사과뿌','쥬바르','옥슈슈','보다부부','연민부부','하루에하나씩'];
-const REAL = ['오유부부','용영','희찬부부','웇슫부부','우나비아','뚜띠부부','옥슈슈'];
+const REAL = ['오유부부','용영','희찬부부','웆슨부부','우나비아','뚜띠부부','옥슈슈'];
 
 // 주차: open = 그 주 과제가 열리는 날(화요일 라이브), due = 마감(월 23:59)
 const WEEKS = [
@@ -955,9 +955,9 @@ function demoData(){
   const subs=[]; let id=0;
   const add=(h,w,k,who,body,share,q,qOk)=>subs.push({id:'d'+(++id),h,task:T(w,k),at:new Date(kst(W(w).open)+86400000*(1+id%4)).toISOString(),who,body:body||TASKS[k][w].ex||TASKS[k][w].form,shareOk:share!==false,q:q||'',qOk:!!qOk,file:'',link:k==='sns'?'https://www.threads.net/@example':''});
   ['오유부부','용영','희찬부부'].forEach((h,i)=>{ add(h,1,'read','아내'); add(h,1,'money','남편'); add(h,1,i%2?'sns':'house','아내'); });
-  ['웇슫부부','우나비아'].forEach(h=>{ add(h,1,'money','아내',null,true,'전세보증금도 자산에 넣나요?',true); add(h,1,'house','남편'); });
+  ['웆슨부부','우나비아'].forEach(h=>{ add(h,1,'money','아내',null,true,'전세보증금도 자산에 넣나요?',true); add(h,1,'house','남편'); });
   ['뚜띠부부'].forEach(h=>add(h,1,'read','둘이 같이'));
-  ['오유부부','용영','웇슫부부'].forEach(h=>add(h,1,'live','아내'));
+  ['오유부부','용영','웆슨부부'].forEach(h=>add(h,1,'live','아내'));
   add('오유부부',1,'sns','남편',null,true,'부부 얼굴이 안 나와도 되나요?',true);
   const qa=[{id:'d6',task:T(1,'money'),q:'전세보증금도 자산에 넣나요?',a:'네, 돌려받을 돈이라 자산이에요. 대출이 끼어 있으면 부채에도 같이 적어주세요.',by:'머니그랩',at:''},{id:'d18',task:T(1,'sns'),q:'부부 얼굴이 안 나와도 되나요?',a:'',by:'',at:''}];
   const mvp=[{id:'d2',h:'오유부부',who:'남편',task:T(1,'money'),quote:'숫자를 펼쳐놓고 나서야 대화가 시작되더라고요. 남편이 먼저 다음 달 예산 얘기를 꺼냈어요.',body:TASKS.money[1].ex,link:''}];
