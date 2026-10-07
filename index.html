@@ -51,8 +51,11 @@ button{font-family:inherit}
 .todo .hd i{font-style:normal;font-size:12px;font-weight:700;color:var(--acc);background:#fff;border-radius:99px;padding:3px 9px;white-space:nowrap;display:inline-flex;align-items:center;gap:2px}
 .todo .hd i svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4}
 .todo ul{list-style:none;margin-top:10px;display:grid;gap:6px}
-.todo li a{display:flex;align-items:center;gap:10px;text-decoration:none;background:#fff;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.45}
-.todo li .ck{flex-shrink:0;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--acc-lt);display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+.todo li{display:flex;align-items:center;background:#fff;border-radius:10px}
+.todo li a{flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-decoration:none;padding:10px 12px 10px 8px;font-size:13.5px;line-height:1.45;color:inherit}
+.todo li .ck{flex-shrink:0;width:22px;height:22px;margin-left:10px;border-radius:50%;border:1.5px solid var(--acc-lt);background:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;cursor:pointer;padding:0;font-family:inherit}
+.todo li .ck:hover{border-color:var(--acc)}
+.todo li .ck:disabled{cursor:default}
 .todo li.ok .ck{background:var(--acc);border-color:var(--acc)}
 .todo li.ok .tx{color:var(--mute);text-decoration:line-through}
 .todo li .k{flex-shrink:0;font-size:11px;font-weight:700;color:var(--acc);background:var(--acc-soft);border-radius:5px;padding:2px 7px}
@@ -667,28 +670,34 @@ function goReplays(){
 }
 function banner(){
   const now=NOW(), cw=curWeek(now), me=(getMine()||{}).h;
-  const li=(k,tx,href,ok,extra)=>`<li class="${ok?'ok':''}"><a href="${href}" ${extra||''}><span class="ck">${ok?'✓':''}</span><span class="k">${k}</span><span class="tx">${tx}</span><span class="go">›</span></a></li>`;
+  const mine=todoChecks(); let nDone=0, nAll=0;
+  const li=(key,k,tx,href,auto,extra)=>{ const ok=!!auto||!!mine[key]; nAll++; if(ok) nDone++;
+    return `<li class="${ok?'ok':''}"><button class="ck" ${auto?'disabled title="낸 과제라 자동으로 체크됐어요"':`onclick="toggleTodo('${key}')" title="눌러서 체크"`} aria-label="${ok?'체크됨':'체크하기'}">${ok?'✓':''}</button><a href="${href}" ${extra||''}><span class="k">${k}</span><span class="tx">${tx}</span><span class="go">›</span></a></li>`; };
   const open=bannerOpen;
   if(!cw){
     if(now>kst(W(1).open)) return '';
     const ok=me?progress(me,0).live:false;
-    return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0"><b>OT 주 해야 할 일</b><span>1주차는 10/13(화)부터</span></span><i>${me?(ok?'1/1 ':'0/1 '):''}${open?chev(true):chev(false)}</i></button>
-      ${open?`<ul>${li('OT',`OT 강의 듣기 · ${OT.time} 라이브 <small style="color:var(--text-lt)">(다시보기 OK)</small>`,esc(OT.url),ok,'target="_blank" rel="noopener"')}${li('출석','OT 과제 · 강의 출석 올리기','#ex/live/0',ok)}${li('독서','『부의 인문학』 사서 준비하기 <small style="color:var(--text-lt)">(20만부 기념 개정증보판)</small>',BOOK.url,false,'target="_blank" rel="noopener"')}</ul>
-      <div class="ft"><span>${me?`${esc(me)} 기준 · 낸 과제에 ✓`:'피드백 탭에서 로그인하면 낸 과제에 ✓가 떠요'}</span></div>`:''}</section>`;
+    const items=`${li('w0-ot','OT',`OT 강의 듣기 · ${OT.time} 라이브 <small style="color:var(--text-lt)">(다시보기 OK)</small>`,esc(OT.url),false,'target="_blank" rel="noopener"')}${li('w0-live','출석','OT 과제 · 강의 출석 올리기','#ex/live/0',ok)}${li('w0-book','독서','『부의 인문학』 사서 준비하기 <small style="color:var(--text-lt)">(20만부 기념 개정증보판)</small>',BOOK.url,false,'target="_blank" rel="noopener"')}`;
+    return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0"><b>OT 주 해야 할 일</b><span>1주차는 10/13(화)부터</span></span><i>${nDone}/${nAll} ${open?chev(true):chev(false)}</i></button>
+      ${open?`<ul>${items}</ul><div class="ft"><span>${todoNote(me)}</span></div>`:''}</section>`;
   }
   if(!nextDue(now)) return '';
   const w=W(cw), [,m,d]=w.due.split('-').map(Number), p=me?progress(me,cw):null;
   const t=k=>esc(TASKS[k][cw].name);
+  const items=`${li(`w${cw}-live`,'출석',`고른 과정 라이브 보고 한 줄 <small style="color:var(--text-lt)">(화 내집 · 목 SNS)</small>`,`#ex/live/${cw}`,p&&p.live)}
+    ${li(`w${cw}-read`,'독서',t('read'),`#ex/read/${cw}`,p&&p.read)}
+    ${li(`w${cw}-money`,'돈관리',t('money'),`#ex/money/${cw}`,p&&p.money)}
+    ${li(`w${cw}-pick`,'택1',`${t('house')} <small style="color:var(--text-lt)">내집</small> / ${t('sns')} <small style="color:var(--text-lt)">SNS</small>`,p&&p.sns&&!p.house?'#sns':'#house',p&&p.pick)}`;
   const head=`<b>${cw}주차 해야 할 일</b><span>마감 ${m}/${d}(월) 23:59</span>`;
-  const cnt=p?`${p.done}/${PER}`:'';
-  if(!open) return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${cnt?cnt+' ':''}${chev(false)}</i></button></section>`;
-  return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${cnt?cnt+' ':''}${chev(true)}</i></button><ul>
-    ${li('출석',`고른 과정 라이브 보고 한 줄 <small style="color:var(--text-lt)">(화 내집 · 목 SNS)</small>`,`#ex/live/${cw}`,p&&p.live)}
-    ${li('독서',t('read'),`#ex/read/${cw}`,p&&p.read)}
-    ${li('돈관리',t('money'),`#ex/money/${cw}`,p&&p.money)}
-    ${li('택1',`${t('house')} <small style="color:var(--text-lt)">내집</small> / ${t('sns')} <small style="color:var(--text-lt)">SNS</small>`,p&&p.sns&&!p.house?'#sns':'#house',p&&p.pick)}
-  </ul><div class="ft"><span>${me?`${esc(me)} 기준 · 낸 과제에 ✓`:'피드백 탭에서 로그인하면 낸 과제에 ✓가 떠요'}</span><a class="sb" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a></div></section>`;
+  if(!open) return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${nDone}/${nAll} ${chev(false)}</i></button></section>`;
+  return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${nDone}/${nAll} ${chev(true)}</i></button><ul>
+    ${items}
+  </ul><div class="ft"><span>${todoNote(me)}</span><a class="sb" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a></div></section>`;
 }
+// 직접 체크 — 이 기기에만 저장한다 (낸 과제는 서버 기록으로 자동 ✓)
+function todoChecks(){ try{ return JSON.parse(localStorage.getItem('ot5todo')||'{}'); }catch(e){ return {}; } }
+function toggleTodo(key){ const c=todoChecks(); c[key]=!c[key]; if(!c[key]) delete c[key]; try{ localStorage.setItem('ot5todo',JSON.stringify(c)); }catch(e){} render(); }
+const todoNote = me => me ? `동그라미를 눌러 체크해요 · ${esc(me)}가 낸 과제는 자동으로 ✓` : '동그라미를 눌러 체크해요 · 피드백 탭에서 로그인하면 낸 과제는 자동으로 ✓';
 function taskCard(k,n,label){ return `<div class="card"><span class="lb">${label}</span>${taskInner(k,n)}</div>`; }
 function taskInner(k,n){
   const t=TASKS[k][n], tr=TRACKS[k], id=`ex-${k}-${n}`;
