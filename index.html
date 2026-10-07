@@ -130,16 +130,29 @@ button{font-family:inherit}
 .wrow.lock .t,.wrow.lock .w b{color:var(--mute)}
 
 /* MVP */
-.mvp{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:16px 17px;margin-top:12px}
-.mvp .who{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--acc-lt)}
-.mvp .tag{font-size:11px;font-weight:700;color:var(--dark);background:var(--acc-lt);padding:2px 8px;border-radius:5px;white-space:nowrap}
-.mvp .tt{font-size:16.5px;font-weight:700;margin-top:7px;letter-spacing:-.03em}
-.mvp .qt{font-size:14px;line-height:1.8;color:rgba(255,255,255,.85);margin-top:6px}
-.mvp .full{display:none;white-space:pre-wrap;font-size:13.5px;line-height:1.8;color:rgba(255,255,255,.78);margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.14)}
-.mvp.open .full{display:block}
-.mvp .rd{background:none;border:0;font-size:13px;font-weight:600;color:var(--acc-lt);margin-top:10px;cursor:pointer;padding:0}
-.mvp .rd a{color:var(--acc-lt)}
-.mvp-empty{font-size:14px;line-height:1.75;color:rgba(255,255,255,.7);margin-top:10px}
+/* MVP — 밝은 바탕 흰 카드. 한 줄 요약(결영님 소개 문구 또는 첫 문장)을 크게, 본문은 칸 이름별로 나눠 접어둔다 */
+.sec-mvp{padding:32px 22px 30px;background:var(--acc-soft)}
+.mvp{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:18px 18px 16px;margin-top:14px;box-shadow:0 1px 2px rgba(27,42,78,.04)}
+.mvp .who{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;color:var(--text-lt)}
+.mvp .who b{color:var(--text);font-weight:700}
+.mvp .tag{font-size:11px;font-weight:700;color:var(--acc);background:var(--acc-soft);padding:3px 9px;border-radius:5px;white-space:nowrap}
+.mvp .tt{font-size:13px;font-weight:600;color:var(--text-lt);margin-top:10px}
+.mvp .qt{font-size:17px;font-weight:700;line-height:1.6;letter-spacing:-.025em;color:var(--acc);margin-top:6px;padding-left:12px;border-left:3px solid var(--acc)}
+.mvp .pick{font-size:11.5px;color:var(--text-lt);margin-top:6px;padding-left:15px}
+.mvp .body{position:relative;margin-top:14px;max-height:12.5em;overflow:hidden}
+.mvp .body::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3.5em;background:linear-gradient(rgba(255,255,255,0),var(--white))}
+.mvp.open .body{max-height:none}
+.mvp.open .body::after{display:none}
+.mvp .fld+.fld{margin-top:12px}
+.mvp .fld.s{display:flex;gap:12px;align-items:baseline}
+.mvp .fld.s .k{flex:0 0 6.5em;margin:0}
+.mvp .fld.s .v{font-size:14px;color:var(--text)}
+.mvp .fld.s+.fld.s{margin-top:5px}
+.mvp .fld .k{display:block;font-size:12px;font-weight:700;color:var(--acc);margin-bottom:3px}
+.mvp .fld .v{font-size:14.5px;line-height:1.8;color:var(--text-md);white-space:pre-wrap}
+.mvp .lnk{display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:var(--acc)}
+.mvp .more{margin-top:12px;padding:11px;font-size:13.5px}
+.mvp-empty{font-size:14px;line-height:1.75;color:var(--text-md);margin-top:10px}
 
 /* 부부 진행판 */
 .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:18px}
@@ -243,7 +256,7 @@ body[data-v=ex] #banner{display:none}
   footer{grid-area:foot}
   body[data-v=ex] #banner,#banner{display:block;grid-area:side;position:sticky;top:58px;padding:18px 18px 0;border-left:1px solid var(--border);min-height:calc(100vh - 58px)}
   .todo{border:0;border-radius:14px}
-  .sec,.sec-alt,.sec-dark{padding:36px 36px}
+  .sec,.sec-alt,.sec-dark,.sec-mvp{padding:36px 36px}
   /* 5기 첫 화면: MVP | 진행판 */
   .homegrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
   /* 과제 예시: 하는 법·양식 | 예시 */
@@ -518,6 +531,23 @@ async function post(body){
   return r.json();
 }
 
+// MVP 본문 나누기 — "알게 된 점 :" 같은 줄에서 새 칸이 시작된다 (주소의 https: 는 칸 이름으로 보지 않는다)
+function fieldsOf(body){
+  const out=[]; let cur={k:'',v:[]};
+  String(body||'').replace(/\r/g,'').split('\n').forEach(line=>{
+    const m=line.match(/^\s*([^:\n]{1,24}?)\s*:\s*(.*)$/);
+    if(m && !/^https?$/i.test(m[1].trim()) && !/[\/.]/.test(m[1])){ out.push(cur); cur={k:m[1].trim(),v:m[2]?[m[2]]:[]}; }
+    else cur.v.push(line);
+  });
+  out.push(cur);
+  return out.map(f=>({k:f.k,v:f.v.join('\n').replace(/\n{3,}/g,'\n\n').trim()})).filter(f=>f.v);
+}
+// 한 줄 요약 — 첫 칸의 첫 문장 (너무 길면 자른다)
+function firstLine(F){
+  const v=(F[0]&&F[0].v||'').replace(/\s+/g,' ').trim();
+  const s=(v.match(/^.+?[.!?](\s|$)|^.+?(다|요)\.?(\s|$)/)||[v])[0].trim();
+  return s.length>80?s.slice(0,78)+'…':s;
+}
 // 부부 하나의 주차별 완료 {live,read,money,pick} — 한 주 4개. 택1은 내집·SNS 중 하나만 내도 완료
 function progress(h, week){
   const mine=(DATA.subs||[]).filter(s=>s.h===h).map(s=>parseTask(s.task)).filter(Boolean).filter(t=>t.week===week);
@@ -557,16 +587,18 @@ function homeView(){
   // MVP
   const mv=(DATA.mvp||[]);
   h+=`<div class="homegrid">`;
-  h+=`<section class="sec-dark"><span class="eyebrow">★ 지난주 MVP</span><div class="h2">이번 주에 제일 잘한 과제</div>`;
+  h+=`<section class="sec-mvp"><span class="eyebrow">★ 지난주 MVP</span><div class="h2">이번 주에 제일 잘한 과제</div>`;
   if(DATA._loading) h+=`<div class="mvp-empty">불러오는 중이에요…</div>`;
   else if(!mv.length) h+=`<div class="mvp-empty">첫 MVP는 1주차 마감(10/19) 뒤에 여기에 올라와요.<br>과제를 낼 때 공유 동의를 O로 해 주시면 MVP 후보가 돼요.</div>`;
   mv.forEach((m,i)=>{
     const t=parseTask(m.task), tn=t?TRACKS[t.track].name:'과제', task=t&&TASKS[t.track][t.week]?TASKS[t.track][t.week].name:m.task;
-    const quote=m.quote||String(m.body||'').split('\n').filter(Boolean).slice(0,2).join(' ');
-    h+=`<div class="mvp" id="mvp${i}"><div class="who"><span class="tag">${t?wkName(t.week)+' · ':''}${esc(tn)}</span><span>${esc(m.h)}${m.who?' · '+esc(m.who):''}</span></div>
-      <div class="tt">${esc(task)}</div><div class="qt">"${esc(quote)}"</div>
-      <div class="full">${esc(m.body)}${m.link?`\n\n<a href="${esc(m.link)}" target="_blank" rel="noopener" style="color:var(--acc-lt)">게시물 보기 ›</a>`:''}</div>
-      <button class="rd" onclick="this.parentNode.classList.toggle('open');this.textContent=this.parentNode.classList.contains('open')?'접기 ▴':'전체 읽기 ▾'">전체 읽기 ▾</button></div>`;
+    const F=fieldsOf(m.body), quote=m.quote||firstLine(F);
+    const long=String(m.body||'').length>160;
+    h+=`<div class="mvp${long?'':' open'}" id="mvp${i}"><div class="who"><span class="tag">${t?wkName(t.week)+' · ':''}${esc(tn)}${task&&String(task).indexOf(tn)<0?' · '+esc(task):''}</span><span><b>${esc(m.h)}</b>${m.who?' · '+esc(m.who):''}</span></div>
+      <div class="qt" style="margin-top:12px">${esc(quote)}</div>${m.quote?`<div class="pick">결영님이 고른 한마디</div>`:''}
+      <div class="body">${F.map(f=>`<div class="fld${f.k&&f.v.length<=24&&f.v.indexOf(String.fromCharCode(10))<0?' s':''}">${f.k?`<span class="k">${esc(f.k)}</span>`:''}<div class="v">${esc(f.v)}</div></div>`).join('')}</div>
+      ${m.link?`<a class="lnk" href="${esc(m.link)}" target="_blank" rel="noopener">게시물 보기 ›</a>`:''}
+      ${long?`<button class="more" onclick="const c=this.parentNode;c.classList.toggle('open');this.innerHTML=c.classList.contains('open')?'접기 '+chev(true):'전체 읽기 '+chev(false)">전체 읽기 ${chev(false)}</button>`:''}</div>`;
   });
   h+=`</section>`;
   // 진행판
@@ -962,7 +994,8 @@ function demoData(){
   ['오유부부','용영','웆슫부부'].forEach(h=>add(h,1,'live','아내'));
   add('오유부부',1,'sns','남편',null,true,'부부 얼굴이 안 나와도 되나요?',true);
   const qa=[{id:'d6',task:T(1,'money'),q:'전세보증금도 자산에 넣나요?',a:'네, 돌려받을 돈이라 자산이에요. 대출이 끼어 있으면 부채에도 같이 적어주세요.',by:'머니그랩',at:''},{id:'d18',task:T(1,'sns'),q:'부부 얼굴이 안 나와도 되나요?',a:'',by:'',at:''}];
-  const mvp=[{id:'d2',h:'오유부부',who:'남편',task:T(1,'money'),quote:'숫자를 펼쳐놓고 나서야 대화가 시작되더라고요. 남편이 먼저 다음 달 예산 얘기를 꺼냈어요.',body:TASKS.money[1].ex,link:''}];
+  const mvp=[{id:'d2',h:'오유부부',who:'남편',task:'OT - 강의 출석',quote:'',body:'알게 된 점 :\n부부 사이 증여는 10년에 6억까지 세금이 없다는 걸 처음 알았어요. 생활비로 쓰는 돈은 증여로 보지 않는다는 것도요.\n\n통장을 합치라는 이유가 돈이 불어나는 걸 둘이 바로 보려는 거였는데, 가계부로 같이 보면 굳이 합치지 않아도 되겠다 싶었어요.\n\n실천할 점 :\n이번 주 안에 생활비 통장 하나만 같이 쓰고, 투자는 각자 계좌로 나누기로 했어요. 주말에 모아불리에 자산부터 입력해 볼게요.',link:''},
+    {id:'d5',h:'용영',who:'아내',task:T(1,'money'),quote:'숫자를 펼쳐놓고 나서야 대화가 시작되더라고요.',body:TASKS.money[1].ex,link:''}];
   return {subs,qa,mvp,links:{'1|내집마련':'https://youtu.be/example'},rows:subs.map(s=>Object.assign({},s,{answer:s.id==='d6'?'네, 자산이에요':'',isMvp:s.id==='d2'}))};
 }
 function demoAdmin(){ DATA.rows.forEach((r,i)=>{ if(i%3===0) r.draft='(초안) 고정비를 이렇게 펼쳐보신 것만으로도 절반은 하신 거예요. 저희도 통신비부터 줄였어요.'; if(i%4===1){ r.feedback='잘 하셨어요!'; r.feedbackBy='결영'; } }); return DATA; }
