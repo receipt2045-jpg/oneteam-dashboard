@@ -508,16 +508,19 @@ function withSns(d){
   });
   return d;
 }
+function adminCached(){ try{ const c=JSON.parse(sessionStorage.getItem('ot5adminData')||'null'); return c?withSns(c):null; }catch(e){ return null; } }
+function keepAdmin(a){ try{ sessionStorage.setItem('ot5adminData', JSON.stringify(a)); }catch(e){} }
 async function load(){
   if(DEMO){ DATA=demoData(); ADMIN=(getKey()||new URLSearchParams(location.search).has('admin'))?demoAdmin():null; return render(); }
   if(!API){ DATA={subs:[],mvp:[],qa:[],links:{}}; return render(); }
   const k=getKey();
   // 처음 오는 사람도 빈 화면 대신 과제·일정은 바로 보이게 (현황 숫자만 나중에 채운다)
   if(!DATA){ const c=cached(); DATA=(c && !k)?c:{subs:[],mvp:[],qa:[],links:{},_loading:true}; render(); }
+  if(k && !ADMIN){ const ca=adminCached(); if(ca){ ADMIN=ca; DATA=ca; render(); } }
   try{
     if(k){
       const a=await getJSON(API+'?action=admin&key='+encodeURIComponent(k));
-      if(a.ok){ ADMIN=a; DATA=withSns(a); keep(a); }
+      if(a.ok){ keepAdmin(a); ADMIN=a; DATA=withSns(a); keep(a); }
       else { setKey(''); ADMIN=null; DATA=withSns(await getJSON(API)); keep(DATA); }
     } else {
       DATA=withSns(await getJSON(API)); keep(DATA);
@@ -953,7 +956,7 @@ async function saveLink(btn){
   btn.disabled=true; const r=await post({op:'link',week:+document.getElementById('lkW').value,track:document.getElementById('lkT').value,url}); btn.disabled=false;
   r.ok?(toast('링크를 저장했어요'),load()):toast('저장하지 못했어요');
 }
-function logout(){ setKey(''); ADMIN=null; openDetail=null; load(); }
+function logout(){ setKey(''); try{ sessionStorage.removeItem('ot5adminData'); }catch(e){} ADMIN=null; openDetail=null; load(); }
 // 운영진 로그인 — 페이지 안 화면 (prompt는 카톡 안 브라우저에서 안 뜰 수 있다)
 let adminBusy=false, adminErr='';
 function adminLogin(){
