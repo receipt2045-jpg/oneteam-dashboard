@@ -890,7 +890,8 @@ function adminPanel(cw){
       return `<div class="sub">보낸 피드백 · 읽음 ${sent.length-un.length} / ${sent.length}</div>${Object.keys(by).length?`<div style="font-size:12px;color:var(--text-lt)">아직 안 읽은 부부 — 피드백 탭에 로그인하면 읽음으로 바뀌어요</div>`+Object.keys(by).map(h=>`<span class="chip">${esc(h)}${by[h]>1?' '+by[h]:''}</span>`).join(''):'<span class="chip ok">모두 읽었어요</span>'}`; })()}
     <div class="sub">답 안 단 질문 · ${unans.length}</div>`;
   unans.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><div style="margin-top:4px">${esc(r.q)}</div>
-    <textarea id="ans-${esc(r.id)}" placeholder="답변을 쓰면 Q&A에 닉네임 없이 올라가요"></textarea>
+    ${r.answerDraft?`<div style="font-size:11.5px;color:var(--warn);margin-top:6px">AI 답변 초안이에요. Q&A에 닉네임 없이 공개되니 고쳐서 저장해주세요</div>`:''}
+    <textarea id="ans-${esc(r.id)}" placeholder="답변을 쓰면 Q&A에 닉네임 없이 올라가요">${esc(r.answerDraft||'')}</textarea>
     <div class="row2"><select id="by-${esc(r.id)}"><option>머니그랩</option><option>결영</option></select><button class="sbtn" onclick="saveAnswer('${esc(r.id)}',this)">저장</button></div></div>`; });
   // 피드백 — 초안기가 넣은 초안이 미리 채워져 있다. 고쳐서 보내면 그 부부 '피드백' 탭에 뜬다
   const waitFb=rows.filter(r=>!r.feedback).sort((a,b)=>new Date(a.at)-new Date(b.at));
