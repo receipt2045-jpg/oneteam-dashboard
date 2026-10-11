@@ -696,8 +696,25 @@ function banner(){
 }
 // 직접 체크 — 이 기기에만 저장한다 (낸 과제는 서버 기록으로 자동 ✓)
 function todoChecks(){ try{ return JSON.parse(localStorage.getItem('ot5todo')||'{}'); }catch(e){ return {}; } }
-function toggleTodo(key){ const c=todoChecks(); c[key]=!c[key]; if(!c[key]) delete c[key]; try{ localStorage.setItem('ot5todo',JSON.stringify(c)); }catch(e){} render(); }
-const todoNote = me => me ? `동그라미를 눌러 체크해요 · ${esc(me)}가 낸 과제는 자동으로 ✓` : '동그라미를 눌러 체크해요 · 피드백 탭에서 로그인하면 낸 과제는 자동으로 ✓';
+function setChecks(c){ try{ localStorage.setItem('ot5todo',JSON.stringify(c)); }catch(e){} }
+function toggleTodo(key){ const c=todoChecks(); c[key]=!c[key]; if(!c[key]) delete c[key]; setChecks(c); render(); pushChecks(); }
+// 피드백 탭에 로그인한 부부는 체크를 과제방 시트에 저장해 다른 기기와 맞춘다 (서버가 기준)
+let pushT;
+function pushChecks(){
+  const m=getMine(); if(!m || !API || DEMO) return;
+  clearTimeout(pushT);
+  pushT=setTimeout(()=>{ post({op:'check',h:m.h,code:m.code,checks:todoChecks()}).catch(()=>{}); },700);
+}
+async function pullChecks(){
+  const m=getMine(); if(!m || !API || DEMO) return;
+  try{
+    const r=await getJSON(API+'?action=checks&h='+encodeURIComponent(m.h)+'&code='+encodeURIComponent(m.code));
+    if(!r.ok) return;
+    if(r.at){ setChecks(r.checks||{}); render(); }      // 저장된 게 있으면 서버 것으로
+    else if(Object.keys(todoChecks()).length) pushChecks();   // 처음이면 이 기기 체크를 올린다
+  }catch(e){}
+}
+const todoNote = me => me ? `동그라미를 눌러 체크해요 · ${esc(me)} 체크는 다른 기기에서도 똑같이 보여요 · 낸 과제는 자동 ✓` : '동그라미를 눌러 체크해요 · 피드백 탭에서 로그인하면 다른 기기에서도 보이고, 낸 과제는 자동으로 ✓';
 function taskCard(k,n,label){ return `<div class="card"><span class="lb">${label}</span>${taskInner(k,n)}</div>`; }
 function taskInner(k,n){
   const t=TASKS[k][n], tr=TRACKS[k], id=`ex-${k}-${n}`;
@@ -829,7 +846,7 @@ async function openMine(h,code,quiet){
   mineBusy=true; mineErr=''; if(!quiet) render();
   try{
     const r = (API && !DEMO) ? await getJSON(API+'?action=mine&h='+encodeURIComponent(h)+'&code='+encodeURIComponent(code)) : demoMine(h);
-    if(r.ok){ MINE=r; setMine({h,code}); keepMineData(r); }
+    if(r.ok){ MINE=r; setMine({h,code}); keepMineData(r); pullChecks(); }
     else { MINE=null; setMine(null); mineIdDraft=h; mineErr=MINE_ERR[r.error]||'다시 해 주세요.'; }
   }catch(e){ if(!quiet) mineErr='불러오지 못했어요. 잠시 뒤에 다시 해 주세요.'; }
   mineBusy=false; if(view==='mine') render();
@@ -1018,6 +1035,7 @@ window.addEventListener('hashchange',()=>{ render(); window.scrollTo(0,0); });
 tick(); setInterval(tick,1000);
 warm();
 load();
+pullChecks();
 </script>
 </body>
 </html>
