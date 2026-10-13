@@ -376,10 +376,10 @@ const TASKS = {
   },
   house:{
     1:{name:'우리집 투자설계',
-      how:['우리 집 돈을 목적 3개로 나누기 — 비상금 / 목돈·잔금 / 노후','목적마다 어느 계좌에 넣을지 정하기 (ISA·연금저축·IRP·파킹통장 등)','누구 명의로, 매달 얼마씩 넣을지 둘이 합의하기','아직 없는 계좌는 이번 달에 열기'],
+      how:['우리 집 돈을 목적 3개로 나누기 — 비상금 / 목돈·잔금 / 노후','목적마다 어느 계좌에 넣을지 정하기 (ISA·연금저축·IRP·파킹통장 등)','누구 명의로, 매달 얼마씩 넣을지 둘이 합의하기','아직 없는 계좌는 이번에 만들기'],
       form:'목표 :\n\n[비상금] 계좌 : / 명의 : / 매달 :\n[목돈·잔금] 계좌 : / 명의 : / 매달 :\n[노후] 계좌 : / 명의 : / 매달 :\n\n이번 달에 열 계좌 :',
       ex:'목표 : 2030년까지 잔금 O억 모으기\n\n[비상금] 파킹통장 / 공동 / 매달 OO만원\n[목돈·잔금] ISA / 남편 매달 OO만원, 아내 매달 OO만원\n[노후] 연금저축펀드 OO만원, IRP OO만원 / 각자\n\n이번 달에 열 계좌 : 아내 IRP\n\n질문 : ISA 만기 후 연금계좌 이전은 어떻게 하나요?',
-      warn:'계좌 잔액, ETF·상품 이름, 수익률은 쓰지 말아주세요. 어떤 상품이 좋은지는 저희가 답해드릴 수 없는 영역이에요.'},
+      warn:['노후 계좌는 내집마련과 갈아타기 이후에 고려하는 게 좋아요.','주식 종목 특정 상품을 추천해드릴 수는 없어요.']},
     2:{name:'대출 계획',
       how:['부부 합산 소득으로 대출 한도 조회하기 (앱 무료 조회, 신용점수 영향 없어요)','디딤돌·보금자리론 같은 정책대출 대상인지 확인하기','각자 "매달 낼 수 있는 돈"을 따로 적고 우리 선 맞추기','가진 돈 + 대출로 매수 가능 예산 계산하기'],
       form:'[대출 한도 조회 결과]\n대출 한도 :\n대출 기간·상환 방식 :\n월 상환액 :\n\n각자 적은 월 상환선 → 맞춘 우리 선 :\n정책대출 대상 :\n매수 가능 예산 :\n\n(조회 결과 화면 캡처 첨부)',
@@ -755,10 +755,12 @@ function example(k,n,id){
   const SHOT={'money|1':'img/moabuli-asset-tab.png','money|2':'img/moabuli-monthly.png','money|4':'img/moabuli-roadmap.png'}[k+'|'+n];
   if(SHOT) h+=`<h4>모아불리 화면 예시</h4><a href="${SHOT}" target="_blank" rel="noopener"><img class="shot" src="${SHOT}" loading="lazy" alt="모아불리 화면 예시"></a><div class="bnote" style="margin-top:4px">누르면 크게 보여요</div>`;
   h+=bestOf(k,n);
-  if(t.warn) h+=`<div class="warn">⚠️ ${esc(t.warn)}</div>`;
+  if(t.warn) h+=`<div class="warn">⚠️ ${warnTx(t.warn)}</div>`;
   if(t.tbd) h+=`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`;
   return h+`<button class="more" onclick="toggleEx('${id}')">접기 ${chev(true)}</button></div>`;
 }
+// 주의 문구 — 여러 줄이면 번호를 붙여 줄바꿈
+const warnTx=w=>Array.isArray(w)?w.map((x,i)=>`${i+1}. ${esc(x)}`).join("<br>"):esc(w);
 // 과제 예시 페이지 — 1 이렇게 하세요 → 2 제출 양식 → 3 결영이네 예시 → 4 4기 잘한 과제, 아래에 제출 버튼
 function exView(k,n){
   const t=TASKS[k]&&TASKS[k][n];
@@ -772,7 +774,7 @@ function exView(k,n){
     <span class="eyebrow">${wkName(n)} · ${esc(tr.name)}${due?` · 마감 ${due[1]}/${due[2]}(월) 23:59`:''}</span>
     <div class="h1">${esc(t.name)}</div>${live}</section>`;
   h+=`<div class="exgrid"><div class="exL">`;
-  h+=`<section class="sec-alt"><div class="exh"><span>1</span>이렇게 하세요</div><div class="ex flat"><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${t.link?`<div class="btns" style="max-width:260px"><a class="b" href="${esc(t.link.url)}" target="_blank" rel="noopener">${esc(t.link.label)} ›</a></div>`:''}${t.warn?`<div class="warn">⚠️ ${esc(t.warn)}</div>`:''}${t.tbd?`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`:''}</div></section>`;
+  h+=`<section class="sec-alt"><div class="exh"><span>1</span>이렇게 하세요</div><div class="ex flat"><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${t.link?`<div class="btns" style="max-width:260px"><a class="b" href="${esc(t.link.url)}" target="_blank" rel="noopener">${esc(t.link.label)} ›</a></div>`:''}${t.warn?`<div class="warn">⚠️ ${warnTx(t.warn)}</div>`:''}${t.tbd?`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`:''}</div></section>`;
   h+=`<section class="sec"><div class="exh"><span>2</span>${t.submit?'제출 방법':t.fields?'제출할 때 채울 칸':'제출 양식'}</div>${t.submit?`<div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`:t.fields?`<div class="exsub">'과제 제출하러 가기'에서 이 과제를 고르면 아래 칸이 나와요</div><div class="ex flat"><ol>${t.fields.map(f=>`<li>${esc(f)}</li>`).join('')}</ol></div>`:`<div class="exsub">복사해서 제출 페이지 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`}</section>`;
   h+=`</div><div class="exR">`;
   if(t.ex||SHOT){
