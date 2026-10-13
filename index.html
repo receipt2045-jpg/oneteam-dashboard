@@ -356,11 +356,11 @@ const TASKS = {
   // 돈관리·내집마련·SNS 예시는 4기 카페에 결영이네가 직접 올린 글 (4기_운영/카페_과제안내_원문_4기.md)
   //   자산·부채·소득·저축·대출 금액은 가렸다. 지출 항목 금액만 남겼다.
   money:{
+    // 10/13 결영: 금액 칸(총자산·총부채·순자산)은 캡처와 겹치고 가리면 'O억'만 남아 어색 → 캡처 + 둘이 나눈 이야기
     1:{name:'자산 점검',
-      link:{label:'모아불리 열기', url:'https://moabuli.com'},
-      how:['모아불리(moabuli.com) 자산 탭 → \'등록·수정\'에서 우리 부부 자산과 부채 입력하기','수입(월급 실수령·성과급·부업) / 현금성(파킹통장·예적금·청약) / 주식 / 부동산(시세·보증금, 대출) / 연금·보험(해약환급금·퇴직연금)','합쳐서 순자산 보고, 올해 목표와 10년 뒤 목표 적기'],
-      form:'총자산 :\n총부채 :\n순자산 :\n\n올해 목표 :\n10년 뒤 목표 :\n\n(모아불리 자산 화면 캡처 첨부)',
-      ex:'총자산 : O억\n총부채 : O억 O천\n순자산 : O억 O천\n\n올해 목표 : 1억 모으기\n10년 뒤 목표 : 총자산 OO억 달성\n\n질문 : 주식을 현재 평가금액으로 쓰면 될까요?'},
+      link:{label:'모아불리 열기', url:'https://moabuli.com'}, noBest:true,
+      how:['모아불리(moabuli.com) 자산 탭 → \'등록·수정\'에서 각자 자기 자산과 부채 입력하기','수입(월급 실수령·성과급·부업) / 현금성(파킹통장·예적금·청약) / 주식 / 부동산(시세·보증금, 대출) / 연금·보험(해약환급금·퇴직연금)','\'함께\' 화면으로 우리 집 전체를 둘이 같이 보면서 이야기 나누기 — 처음 알게 된 것, 놀랐던 것, 앞으로 이렇게 하자고 정한 것','이야기하면서 든 생각을 적고, 모아불리 화면을 캡처해서 내기'],
+      form:'부부가 함께 보며 나눈 이야기 :\n(처음 알게 된 것, 놀랐던 것, 앞으로 이렇게 하자고 정한 것)\n\n(모아불리 자산 화면 캡처 첨부)'},
     2:{name:'고정·변동비 점검',
       how:['부부 각자 카드 내역 3개월치 훑기 (한 달만 보면 분기·연 결제가 안 잡혀요)','매달 똑같이 나가는 고정비를 항목별로 적기','고정비를 뺀 나머지(식비·쇼핑·생활용품)를 지난달 변동비로 적기'],
       form:'[고정비]\n· 주거비 :\n· 보험 :\n· 통신비 :\n· 구독료 :\n─ 고정비 합계 :\n\n[변동비 · 지난달]\n· 식비 :\n· 쇼핑 :\n· 생활용품 :\n─ 변동비 합계 :\n\n(모아불리 화면 캡처 첨부)',
@@ -425,7 +425,7 @@ TASKS.live = {0:Object.assign(LIVE_TASK(0),{name:'OT 강의 출석',how:['OT 라
 const READ_FIELDS = ['독서 기록 — 서술형으로 자유롭게 한 칸'];
 [1,2,3,4].forEach(n=>{ TASKS.read[n].fields=READ_FIELDS; TASKS.live[n].fields=['어느 라이브를 봤나요? (화 내집마련 / 목 SNS)','알게 된 점','실천할 점']; });
 TASKS.live[0].fields=['알게 된 점','실천할 점'];
-TASKS.money[1].fields=['총자산 · 총부채 · 순자산 (선택 · 가려도 돼요)','올해 목표','10년 뒤 목표','모아불리 자산 화면 캡처 (필수)'];
+TASKS.money[1].fields=['부부가 함께 보며 나눈 이야기 — 처음 알게 된 것, 놀랐던 것, 앞으로 정한 것을 자유롭게','모아불리 자산 화면 캡처 (필수 · 금액은 가려도 돼요)'];
 TASKS.house[1].fields=['투자 목표','비상금 계좌 (계좌 / 명의 / 매달 얼마)','목돈·잔금 계좌','노후 계좌','이번 달에 열 계좌'];
 const TRACK_OF = {'독서':'read','돈관리':'money','내집마련':'house','SNS':'sns','강의':'live','강의출석':'live'};
 
@@ -749,7 +749,7 @@ function example(k,n,id){
   if(t.ex) h+=`<h4>결영이네 예시</h4><pre>${esc(t.ex)}</pre>`;
   // 모아불리 화면 — 예시 데이터로 찍은 캡처(실제 금액 아님). 누르면 전체 크기
   const SHOT={'money|1':'img/moabuli-asset-tab.png','money|2':'img/moabuli-monthly.png','money|4':'img/moabuli-roadmap.png'}[k+'|'+n];
-  if(SHOT) h+=`<h4>모아불리 화면 예시</h4><a href="${SHOT}" target="_blank" rel="noopener"><img class="shot" src="${SHOT}" loading="lazy" alt="모아불리 화면 예시"></a><div class="bnote" style="margin-top:4px">예시 데이터예요 · 누르면 크게 보여요</div>`;
+  if(SHOT) h+=`<h4>모아불리 화면 예시</h4><a href="${SHOT}" target="_blank" rel="noopener"><img class="shot" src="${SHOT}" loading="lazy" alt="모아불리 화면 예시"></a><div class="bnote" style="margin-top:4px">누르면 크게 보여요</div>`;
   h+=bestOf(k,n);
   if(t.warn) h+=`<div class="warn">⚠️ ${esc(t.warn)}</div>`;
   if(t.tbd) h+=`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`;
@@ -773,7 +773,7 @@ function exView(k,n){
   h+=`</div><div class="exR">`;
   if(t.ex||SHOT){
     h+=`<section class="sec-alt"><div class="exh"><span>3</span>결영이네 예시</div><div class="ex flat">${t.ex?`<pre>${esc(t.ex)}</pre>`:''}`;
-    if(SHOT) h+=`<h4>모아불리 화면</h4><a href="${SHOT}" target="_blank" rel="noopener"><img class="shot" src="${SHOT}" loading="lazy" alt="모아불리 화면 예시"></a><div class="bnote" style="margin-top:4px">예시 데이터예요 · 누르면 크게 보여요</div>`;
+    if(SHOT) h+=`<h4>모아불리 화면</h4><a href="${SHOT}" target="_blank" rel="noopener"><img class="shot" src="${SHOT}" loading="lazy" alt="모아불리 화면 예시"></a><div class="bnote" style="margin-top:4px">누르면 크게 보여요</div>`;
     h+=`</div></section>`;
   }
   const bc=t.noBest?'':bestCards(k,n);
