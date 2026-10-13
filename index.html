@@ -687,7 +687,11 @@ function banner(){
   const items=`${li(`w${cw}-live`,'출석',`고른 과정 라이브 보고 한 줄 <small style="color:var(--text-lt)">(화 내집 · 목 SNS)</small>`,`#ex/live/${cw}`,p&&p.live)}
     ${li(`w${cw}-read`,'독서',t('read'),`#ex/read/${cw}`,p&&p.read)}
     ${li(`w${cw}-money`,'돈관리',t('money'),`#ex/money/${cw}`,p&&p.money)}
-    ${li(`w${cw}-pick`,'택1',`${t('house')} <small style="color:var(--text-lt)">내집</small> / ${t('sns')} <small style="color:var(--text-lt)">SNS</small>`,p&&p.sns&&!p.house?'#sns':'#house',p&&p.pick)}`;
+    ${li(`w${cw}-house`,'내집',`${t('house')} <small style="color:var(--text-lt)">(SNS와 둘 중 하나)</small>`,`#ex/house/${cw}`,p&&p.house)}
+    ${li(`w${cw}-sns`,'SNS',`${t('sns')} <small style="color:var(--text-lt)">(내집과 둘 중 하나)</small>`,`#ex/sns/${cw}`,p&&p.sns)}`;
+  // 내집·SNS는 둘 중 하나만 하면 되니 개수는 한 칸으로 센다 (4개 기준)
+  const hOk=!!(p&&p.house)||!!mine[`w${cw}-house`], sOk=!!(p&&p.sns)||!!mine[`w${cw}-sns`];
+  nAll--; if(hOk&&sOk) nDone--;
   const head=`<b>${cw}주차 해야 할 일</b><span>마감 ${m}/${d}(월) 23:59</span>`;
   if(!open) return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${nDone}/${nAll} ${chev(false)}</i></button></section>`;
   return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${nDone}/${nAll} ${chev(true)}</i></button><ul>
