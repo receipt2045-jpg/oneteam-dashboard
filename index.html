@@ -624,7 +624,8 @@ function board(cw){
   // 이번 주 / 전체
   const rows=ROSTER.map(r=>{
     if(boardMode==='week'){ const p=progress(r,cw); return {h:r,done:p.done,total:PER}; }
-    let d=0; for(let w=1;w<=cw;w++) d+=progress(r,w).done; return {h:r,done:d,total:cw*PER};
+    // 전체 = OT 출석 1개 + 1주차부터 한 주 4개
+    let d=progress(r,0).live?1:0; for(let w=1;w<=cw;w++) d+=progress(r,w).done; return {h:r,done:d,total:1+cw*PER};
   }).sort((a,b)=>b.done-a.done||ROSTER.indexOf(a.h)-ROSTER.indexOf(b.h));
   const wk=ROSTER.map(r=>progress(r,cw));
   const sum=wk.reduce((a,p)=>a+p.done,0), full=wk.filter(p=>p.done===PER).length;
@@ -632,7 +633,7 @@ function board(cw){
   const shown=boardAll?rows:rows.slice(0,8);
   let h=`<span class="eyebrow">5기 ${n}부부${DATA._loading?' · 불러오는 중…':''}</span><div class="h2">${cw}주차, <span class="hl">다들 여기까지</span> 왔어요</div>
     <div class="stats"><div><b>${Math.round(sum/(n*PER)*100)}%</b><span>이번 주 달성</span></div><div><b>${full}</b><span>다 한 부부</span></div><div><b>${hs} · ${sn}</b><span>내집 · SNS</span></div></div>
-    <div class="seg"><button class="${boardMode==='week'?'on':''}" onclick="boardMode='week';render()">이번 주</button><button class="${boardMode==='all'?'on':''}" onclick="boardMode='all';render()">${cw>1?'1~'+cw+'주 전체':'전체'}</button></div>
+    <div class="seg"><button class="${boardMode==='week'?'on':''}" onclick="boardMode='week';render()">이번 주</button><button class="${boardMode==='all'?'on':''}" onclick="boardMode='all';render()">${cw>1?'OT~'+cw+'주 전체':'OT 포함 전체'}</button></div>
     <div style="margin-top:12px">`;
   shown.forEach(r=>{
     const c=choiceOf(r.h), w=r.total?Math.round(r.done/r.total*100):0;
