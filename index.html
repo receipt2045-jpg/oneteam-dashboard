@@ -44,6 +44,24 @@ button{font-family:inherit}
 
 .sec{padding:32px 22px;background:var(--white)}
 /* 이번 주 해야 할 일 배너 — 모든 화면 맨 위 */
+.newfile{display:flex;align-items:center;gap:6px;background:#FDF1F5;border-bottom:1px solid #F4D3DE;padding:10px 14px 10px 20px}
+.newfile a{flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.newfile .ic{font-size:20px;flex-shrink:0}
+.newfile .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.newfile b{font-size:13.5px;font-weight:700;color:#A3284F;letter-spacing:-.02em}
+.newfile small{font-size:12px;color:#B4536F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.newfile .go{flex-shrink:0;font-size:13px;font-weight:700;color:#A3284F}
+.newfile button{flex-shrink:0;background:none;border:0;color:#B4536F;font-size:14px;cursor:pointer;padding:6px}
+.files{margin-top:16px;display:grid;gap:10px}
+.fl{display:flex;align-items:center;gap:14px;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px;text-decoration:none;color:inherit}
+.fl:hover{border-color:var(--acc-lt)}
+.fl .ic{flex-shrink:0;width:42px;height:54px;border-radius:6px;background:var(--acc-soft);color:var(--acc);font-size:11px;font-weight:800;display:grid;place-items:center}
+.fl .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.fl b{font-size:15px;font-weight:700;letter-spacing:-.02em;line-height:1.4}
+.fl b i{font-style:normal;font-size:10px;font-weight:800;color:#fff;background:#E5487A;border-radius:4px;padding:1px 5px;vertical-align:2px;margin-left:2px}
+.fl small{font-size:12.5px;color:var(--text-md);line-height:1.5}
+.fl small.m{color:var(--text-lt);font-size:11.5px}
+.fl .dl{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--bg);display:grid;place-items:center;color:var(--acc);font-weight:700}
 .todo{background:var(--acc-soft);border-bottom:1px solid var(--border);padding:14px 20px 16px}
 .todo .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:none;border:0;cursor:pointer;text-align:left;color:var(--text);padding:0}
 .todo .hd b{font-size:15px;font-weight:700;letter-spacing:-.03em}
@@ -296,6 +314,7 @@ body[data-v=ex] #banner{display:none}
       <a href="#money" data-v="money">돈관리</a>
       <a href="#house" data-v="house">내집마련</a>
       <a href="#sns" data-v="sns">SNS</a>
+      <a href="#files" data-v="files">자료실</a>
       <a href="#qa" data-v="qa">Q&amp;A</a>
     </nav>
   </div>
@@ -592,15 +611,15 @@ function choiceOf(h){
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
   const v=(location.hash||'#home').slice(1), exm=v.match(/^ex\/(read|money|house|sns|live)\/(\d)$/);
-  view=exm?'ex':['home','read','money','house','sns','qa','mine','admin'].includes(v)?v:'home';
+  view=exm?'ex':['home','read','money','house','sns','qa','files','mine','admin'].includes(v)?v:'home';
   const tab=exm?(exm[1]==='live'?'home':exm[1]):view;
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
   document.body.dataset.v=view; document.body.dataset.admin=ADMIN?'1':'';
-  const bn=document.getElementById('banner'); if(bn) bn.innerHTML=DATA?banner():'';
+  const bn=document.getElementById('banner'); if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
   const el=document.getElementById('view');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
-  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
+  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
 }
 
 // 5기 (첫 화면): MVP → 부부 진행판
@@ -847,6 +866,33 @@ function trackView(k){
 }
 
 // Q&A
+// 자료실 — PDF는 이 저장소 files/ 에 올리고 여기 한 줄 추가. 맨 위(가장 최근)가 새 자료 배너로 뜬다
+const FILES = [
+  {id:'profile-link', title:'프로필 링크 제대로 시작하기', desc:'리틀리로 5분 만에 만들고 사람들이 누르게 꾸미는 법까지', track:'sns', date:'2026-10-16', pages:10, file:'files/profile-link.pdf', name:'프로필링크_제대로_시작하기.pdf'}
+];
+const FILE_NEW_DAYS = 14;
+const fileIsNew = f => (NOW()-kst(f.date))/864e5 < FILE_NEW_DAYS;
+function filesView(){
+  let h=`<section class="sec-alt"><span class="eyebrow">자료실</span><div class="h1">받아가세요</div>
+    <div class="body1">강의·과제에 쓰는 자료를 여기 모아둬요. 누르면 PDF가 열려요.</div><div class="files">`;
+  if(!FILES.length) h+=`<div class="empty">아직 올라온 자료가 없어요</div>`;
+  FILES.forEach(f=>{
+    const tr=TRACKS[f.track], [,m,d]=f.date.split('-').map(Number);
+    h+=`<a class="fl" href="${esc(f.file)}" target="_blank" rel="noopener" download="${esc(f.name||'')}">
+      <span class="ic">PDF</span>
+      <span class="tx"><b>${esc(f.title)}${fileIsNew(f)?' <i>NEW</i>':''}</b><small>${esc(f.desc)}</small><small class="m">${tr?esc(tr.name)+' · ':''}${m}/${d}${f.pages?' · '+f.pages+'쪽':''}</small></span>
+      <span class="dl" aria-hidden="true">↓</span></a>`;
+  });
+  return h+`</div></section>`;
+}
+// 새 자료 배너 — 모든 화면 맨 위. X를 누르면 그 기기에선 그 자료로는 다시 안 뜬다
+function filesBanner(){
+  const f=FILES[0]; if(!f || !fileIsNew(f) || view==='files') return '';
+  try{ if(localStorage.getItem('ot5file_seen')===f.id) return ''; }catch(e){}
+  return `<div class="newfile"><a href="#files" onclick="seenFile()"><span class="ic">🎁</span><span class="tx"><b>새 자료 · ${esc(f.title)}</b><small>${esc(f.desc)}</small></span><span class="go">받기 ›</span></a><button onclick="seenFile();render()" aria-label="닫기">✕</button></div>`;
+}
+function seenFile(){ try{ localStorage.setItem('ot5file_seen',FILES[0].id); }catch(e){} }
+
 function qaView(){
   const list=DATA.qa||[];
   let h=`<section class="sec-alt"><span class="eyebrow">Q&amp;A</span><div class="h1">물어봐 주신 것들</div>
