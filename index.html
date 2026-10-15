@@ -868,7 +868,10 @@ function trackView(k){
 // Q&A
 // 자료실 — PDF는 이 저장소 files/ 에 올리고 여기 한 줄 추가. 맨 위(가장 최근)가 새 자료 배너로 뜬다
 const FILES = [
-  {id:'profile-link', title:'프로필 링크 제대로 시작하기', desc:'리틀리로 5분 만에 만들고 사람들이 누르게 꾸미는 법까지', track:'sns', date:'2026-10-16', pages:9, file:'files/profile-link.pdf?v=2', name:'프로필링크_제대로_시작하기.pdf'}
+  {id:'profile-link', title:'프로필 링크 제대로 시작하기', desc:'리틀리로 5분 만에 만들고 사람들이 누르게 꾸미는 법까지', track:'sns', date:'2026-10-16', pages:9, file:'files/profile-link.pdf?v=2', name:'프로필링크_제대로_시작하기.pdf'},
+  {id:'books', title:'둘이서 함께하는 부의 첫걸음', desc:'경제책 입문 18선과 추천 유튜브 채널 (부자 마인드·주식·부동산)', track:'read', date:'2026-10-16', pages:8, file:'files/books.pdf', name:'부의첫걸음_책목록.pdf'},
+  {id:'glossary-stock', title:'주식·ETF 용어집', desc:'투자가 처음인 부부를 위한 핵심 용어 34', track:'house', date:'2026-10-16', pages:4, file:'files/glossary-stock.pdf', name:'주식ETF_용어집.pdf'},
+  {id:'glossary-realestate', title:'부동산·청약 용어집', desc:'신혼집·내집마련을 준비하는 부부 필수 용어', track:'house', date:'2026-10-16', pages:3, file:'files/glossary-realestate.pdf', name:'부동산청약_용어집.pdf'}
 ];
 const FILE_NEW_DAYS = 14;
 const fileIsNew = f => (NOW()-kst(f.date))/864e5 < FILE_NEW_DAYS;
