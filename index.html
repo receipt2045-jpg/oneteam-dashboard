@@ -972,15 +972,26 @@ async function reqFb(ids,btn){
   if(r.ok){ toast(ids.length>1?`${ids.length}개 초안을 요청했어요`:'초안을 요청했어요'); load(); }
   else { btn.disabled=false; btn.textContent=old; toast('요청하지 못했어요. 다시 해 주세요'); }
 }
-async function sendFb(id,btn){
-  const text=document.getElementById('fb-'+id).value.trim(); if(!text) return toast('피드백을 먼저 써 주세요');
-  btn.disabled=true; const r=await post({op:'feedback',id,text,who:document.getElementById('fbby-'+id).value}); btn.disabled=false;
-  r.ok?(toast('피드백을 보냈어요'),load()):toast('보내지 못했어요. 다시 해 주세요');
+// 보내기·저장은 화면부터 바로 바꾸고 서버 저장은 뒤에서 한다 (Apps Script가 몇 초 걸려 답답하다는 결영 피드백, 10/16)
+// 실패하면 원래대로 되돌리고 쓴 글은 그대로 살려 둔다
+async function optimistic(id,patch,body,okMsg,failMsg){
+  const row=(ADMIN&&ADMIN.rows||[]).find(r=>r.id===id); if(!row) return;
+  const old={}; Object.keys(patch).forEach(k=>old[k]=row[k]);
+  Object.assign(row,patch); keepAdmin(ADMIN); render(); toast(okMsg);
+  let r; try{ r=await post(body); }catch(e){ r={ok:false}; }
+  if(r&&r.ok) return;
+  Object.keys(old).forEach(k=>{ if(!/draft/i.test(k)) row[k]=old[k]; });  // 초안 칸엔 방금 쓴 글이 남는다
+  keepAdmin(ADMIN); render(); toast(failMsg);
 }
-async function saveAnswer(id,btn){
+function sendFb(id){
+  const text=document.getElementById('fb-'+id).value.trim(); if(!text) return toast('피드백을 먼저 써 주세요');
+  const who=document.getElementById('fbby-'+id).value;
+  optimistic(id,{feedback:text,feedbackBy:who,draft:text},{op:'feedback',id,text,who},'피드백을 보냈어요','보내지 못했어요. 다시 해 주세요');
+}
+function saveAnswer(id){
   const text=document.getElementById('ans-'+id).value.trim(); if(!text) return toast('답변을 먼저 써 주세요');
-  btn.disabled=true; const r=await post({op:'answer',id,text,who:document.getElementById('by-'+id).value}); btn.disabled=false;
-  r.ok?(toast('답변을 저장했어요'),load()):toast('저장하지 못했어요. 다시 해 주세요');
+  const who=document.getElementById('by-'+id).value;
+  optimistic(id,{answer:text,answerBy:who,answerDraft:text},{op:'answer',id,text,who},'답변을 저장했어요','저장하지 못했어요. 다시 해 주세요');
 }
 async function setMvp(id,btn){ btn.disabled=true; const r=await post({op:'mvp',id,quote:document.getElementById('q-'+id).value.trim()}); r.ok?(toast('MVP로 올렸어요'),load()):(btn.disabled=false,toast('저장하지 못했어요')); }
 async function unMvp(id,btn){ btn.disabled=true; const r=await post({op:'unmvp',id}); r.ok?(toast('MVP에서 내렸어요'),load()):(btn.disabled=false,toast('저장하지 못했어요')); }
