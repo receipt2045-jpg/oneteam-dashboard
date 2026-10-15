@@ -152,7 +152,8 @@ button{font-family:inherit}
 .mvp .fld.s .v{font-size:14px;color:var(--text)}
 .mvp .fld.s+.fld.s{margin-top:5px}
 .mvp .fld .k{display:block;font-size:12px;font-weight:700;color:var(--acc);margin-bottom:3px}
-.mvp .fld .v{font-size:14.5px;line-height:1.8;color:var(--text-md);white-space:pre-wrap}
+.mvp .fld .v{font-size:14.5px;line-height:1.75;color:var(--text-md);word-break:keep-all;overflow-wrap:anywhere}
+.mvp .fld .v p+p{margin-top:8px}
 .mvp .lnk{display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:var(--acc)}
 .mvp .more{margin-top:12px;padding:11px;font-size:13.5px}
 .mvp-empty{font-size:14px;line-height:1.75;color:var(--text-md);margin-top:10px}
@@ -552,6 +553,20 @@ function fieldsOf(body){
   return out.map(f=>({k:f.k,v:f.v.join('\n').replace(/\n{3,}/g,'\n\n').trim()})).filter(f=>f.v);
 }
 // 한 줄 요약 — 첫 칸의 첫 문장 (너무 길면 자른다)
+const META_K=/어떤 강의|어느 라이브/;
+// 본문 → 문단 HTML. 빈 줄은 문단 사이 짧은 간격으로, 문장 중간에 끊긴 줄(폰에서 친 줄바꿈)은 이어 붙인다.
+// 목록(- · 1.)이나 짧은 줄은 그대로 줄을 바꾼다
+function parasHtml(v){
+  return String(v||'').split(/\n\s*\n/).map(p=>{
+    const L=p.split('\n').map(s=>s.trim()).filter(Boolean); let out='';
+    L.forEach((s,j)=>{
+      if(!j){ out=esc(s); return; }
+      const prev=L[j-1], soft=prev.length>=20 && !/[.!?…~)」"'”:]$|[다요음함죠네]$/.test(prev) && !/^([-•·*▶✔︎✓]|\d+[.)])/.test(s);
+      out+=(soft?' ':'<br>')+esc(s);
+    });
+    return `<p>${out}</p>`;
+  }).join('');
+}
 function firstLine(F){
   const v=(F[0]&&F[0].v||'').replace(/\s+/g,' ').trim();
   const s=(v.match(/^.+?[.!?](\s|$)|^.+?(다|요)\.?(\s|$)/)||[v])[0].trim();
@@ -601,11 +616,14 @@ function homeView(){
   else if(!mv.length) h+=`<div class="mvp-empty">첫 MVP는 1주차 마감(10/19) 뒤에 여기에 올라와요.<br>과제를 낼 때 공유 동의를 O로 해 주시면 MVP 후보가 돼요.</div>`;
   mv.forEach((m,i)=>{
     const t=parseTask(m.task), tn=t?TRACKS[t.track].name:'과제', task=t&&TASKS[t.track][t.week]?TASKS[t.track][t.week].name:m.task;
-    const F=fieldsOf(m.body), quote=m.quote||firstLine(F);
+    // '어떤 강의를 들었나요?' 같은 짧은 안내 칸은 본문·인용에서 빼고 태그 뒤에 붙인다
+    const all=fieldsOf(m.body), meta=all.filter(f=>META_K.test(f.k)), F=all.filter(f=>!META_K.test(f.k));
+    const quote=m.quote||firstLine(F);
     const long=String(m.body||'').length>160;
-    h+=`<div class="mvp${long?'':' open'}" id="mvp${i}"><div class="who"><span class="tag">${t?wkName(t.week)+' · ':''}${esc(tn)}${task&&String(task).indexOf(tn)<0?' · '+esc(task):''}</span><span><b>${esc(m.h)}</b>${m.who?' · '+esc(m.who):''}</span></div>
+    const tagTx=`${t?wkName(t.week)+' · ':''}${tn}${t&&t.track!=='live'&&task&&String(task).indexOf(tn)<0?' · '+task:''}${meta.length?' · '+meta[0].v:''}`;
+    h+=`<div class="mvp${long?'':' open'}" id="mvp${i}"><div class="who"><span class="tag">${esc(tagTx)}</span><span><b>${esc(m.h)}</b>${m.who?' · '+esc(m.who):''}</span></div>
       <div class="qt" style="margin-top:12px">${esc(quote)}</div>${m.quote?`<div class="pick">결영님이 고른 한마디</div>`:''}
-      <div class="body">${F.map(f=>`<div class="fld${f.k&&f.v.length<=24&&f.v.indexOf(String.fromCharCode(10))<0?' s':''}">${f.k?`<span class="k">${esc(f.k)}</span>`:''}<div class="v">${esc(f.v)}</div></div>`).join('')}</div>
+      <div class="body">${F.map(f=>`<div class="fld${f.k&&f.v.length<=24&&f.v.indexOf(String.fromCharCode(10))<0?' s':''}">${f.k?`<span class="k">${esc(f.k)}</span>`:''}<div class="v">${parasHtml(f.v)}</div></div>`).join('')}</div>
       ${m.link?`<a class="lnk" href="${esc(m.link)}" target="_blank" rel="noopener">게시물 보기 ›</a>`:''}
       ${long?`<button class="more" onclick="const c=this.parentNode;c.classList.toggle('open');this.innerHTML=c.classList.contains('open')?'접기 '+chev(true):'전체 읽기 '+chev(false)">전체 읽기 ${chev(false)}</button>`:''}</div>`;
   });
