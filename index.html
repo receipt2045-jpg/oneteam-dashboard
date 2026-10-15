@@ -223,6 +223,9 @@ button{font-family:inherit}
 .chip.ok{background:var(--acc-soft);color:var(--acc)}
 .aq{background:#fff;border:1px solid var(--warn-line);border-radius:10px;padding:11px 12px;margin-top:8px;font-size:13px}
 .aq .m{font-size:11.5px;color:var(--text-lt)}
+.aq.sent{background:var(--bg);border-color:var(--border);opacity:.75}
+.aq.sent .m b{color:var(--acc);font-weight:600;margin-left:4px}
+.aq.sent pre{white-space:pre-wrap;font-family:inherit;margin-top:6px;color:var(--text-md);max-height:4.8em;overflow:hidden}
 .aq textarea,.aq input,.admin input,.admin select{width:100%;font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:8px;padding:8px 9px;margin-top:6px;background:#fff}
 .aq textarea{min-height:64px;resize:vertical}
 .row2{display:flex;gap:6px;margin-top:6px;align-items:center}
@@ -932,7 +935,7 @@ function adminPanel(cw){
   // 피드백 — 초안기가 넣은 초안이 미리 채워져 있다. 고쳐서 보내면 그 부부 '피드백' 탭에 뜬다
   const waitFb=rows.filter(r=>!r.feedback).sort((a,b)=>new Date(a.at)-new Date(b.at));
   const nDraft=waitFb.filter(r=>r.draft).length;
-  h+=`<div class="sub">피드백 기다리는 과제 · ${waitFb.length}${nDraft?` (초안 ${nDraft})`:''}</div><div style="font-size:12px;color:var(--text-lt);line-height:1.6">새로 들어온 과제는 매일 매일 오전 10시에 결영님 PC의 Claude가 3·4기 실제 피드백과 수정 규칙으로 초안을 채워둬요(PC와 Claude 앱이 켜져 있을 때). 급하면 Claude에게 '초안 써줘'라고 하세요.</div>`;
+  h+=`<div class="sub">피드백 기다리는 과제 · ${waitFb.length}${nDraft?` (초안 ${nDraft})`:''}</div><div style="font-size:12px;color:var(--text-lt);line-height:1.6">새로 들어온 과제는 매일 오전 10시에 결영님 PC의 Claude가 3·4기 실제 피드백과 수정 규칙으로 초안을 채워둬요(PC와 Claude 앱이 켜져 있을 때). 급하면 Claude에게 '초안 써줘'라고 하세요.</div>`;
   waitFb.slice(0,fbShowAll?999:6).forEach(r=>{
     const files=r.file?String(r.file).split(/[\s,]+/).filter(u=>/^https?:/.test(u)).map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener" style="font-size:12px;color:var(--acc)">캡처 ${i+1} ›</a> `).join(''):'';
     h+=`<div class="aq fbq"><div class="fbL"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div>
@@ -942,6 +945,15 @@ function adminPanel(cw){
     <div class="row2">${r.draft||r.requested?`<button class="sbtn ghost" onclick="reqFb(['${esc(r.id)}'],this)" ${r.requested?'disabled':''}>${r.requested?'요청됨':'초안 다시 요청'}</button>`:''}<select id="fbby-${esc(r.id)}"><option>결영</option><option>머니그랩</option></select><button class="sbtn" onclick="sendFb('${esc(r.id)}',this)">보내기</button></div></div></div>`;
   });
   if(waitFb.length>6) h+=`<button class="more" onclick="fbShowAll=!fbShowAll;render()">${fbShowAll?`접기 ${chev(true)}`:`${waitFb.length-6}개 더 보기 ${chev(false)}`}</button>`;
+  // 보낸 피드백 — 사라지지 않고 아래에 줄 그어 남긴다 (최근 보낸 순, 10/16 결영 요청)
+  const sentFb=rows.filter(r=>r.feedback).sort((a,b)=>new Date(b.feedbackAt||0)-new Date(a.feedbackAt||0));
+  if(sentFb.length){
+    h+=`<div class="sub" style="margin-top:18px">보낸 피드백 · ${sentFb.length}</div>`;
+    sentFb.slice(0,fbSentAll?999:3).forEach(r=>{
+      h+=`<div class="aq sent"><div class="m"><s>${esc(r.h)} · ${esc(r.task)}</s> <b>✓ 보냄${r.feedbackAt?' '+fmtD(r.feedbackAt):''} · ${r.readAt?'읽음':'안 읽음'}</b></div><pre>${esc(r.feedback)}</pre></div>`;
+    });
+    if(sentFb.length>3) h+=`<button class="more" onclick="fbSentAll=!fbSentAll;render()">${fbSentAll?`접기 ${chev(true)}`:`보낸 피드백 ${sentFb.length-3}개 더 보기 ${chev(false)}`}</button>`;
+  }
   h+=`<div class="sub">MVP 후보 (공유 동의 O) · ${cand.length}</div>`;
   if(!cand.length) h+=`<div style="font-size:12.5px;color:var(--text-lt)">아직 없어요</div>`;
   cand.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><pre style="white-space:pre-wrap;font-family:inherit;margin-top:4px;color:var(--text-md)">${esc(String(r.body).slice(0,220))}${String(r.body).length>220?'…':''}</pre>
@@ -963,7 +975,7 @@ function detailOf(h){
     ${r.q?`<pre><b>질문</b> ${esc(r.q)}${r.answer?`\n<b>답</b> ${esc(r.answer)}`:''}</pre>`:''}
     ${r.feedback?`<pre><b>보낸 피드백 (${esc(r.feedbackBy)}) · ${r.readAt?'읽음 '+fmtD(r.readAt):'안 읽음'}</b> ${esc(r.feedback)}</pre>`:''}</div>`).join('')}</div>`;
 }
-let fbShowAll=false;
+let fbShowAll=false, fbSentAll=false;
 const PC = () => window.matchMedia && matchMedia('(min-width:960px)').matches;
 // 초안 다시 요청 — 시트에 요청 시각만 적는다. 새 과제는 요청 없이도 Claude 앱 예약 작업(매일 10:00)이 fb_drafts.py --check 로 보고 채운다
 async function reqFb(ids,btn){
@@ -986,7 +998,7 @@ async function optimistic(id,patch,body,okMsg,failMsg){
 function sendFb(id){
   const text=document.getElementById('fb-'+id).value.trim(); if(!text) return toast('피드백을 먼저 써 주세요');
   const who=document.getElementById('fbby-'+id).value;
-  optimistic(id,{feedback:text,feedbackBy:who,draft:text},{op:'feedback',id,text,who},'피드백을 보냈어요','보내지 못했어요. 다시 해 주세요');
+  optimistic(id,{feedback:text,feedbackBy:who,feedbackAt:new Date().toISOString(),draft:text},{op:'feedback',id,text,who},'피드백을 보냈어요','보내지 못했어요. 다시 해 주세요');
 }
 function saveAnswer(id){
   const text=document.getElementById('ans-'+id).value.trim(); if(!text) return toast('답변을 먼저 써 주세요');
