@@ -943,7 +943,7 @@ function getMine(){ try{ return JSON.parse(localStorage.getItem('ot5mine')||sess
 function setMine(v){ try{ localStorage.removeItem('ot5mine'); sessionStorage.removeItem('ot5mine'); localStorage.removeItem('ot5mineData'); if(v) (mineKeep?localStorage:sessionStorage).setItem('ot5mine',JSON.stringify(v)); }catch(e){} }
 function keepMineData(r){ try{ if(mineKeep && getMine()) localStorage.setItem('ot5mineData',JSON.stringify(r)); }catch(e){} }
 function cachedMine(h){ try{ const c=JSON.parse(localStorage.getItem('ot5mineData')||'null'); return c&&c.h===h?c:null; }catch(e){ return null; } }
-const MINE_ERR={code:'비밀번호가 맞지 않아요. 부부 중 한 분의 휴대폰 번호 뒷자리 4개예요.',nocode:'아직 비밀번호가 등록되지 않았어요. 결영이네에 알려주세요.',locked:'여러 번 틀려서 잠깐 막혔어요. 10분 뒤에 다시 해 주세요.'};
+const MINE_ERR={code:'비밀번호가 맞지 않아요. 부부 중 한 분의 휴대폰 번호 뒷자리 4개예요.',nocode:'아직 비밀번호가 등록되지 않았어요. 결영이네에 알려주세요.',locked:'여러 번 틀려서 잠깐 막혔어요. 1시간 뒤에 다시 해 주세요.'};
 // 입구에서 로그인 — 과제방 데이터 하나만 받는다 (비밀번호 확인도 이 요청이 한다). 피드백은 피드백 탭을 열 때 받는다 (10/18, 로그인 느림)
 async function enterHub(h,code){
   mineBusy=true; mineErr=''; render();
