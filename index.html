@@ -944,10 +944,24 @@ function setMine(v){ try{ localStorage.removeItem('ot5mine'); sessionStorage.rem
 function keepMineData(r){ try{ if(mineKeep && getMine()) localStorage.setItem('ot5mineData',JSON.stringify(r)); }catch(e){} }
 function cachedMine(h){ try{ const c=JSON.parse(localStorage.getItem('ot5mineData')||'null'); return c&&c.h===h?c:null; }catch(e){ return null; } }
 const MINE_ERR={code:'비밀번호가 맞지 않아요. 부부 중 한 분의 휴대폰 번호 뒷자리 4개예요.',nocode:'아직 비밀번호가 등록되지 않았어요. 결영이네에 알려주세요.',locked:'여러 번 틀려서 잠깐 막혔어요. 10분 뒤에 다시 해 주세요.'};
+// 입구에서 로그인 — 과제방 데이터 하나만 받는다 (비밀번호 확인도 이 요청이 한다). 피드백은 피드백 탭을 열 때 받는다 (10/18, 로그인 느림)
+async function enterHub(h,code){
+  mineBusy=true; mineErr=''; render();
+  try{
+    const r=await getJSON(API+'?h='+encodeURIComponent(h)+'&code='+encodeURIComponent(code));
+    if(r.ok){ setMine({h,code}); keep(r); keepLinks(r.links); DATA=withSns(r); mineBusy=false; pullChecks(); if(location.hash==='#home') render(); else location.hash='#home'; return; }
+    mineIdDraft=h; mineErr=MINE_ERR[r.error]||'다시 해 주세요.';
+  }catch(e){ mineErr='불러오지 못했어요. 잠시 뒤에 다시 해 주세요.'; }
+  mineBusy=false; render();
+}
+let mineGen=0;   // 로그아웃하면 올라간다 — 로그아웃 전에 보낸 요청이 늦게 와도 다시 로그인되지 않게
 async function openMine(h,code,quiet){
+  if(isLocked()) return enterHub(h,code);
+  const gen=mineGen;
   mineBusy=true; mineErr=''; if(!quiet) render();
   try{
     const r = (API && !DEMO) ? await getJSON(API+'?action=mine&h='+encodeURIComponent(h)+'&code='+encodeURIComponent(code)) : demoMine(h);
+    if(gen!==mineGen) return;
     if(r.ok){ const wasOut=!DATA||isLocked(); MINE=r; setMine({h,code}); keepMineData(r); keepLinks(r.links); pullChecks(); if(wasOut){ mineBusy=false; if(view==='mine'||view==='home') location.hash='#home'; return load(); } }
     else { MINE=null; setMine(null); keepLinks(null); mineIdDraft=h; mineErr=MINE_ERR[r.error]||'다시 해 주세요.'; }
   }catch(e){ if(!quiet) mineErr='불러오지 못했어요. 잠시 뒤에 다시 해 주세요.'; }
@@ -972,7 +986,7 @@ function gateView(){
     `<span class="eyebrow">원팀 프로젝트 5기</span><div class="h1">5기 부부만<br><span class="hl">들어올 수 있어요</span></div><div class="body1" style="margin-top:8px">아이디는 과제 낼 때 고르는 부부 이름, 비밀번호는 휴대폰 번호 뒷자리 4개예요. 한 번 로그인하면 이 기기에선 계속 열려요.</div>`)
     + `<div style="text-align:center;margin:-6px 0 30px"><a href="#admin" style="font-size:12px;color:var(--text-lt)">운영진</a></div>`;
 }
-function leaveMine(){ MINE=null; mineErr=''; mineIdDraft=''; setMine(null); keepLinks(null); clearPub(); DATA=null; render(); }
+function leaveMine(){ mineGen++; MINE=null; mineErr=''; mineIdDraft=''; setMine(null); keepLinks(null); clearPub(); DATA=null; render(); }
 function mineView(){
   if(!MINE){
     const saved=getMine();
