@@ -62,6 +62,7 @@ button{font-family:inherit}
 .fl small{font-size:12.5px;color:var(--text-md);line-height:1.5}
 .fl small.m{color:var(--text-lt);font-size:11.5px}
 .fl .dl{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--bg);display:grid;place-items:center;color:var(--acc);font-weight:700}
+body[data-locked="1"] #menu,body[data-locked="1"] footer{display:none}
 .todo{background:var(--acc-soft);border-bottom:1px solid var(--border);padding:14px 20px 16px}
 .todo .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:none;border:0;cursor:pointer;text-align:left;color:var(--text);padding:0}
 .todo .hd b{font-size:15px;font-weight:700;letter-spacing:-.03em}
@@ -337,7 +338,7 @@ const FORM = 'https://tally.so/r/RG70yv';
 // OT 라이브 (10/6 화, 결영) — 과제는 없고 다시보기만
 const SNS_FORM = 'https://tally.so/r/aQXK9B';  // SNS 1주차 방향성 체크 폼 (결영님 레포트용)
 const BOOK = {title:'부의 인문학 (20만부 기념 개정증보판)', sub:'슈퍼리치의 서재에서 찾아낸 부자의 길', url:'https://link.yes24.com/a/LdR52SPkT8'};
-const OT = {time:'10/6(화) 밤 9시', date:'10/6', title:'OT · 통장은 각자, 돈 관리는 함께', url:'https://www.youtube.com/live/BBDZVrWvAUc'};
+const OT = {time:'10/6(화) 밤 9시', date:'10/6', title:'OT · 통장은 각자, 돈 관리는 함께'};
 
 // 탈리 '부부 닉네임' 목록과 같아야 한다
 // 멤버 화면엔 15팀으로 보인다. 실제 수강생은 REAL 7팀 — 결영님 미제출 명단은 REAL만 본다
@@ -498,6 +499,14 @@ function setKey(k){ try{ k?sessionStorage.setItem('ot5key',k):sessionStorage.rem
 
 // Apps Script는 쉬다 깨어날 때 15~40초 걸리고 가끔 404(HTML)를 준다.
 //   → 6초 안에 답이 없으면 같은 요청을 하나 더 보내고(최대 3개), 먼저 온 JSON을 쓴다.
+// 부부 로그인으로 과제방 데이터 받기 — 비밀번호가 틀렸거나 막혔으면 로그아웃하고 입구로
+async function loadMineData(m){
+  const r=await getJSON(API+'?h='+encodeURIComponent(m.h)+'&code='+encodeURIComponent(m.code));
+  if(r.ok){ keep(r); keepLinks(r.links); return withSns(r); }
+  setMine(null); keepLinks(null); clearPub(); mineErr=MINE_ERR[r.error]||'다시 로그인해 주세요.';
+  return null;
+}
+function clearPub(){ try{ localStorage.removeItem('ot5pub'); }catch(e){} }
 function getJSON(url){
   return new Promise((resolve,reject)=>{
     let done=false, running=0, sent=0;
@@ -516,7 +525,15 @@ function getJSON(url){
 function warm(){ if(API && !DEMO) fetch(API+'?action=warm&t='+Date.now()).catch(()=>{}); }
 // 지난번 받은 공개 데이터를 먼저 보여주고, 새 데이터가 오면 바꿔 그린다 (이 기기에만 저장)
 function cached(){ try{ return JSON.parse(localStorage.getItem('ot5pub')||'null'); }catch(e){ return null; } }
-function keep(d){ try{ localStorage.setItem('ot5pub', JSON.stringify({subs:d.subs,mvp:d.mvp,qa:d.qa,links:d.links})); }catch(e){} }
+function keep(d){ try{ localStorage.setItem('ot5pub', JSON.stringify({subs:d.subs,mvp:d.mvp,qa:d.qa,files:d.files})); }catch(e){} }
+// 강의 다시보기 링크 — 공개 데이터엔 없다. 로그인한 부부(피드백 탭 비밀번호)와 결영님 화면에서만 받는다 (10/18, 결제 안 한 사람이 못 보게)
+function liveLinks(){
+  if(DATA && DATA.links && Object.keys(DATA.links).length) return DATA.links;
+  try{ return JSON.parse(localStorage.getItem('ot5links')||sessionStorage.getItem('ot5links')||'null')||{}; }catch(e){ return {}; }
+}
+function keepLinks(l){ try{ localStorage.removeItem('ot5links'); sessionStorage.removeItem('ot5links'); if(l && getMine()) (mineKeep?localStorage:sessionStorage).setItem('ot5links',JSON.stringify(l)); }catch(e){} }
+const hasLinks = () => !!liveLinks()['0|OT'];
+const lockedLive = '<a class="b off" href="#mine" style="text-decoration:none">🔒 로그인하면 다시보기가 보여요</a>';
 
 const normName = v => String(v||'').replace(/[\s@]/g,'').toLowerCase();
 function rosterOf(name){
@@ -539,17 +556,19 @@ function keepAdmin(a){ try{ sessionStorage.setItem('ot5adminData', JSON.stringif
 async function load(){
   if(DEMO){ DATA=demoData(); ADMIN=(getKey()||new URLSearchParams(location.search).has('admin'))?demoAdmin():null; return render(); }
   if(!API){ DATA={subs:[],mvp:[],qa:[],links:{}}; return render(); }
-  const k=getKey();
-  // 처음 오는 사람도 빈 화면 대신 과제·일정은 바로 보이게 (현황 숫자만 나중에 채운다)
+  const k=getKey(), m=getMine();
+  // 과제방은 로그인해야 들어온다 (10/18~). 로그인 전이면 입구 화면만
+  if(!k && !m){ DATA=null; return render(); }
+  // 전에 로그인한 기기면 지난 데이터를 먼저 보여주고 새 데이터는 뒤에서 받는다
   if(!DATA){ const c=cached(); DATA=(c && !k)?c:{subs:[],mvp:[],qa:[],links:{},_loading:true}; render(); }
   if(k && !ADMIN){ const ca=adminCached(); if(ca){ ADMIN=ca; DATA=ca; render(); } }
   try{
     if(k){
       const a=await getJSON(API+'?action=admin&key='+encodeURIComponent(k));
       if(a.ok){ keepAdmin(a); ADMIN=a; DATA=withSns(a); keep(a); }
-      else { setKey(''); ADMIN=null; DATA=withSns(await getJSON(API)); keep(DATA); }
+      else { setKey(''); ADMIN=null; if(m) DATA=await loadMineData(m); else { DATA=null; return render(); } }
     } else {
-      DATA=withSns(await getJSON(API)); keep(DATA);
+      DATA=await loadMineData(m);
     }
   }catch(e){ if(!DATA || DATA._loading) DATA=null; }
   render();
@@ -616,8 +635,11 @@ function render(){
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
   document.body.dataset.v=view; document.body.dataset.admin=ADMIN?'1':'';
-  const bn=document.getElementById('banner'); if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
-  const el=document.getElementById('view');
+  const bn=document.getElementById('banner'), el=document.getElementById('view');
+  const locked=isLocked() && view!=='admin';
+  document.body.dataset.locked=locked?'1':'';
+  if(locked){ if(bn) bn.innerHTML=''; el.innerHTML=gateView(); return; }
+  if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
   el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
 }
@@ -688,7 +710,7 @@ function board(cw){
 
 // 라이브 다시보기 목록 — OT + 링크가 들어온 주차 라이브
 function replays(){
-  const L=DATA.links||{}, out=[{d:OT.date, day:'화', t:OT.title, url:OT.url}];
+  const L=liveLinks(), out=[{d:OT.date, day:'화', t:OT.title, url:L['0|OT']}];
   WEEKS.forEach(w=>{
     ['내집마련','SNS'].forEach(tr=>{
       const u=L[w.n+'|'+tr]; if(!u) return;
@@ -696,6 +718,10 @@ function replays(){
       out.push({d:tr==='SNS'?w.thu:w.tue, day:TRACKS[k].live, t:`${w.n}주차 ${tr} · ${TASKS[k][w.n].name}`, url:u});
     });
   });
+  if(!hasLinks()) return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div>
+    <div class="body1" style="margin-top:10px">다시보기는 5기 부부만 볼 수 있어요. 피드백 탭에서 한 번 로그인하면 여기에 강의 목록이 떠요.</div>
+    <a class="btn" href="#mine" style="margin-top:14px">로그인하고 다시보기 보기</a>
+    <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',curWeek(NOW()),'ex-live')}</div></section>`;
   return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
     out.map(r=>`<a class="replay" href="${esc(r.url)}" target="_blank" rel="noopener"><span class="d">${r.day}<b>${r.d}</b></span><span class="t">${esc(r.t)}</span><span class="go">▶ 보기</span></a>`).join('')+
     `</div><div class="note" style="text-align:left">녹화본은 한 달간 볼 수 있어요.</div>
@@ -718,7 +744,7 @@ function banner(){
   if(!cw){
     if(now>kst(W(1).open)) return '';
     const ok=me?progress(me,0).live:false;
-    const items=`${li('w0-ot','OT',`OT 강의 듣기 · ${OT.time} 라이브 <small style="color:var(--text-lt)">(다시보기 OK)</small>`,esc(OT.url),false,'target="_blank" rel="noopener"')}${li('w0-live','출석','OT 과제 · 강의 출석 올리기','#ex/live/0',ok)}${li('w0-book','독서','『부의 인문학』 사서 준비하기 <small style="color:var(--text-lt)">(20만부 기념 개정증보판)</small>',BOOK.url,false,'target="_blank" rel="noopener"')}`;
+    const items=`${li('w0-ot','OT',`OT 강의 듣기 · ${OT.time} 라이브 <small style="color:var(--text-lt)">(${hasLinks()?'다시보기 OK':'로그인하면 다시보기'})</small>`,hasLinks()?esc(liveLinks()['0|OT']):'#mine',false,hasLinks()?'target="_blank" rel="noopener"':'')}${li('w0-live','출석','OT 과제 · 강의 출석 올리기','#ex/live/0',ok)}${li('w0-book','독서','『부의 인문학』 사서 준비하기 <small style="color:var(--text-lt)">(20만부 기념 개정증보판)</small>',BOOK.url,false,'target="_blank" rel="noopener"')}`;
     return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0"><b>OT 주 해야 할 일</b><span>1주차는 10/13(화)부터</span></span><i>${nDone}/${nAll} ${open?chev(true):chev(false)}</i></button>
       ${open?`<ul>${items}</ul><div class="ft"><span>${todoNote(me)}</span></div>`:''}</section>`;
   }
@@ -755,6 +781,7 @@ async function pullChecks(){
   try{
     const r=await getJSON(API+'?action=checks&h='+encodeURIComponent(m.h)+'&code='+encodeURIComponent(m.code));
     if(!r.ok) return;
+    if(r.links){ const had=hasLinks(); keepLinks(r.links); if(!had) render(); }
     if(r.at){ setChecks(r.checks||{}); render(); }      // 저장된 게 있으면 서버 것으로
     else if(Object.keys(todoChecks()).length) pushChecks();   // 처음이면 이 기기 체크를 올린다
   }catch(e){}
@@ -770,8 +797,9 @@ function buttons(k,n,id){
   const tr=TRACKS[k], w=W(n), now=NOW();
   let live='';
   if(tr.live){
-    const day=tr.live==='화'?w.tue:w.thu, url=(DATA.links||{})[n+'|'+tr.name];
+    const day=tr.live==='화'?w.tue:w.thu, url=liveLinks()[n+'|'+tr.name];
     live = url ? `<a class="b" href="${esc(url)}" target="_blank" rel="noopener">▶ ${tr.live} ${day} 라이브</a>`
+               : (!hasLinks() && now>=kst(w.open)) ? lockedLive
                : `<span class="b off">${tr.live} ${day} 라이브 · ${now<kst(w.open)?'예정':'링크 준비 중'}</span>`;
   }
   return `<div class="btns"><a class="b fill" href="#ex/${k}/${n}">과제 예시 보기 ›</a>${live}</div>`;
@@ -809,8 +837,8 @@ function exView(k,n){
   const tr=TRACKS[k], back=k==='live'?'home':k, w=n?W(n):null, due=w?w.due.split('-').map(Number):null;
   const SHOT={'money|1':'img/moabuli-asset-tab.png','money|2':'img/moabuli-monthly.png','money|4':'img/moabuli-roadmap.png'}[k+'|'+n];
   let live='';
-  if(tr.live && w){ const day=tr.live==='화'?w.tue:w.thu, url=(DATA.links||{})[n+'|'+tr.name];
-    live=`<div class="btns">${url?`<a class="b" href="${esc(url)}" target="_blank" rel="noopener">▶ ${tr.live} ${day} 라이브 보기</a>`:`<span class="b off">${tr.live} ${day} 라이브 · ${NOW()<kst(w.open)?'예정':'링크 준비 중'}</span>`}</div>`; }
+  if(tr.live && w){ const day=tr.live==='화'?w.tue:w.thu, url=liveLinks()[n+'|'+tr.name];
+    live=`<div class="btns">${url?`<a class="b" href="${esc(url)}" target="_blank" rel="noopener">▶ ${tr.live} ${day} 라이브 보기</a>`:(!hasLinks() && NOW()>=kst(w.open))?lockedLive:`<span class="b off">${tr.live} ${day} 라이브 · ${NOW()<kst(w.open)?'예정':'링크 준비 중'}</span>`}</div>`; }
   let h=`<section class="sec" style="padding-bottom:24px"><a class="back" href="#${back}">‹ ${k==='live'?'5기':esc(tr.name)}</a>
     <span class="eyebrow">${wkName(n)} · ${esc(tr.name)}${due?` · 마감 ${due[1]}/${due[2]}(월) 23:59`:''}</span>
     <div class="h1">${esc(t.name)}</div>${live}</section>`;
@@ -867,17 +895,14 @@ function trackView(k){
 
 // Q&A
 // 자료실 — PDF는 이 저장소 files/ 에 올리고 여기 한 줄 추가. 맨 위(가장 최근)가 새 자료 배너로 뜬다
-const FILES = [
-  {id:'profile-link', title:'프로필 링크 제대로 시작하기', desc:'리틀리로 5분 만에 만들고 사람들이 누르게 꾸미는 법까지', track:'sns', date:'2026-10-16', pages:9, file:'files/profile-link.pdf?v=2', name:'프로필링크_제대로_시작하기.pdf'},
-  {id:'books', title:'둘이서 함께하는 부의 첫걸음', desc:'경제책 입문 18선과 추천 유튜브 채널 (부자 마인드·주식·부동산)', track:'read', date:'2026-10-16', pages:8, file:'files/books.pdf', name:'부의첫걸음_책목록.pdf'},
-  {id:'glossary-stock', title:'주식·ETF 용어집', desc:'투자가 처음인 부부를 위한 핵심 용어 34', track:'house', date:'2026-10-16', pages:4, file:'files/glossary-stock.pdf', name:'주식ETF_용어집.pdf'},
-  {id:'glossary-realestate', title:'부동산·청약 용어집', desc:'신혼집·내집마련을 준비하는 부부 필수 용어', track:'house', date:'2026-10-16', pages:3, file:'files/glossary-realestate.pdf', name:'부동산청약_용어집.pdf'}
-];
+// 자료실 목록은 서버(Code.gs FILES_)가 로그인한 사람에게만 준다 (10/18~). PDF는 files/<무작위 폴더>/ 에 둔다
+const FILES_OF = () => (DATA && DATA.files) || [];
 const FILE_NEW_DAYS = 14;
 const fileIsNew = f => (NOW()-kst(f.date))/864e5 < FILE_NEW_DAYS;
 function filesView(){
   let h=`<section class="sec-alt"><span class="eyebrow">자료실</span><div class="h1">받아가세요</div>
     <div class="body1">강의·과제에 쓰는 자료를 여기 모아둬요. 누르면 PDF가 열려요.</div><div class="files">`;
+  const FILES=FILES_OF();
   if(!FILES.length) h+=`<div class="empty">아직 올라온 자료가 없어요</div>`;
   FILES.forEach(f=>{
     const tr=TRACKS[f.track], [,m,d]=f.date.split('-').map(Number);
@@ -890,11 +915,11 @@ function filesView(){
 }
 // 새 자료 배너 — 모든 화면 맨 위. X를 누르면 그 기기에선 그 자료로는 다시 안 뜬다
 function filesBanner(){
-  const f=FILES[0]; if(!f || !fileIsNew(f) || view==='files') return '';
+  const f=FILES_OF()[0]; if(!f || !fileIsNew(f) || view==='files') return '';
   try{ if(localStorage.getItem('ot5file_seen')===f.id) return ''; }catch(e){}
   return `<div class="newfile"><a href="#files" onclick="seenFile()"><span class="ic">🎁</span><span class="tx"><b>새 자료 · ${esc(f.title)}</b><small>${esc(f.desc)}</small></span><span class="go">받기 ›</span></a><button onclick="seenFile();render()" aria-label="닫기">✕</button></div>`;
 }
-function seenFile(){ try{ localStorage.setItem('ot5file_seen',FILES[0].id); }catch(e){} }
+function seenFile(){ try{ const f=FILES_OF()[0]; if(f) localStorage.setItem('ot5file_seen',f.id); }catch(e){} }
 
 function qaView(){
   const list=DATA.qa||[];
@@ -923,8 +948,8 @@ async function openMine(h,code,quiet){
   mineBusy=true; mineErr=''; if(!quiet) render();
   try{
     const r = (API && !DEMO) ? await getJSON(API+'?action=mine&h='+encodeURIComponent(h)+'&code='+encodeURIComponent(code)) : demoMine(h);
-    if(r.ok){ MINE=r; setMine({h,code}); keepMineData(r); pullChecks(); }
-    else { MINE=null; setMine(null); mineIdDraft=h; mineErr=MINE_ERR[r.error]||'다시 해 주세요.'; }
+    if(r.ok){ const wasOut=!DATA||isLocked(); MINE=r; setMine({h,code}); keepMineData(r); keepLinks(r.links); pullChecks(); if(wasOut){ mineBusy=false; if(view==='mine'||view==='home') location.hash='#home'; return load(); } }
+    else { MINE=null; setMine(null); keepLinks(null); mineIdDraft=h; mineErr=MINE_ERR[r.error]||'다시 해 주세요.'; }
   }catch(e){ if(!quiet) mineErr='불러오지 못했어요. 잠시 뒤에 다시 해 주세요.'; }
   mineBusy=false; if(view==='mine') render();
 }
@@ -940,7 +965,14 @@ function submitMine(){
   openMine(h,c);
 }
 let mineKeep=true, mineIdDraft='';
-function leaveMine(){ MINE=null; mineErr=''; mineIdDraft=''; setMine(null); render(); }
+// 입구 — 5기 부부만 (부부 이름 + 휴대폰 번호 뒷자리 4개)
+function isLocked(){ return !DEMO && !!API && !ADMIN && !getKey() && !getMine(); }
+function gateView(){
+  return mineView().replace(/<span class="eyebrow">피드백<\/span><div class="h1">[\s\S]*?<\/div>/,
+    `<span class="eyebrow">원팀 프로젝트 5기</span><div class="h1">5기 부부만<br><span class="hl">들어올 수 있어요</span></div><div class="body1" style="margin-top:8px">아이디는 과제 낼 때 고르는 부부 이름, 비밀번호는 휴대폰 번호 뒷자리 4개예요. 한 번 로그인하면 이 기기에선 계속 열려요.</div>`)
+    + `<div style="text-align:center;margin:-6px 0 30px"><a href="#admin" style="font-size:12px;color:var(--text-lt)">운영진</a></div>`;
+}
+function leaveMine(){ MINE=null; mineErr=''; mineIdDraft=''; setMine(null); keepLinks(null); clearPub(); DATA=null; render(); }
 function mineView(){
   if(!MINE){
     const saved=getMine();
