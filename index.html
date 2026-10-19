@@ -464,6 +464,8 @@ function nextDue(now){ return WEEKS.find(w=>now<=kst(w.due,true)); }
 const W = n => WEEKS[n-1];
 // 과제 내용은 여기까지만 공개 (결영님 결정 10/6: 일단 1주차까지). 다음 주차를 열 때 숫자만 올린다
 const SHOW_UPTO = 1;
+// 운영진(결영님 화면 로그인)은 공개 전 주차도 미리 본다 (10/19)
+const hiddenWeek = n => n>SHOW_UPTO && !ADMIN;
 
 // 마감 타이머 — 1초마다. 마감이 지나면 다음 주차 마감으로 넘어간다
 function tick(){
@@ -833,7 +835,7 @@ const warnTx=w=>Array.isArray(w)?w.map((x,i)=>`${i+1}. ${esc(x)}`).join("<br>"):
 // 과제 예시 페이지 — 1 이렇게 하세요 → 2 제출 양식 → 3 결영이네 예시 → 4 4기 잘한 과제, 아래에 제출 버튼
 function exView(k,n){
   const t=TASKS[k]&&TASKS[k][n];
-  if(!t || (n>SHOW_UPTO)) return `<section class="sec"><a class="back" href="#${k in TRACKS&&k!=='live'?k:'home'}">‹ 돌아가기</a><div class="h2">아직 공개 전인 과제예요</div></section>`;
+  if(!t || hiddenWeek(n)) return `<section class="sec"><a class="back" href="#${k in TRACKS&&k!=='live'?k:'home'}">‹ 돌아가기</a><div class="h2">아직 공개 전인 과제예요</div></section>`;
   const tr=TRACKS[k], back=k==='live'?'home':k, w=n?W(n):null, due=w?w.due.split('-').map(Number):null;
   const SHOT={'money|1':'img/moabuli-asset-tab.png','money|2':'img/moabuli-monthly.png','money|4':'img/moabuli-roadmap.png'}[k+'|'+n];
   let live='';
@@ -841,7 +843,7 @@ function exView(k,n){
     live=`<div class="btns">${url?`<a class="b" href="${esc(url)}" target="_blank" rel="noopener">▶ ${tr.live} ${day} 라이브 보기</a>`:(!hasLinks() && NOW()>=kst(w.open))?lockedLive:`<span class="b off">${tr.live} ${day} 라이브 · ${NOW()<kst(w.open)?'예정':'링크 준비 중'}</span>`}</div>`; }
   let h=`<section class="sec" style="padding-bottom:24px"><a class="back" href="#${back}">‹ ${k==='live'?'5기':esc(tr.name)}</a>
     <span class="eyebrow">${wkName(n)} · ${esc(tr.name)}${due?` · 마감 ${due[1]}/${due[2]}(월) 23:59`:''}</span>
-    <div class="h1">${esc(t.name)}</div>${live}</section>`;
+    <div class="h1">${esc(t.name)}</div>${live}${n>SHOW_UPTO?'<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:var(--warn)">운영진 미리보기 · 부부들에게는 아직 안 보여요</div>':''}</section>`;
   h+=`<div class="exgrid"><div class="exL">`;
   h+=`<section class="sec-alt"><div class="exh"><span>1</span>이렇게 하세요</div><div class="ex flat"><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${t.link?`<div class="btns" style="max-width:260px"><a class="b" href="${esc(t.link.url)}" target="_blank" rel="noopener">${esc(t.link.label)} ›</a></div>`:''}${t.warn?`<div class="warn">⚠️ ${warnTx(t.warn)}</div>`:''}${t.tbd?`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`:''}</div></section>`;
   h+=`<section class="sec"><div class="exh"><span>2</span>${t.submit?'제출 방법':t.fields?'제출할 때 채울 칸':'제출 양식'}</div>${t.submit?`<div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`:t.fields?`<div class="exsub">'과제 제출하러 가기'에서 이 과제를 고르면 아래 칸이 나와요</div><div class="ex flat"><ol>${t.fields.map(f=>`<li>${esc(f)}</li>`).join('')}</ol></div>`:`<div class="exsub">복사해서 제출 페이지 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`}</section>`;
@@ -886,7 +888,7 @@ function trackView(k){
   WEEKS.forEach(w=>{
     const t=TASKS[k][w.n], id=`exT-${k}-${w.n}`, open=now>=kst(w.open), isCur=w.n===cw, [,m,d]=w.due.split('-').map(Number);
     const state=isCur?'지금 진행 중':open?'지난 주차 · 늦게 내도 돼요':`${fmtD(kst(w.open))}에 열려요`;
-    if(w.n>SHOW_UPTO){ h+=`<div class="wrow lock"><div class="w"><b>${w.n}주차</b><span>${fmtD(kst(w.open))}에 열려요 · 마감 ${m}/${d}</span></div><div class="t">공개 예정이에요</div></div>`; return; }
+    if(hiddenWeek(w.n)){ h+=`<div class="wrow lock"><div class="w"><b>${w.n}주차</b><span>${fmtD(kst(w.open))}에 열려요 · 마감 ${m}/${d}</span></div><div class="t">공개 예정이에요</div></div>`; return; }
     h+=`<div class="wrow${open?'':' lock'}"><div class="w"><b>${w.n}주차</b><span>${state} · 마감 ${m}/${d}</span></div>
       <div class="t">${esc(t.name)}</div>${buttons(k,w.n,id)}</div>`;
   });
