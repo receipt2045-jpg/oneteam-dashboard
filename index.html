@@ -468,7 +468,7 @@ function curWeek(now){ let c=0; WEEKS.forEach(w=>{ if(now>=kst(w.open)) c=w.n; }
 function nextDue(now){ return WEEKS.find(w=>now<=kst(w.due,true)); }
 const W = n => WEEKS[n-1];
 // 과제 내용은 여기까지만 공개 (결영님 결정 10/6: 일단 1주차까지). 다음 주차를 열 때 숫자만 올린다
-const SHOW_UPTO = 1;
+const SHOW_UPTO = 2;
 // 운영진(결영님 화면 로그인)은 공개 전 주차도 미리 본다 (10/19)
 const hiddenWeek = n => n>SHOW_UPTO && !ADMIN;
 
