@@ -812,10 +812,12 @@ function buttons(k,n,id){
   return `<div class="btns"><a class="b fill" href="#ex/${k}/${n}">과제 예시 보기 ›</a>${live}</div>`;
 }
 let BEST={};
+// 4기 예시 안내 — 숫자를 그대로 둔 예시(10/20 내집 2주차)는 '금액을 가렸어요'라고 하지 않는다
+const bestCap = (k,n) => '4기 카페 글이에요 · ' + ((BEST[k+'|'+n]||[]).some(x=>/\d(억|만원)/.test(x.body||'')) ? '닉네임은 가렸어요' : '닉네임과 금액은 가렸어요');
 fetch('best_examples.json').then(r=>r.ok?r.json():{}).then(j=>{ BEST=j||{}; if(DATA) render(); }).catch(()=>{});
 function bestOf(k,n){
   const c=bestCards(k,n);
-  return c?`<h4>★ 4기 잘한 과제</h4><div class="bnote">4기 카페 글이에요 · 닉네임과 금액은 가렸어요</div>`+c:'';
+  return c?`<h4>★ 4기 잘한 과제</h4><div class="bnote">${bestCap(k,n)}</div>`+c:'';
 }
 function bestCards(k,n){
   const list=BEST[k==='live'?'live':k+'|'+n]||[];
@@ -859,7 +861,7 @@ function exView(k,n){
     h+=`</div></section>`;
   }
   const bc=t.noBest?'':bestCards(k,n);
-  if(bc) h+=`<section class="sec"><div class="exh"><span>${t.ex||SHOT?4:3}</span>4기 잘한 과제</div><div class="exsub">4기 카페 글이에요 · 닉네임과 금액은 가렸어요</div><div class="ex flat">${bc}</div></section>`;
+  if(bc) h+=`<section class="sec"><div class="exh"><span>${t.ex||SHOT?4:3}</span>4기 잘한 과제</div><div class="exsub">${bestCap(k,n)}</div><div class="ex flat">${bc}</div></section>`;
   h+=`</div></div>`;
   if(t.submit) h+=`<div class="exbar"><a class="b fill" href="${t.submit.url}" target="_blank" rel="noopener">${esc(t.submit.label)} ›</a></div>`;
   else if(t.fields) h+=`<div class="exbar"><a class="b fill" href="${FORM}" target="_blank" rel="noopener">과제 제출하러 가기 ›</a></div>`;
