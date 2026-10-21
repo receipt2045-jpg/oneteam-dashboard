@@ -1330,6 +1330,8 @@ function gradDemo(){
   return {ok:true,rows,_demo:true};
 }
 
+// 알림톡 버튼은 ?go=grad 처럼 들어온다 (카카오 버튼 주소에 #을 변수로 못 넣어서) → 그 탭으로
+(()=>{ const g=new URLSearchParams(location.search).get('go'); if(g && /^[a-z]+$/.test(g) && !location.hash) history.replaceState(null,'',location.pathname+'#'+g); })();
 window.addEventListener('hashchange',()=>{ render(); window.scrollTo(0,0); });
 tick(); setInterval(tick,1000);
 warm();
