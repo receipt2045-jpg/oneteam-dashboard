@@ -268,6 +268,54 @@ footer a{color:var(--text-lt);margin:0 6px}
 .toast.on{opacity:1}
 .homegrid,.exgrid{display:block}
 body[data-v=ex] #banner{display:none}
+/* 졸업반 — 릴스 한 달 챌린지 (10/21~) */
+body[data-v=grad] #banner{display:none!important}
+.gd-up{--up:#C2410C;--up-soft:#FFF1E8}
+.gd-up>*{max-width:640px}
+.gd-today{background:var(--bg);border-radius:14px;padding:18px;margin-top:16px}
+.gd-today .l{font-size:12.5px;color:var(--text-md)}
+.gd-today .w{font-size:21px;font-weight:800;margin:4px 0 2px;letter-spacing:-.03em}
+.gd-today .d{font-size:13.5px;color:var(--text-md)}
+.gd-week{display:flex;gap:5px;margin-top:14px}
+.gd-week div{flex:1;text-align:center;font-size:11px;color:var(--mute);padding:6px 0;border-radius:8px;background:#fff}
+.gd-week div b{display:block;font-size:13px;color:var(--text-md)}
+.gd-week .on{background:var(--acc-soft);outline:2px solid var(--acc)}
+.gd-week .on b{color:var(--acc)}
+.gd-week .u b{color:var(--up)}
+.gd-legend{display:flex;gap:12px;font-size:12px;color:var(--text-md);margin:14px 0 10px;flex-wrap:wrap}
+.gd-legend span{display:inline-flex;align-items:center;gap:5px}
+.gd-legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
+.gd-team{border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;background:#fff}
+.gd-team .top{display:flex;align-items:baseline;justify-content:space-between}
+.gd-team .nm{font-size:16px;font-weight:700}
+.gd-team .ct{font-size:13px;color:var(--text-md)}
+.gd-team .ct b{color:var(--up);font-size:16px}
+.gd-bar{height:6px;background:var(--bg);border-radius:3px;margin:8px 0 12px;overflow:hidden}
+.gd-bar i{display:block;height:100%;background:var(--up);border-radius:3px}
+.gd-grid{display:grid;grid-template-columns:30px repeat(7,minmax(0,44px));gap:4px;align-items:center}
+.gd-grid .wk{font-size:11px;color:var(--mute)}
+.gd-c{aspect-ratio:1;border-radius:7px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--mute)}
+.gd-c.done{background:var(--acc);color:#fff}
+.gd-c.done.up{background:var(--up)}
+.gd-c.miss{background:#fff;border:1px dashed var(--acc-lt);color:var(--acc-lt)}
+.gd-c.now{outline:2px solid var(--acc);outline-offset:1px}
+.gd-feed{border:1px solid var(--border);border-radius:14px;background:#fff}
+.gd-item{padding:14px 16px;border-bottom:1px solid var(--border);overflow:hidden}
+.gd-item:last-child{border:0}
+.gd-item .h{display:flex;justify-content:space-between;font-size:13px}
+.gd-item .h b{font-size:14px}
+.gd-item .h span{color:var(--mute)}
+.gd-chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--acc-soft);color:var(--acc);margin:6px 6px 0 0}
+.gd-chip.up{background:var(--up-soft);color:var(--up)}
+.gd-item p{font-size:14px;margin-top:6px;white-space:pre-wrap;word-break:break-all}
+.gd-item a.l{font-size:13px;color:var(--acc);font-weight:600;text-decoration:none;display:inline-block;margin-top:6px}
+.gd-item img{width:56px;height:72px;object-fit:cover;border-radius:8px;float:right;margin-left:10px;background:var(--bg)}
+.gd-rt{border:1px solid var(--border);border-radius:14px;padding:4px 16px;background:#fff}
+.gd-rt div{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.gd-rt div:last-child{border:0}
+.gd-rt b{width:64px;flex:none;color:var(--text-md);font-weight:600}
+.gd-rt .u,.gd-rt .u b{color:var(--up)}
+.gd-empty{font-size:13.5px;color:var(--text-lt);padding:18px 16px;text-align:center}
 
 /* PC — 왼쪽 세로 메뉴 · 가운데 본문 · 오른쪽 이번 주 할 일(따라옴) */
 @media (min-width:960px){
@@ -317,6 +365,7 @@ body[data-v=ex] #banner{display:none}
       <a href="#sns" data-v="sns">SNS</a>
       <a href="#files" data-v="files">자료실</a>
       <a href="#qa" data-v="qa">Q&amp;A</a>
+      <a href="#grad" data-v="grad">졸업반</a>
     </nav>
   </div>
   <div id="banner"></div>
@@ -638,14 +687,16 @@ function choiceOf(h){
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
   const v=(location.hash||'#home').slice(1), exm=v.match(/^ex\/(read|money|house|sns|live)\/(\d)$/);
-  view=exm?'ex':['home','read','money','house','sns','qa','files','mine','admin'].includes(v)?v:'home';
+  view=exm?'ex':['home','read','money','house','sns','qa','files','mine','admin','grad'].includes(v)?v:'home';
   const tab=exm?(exm[1]==='live'?'home':exm[1]):view;
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
   document.body.dataset.v=view; document.body.dataset.admin=ADMIN?'1':'';
   const bn=document.getElementById('banner'), el=document.getElementById('view');
-  const locked=isLocked() && view!=='admin';
+  // 졸업반 탭은 5기 로그인 없이 본다 (졸업반 멤버도 들어온다)
+  const locked=isLocked() && view!=='admin' && view!=='grad';
   document.body.dataset.locked=locked?'1':'';
+  if(view==='grad'){ if(bn) bn.innerHTML=''; el.innerHTML=gradView(); loadGrad(); return; }
   if(locked){ if(bn) bn.innerHTML=''; el.innerHTML=gateView(); return; }
   if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
@@ -1183,6 +1234,101 @@ function demoData(){
 }
 function demoAdmin(){ DATA.rows.forEach((r,i)=>{ if(i%3===0) r.draft='(초안) 고정비를 이렇게 펼쳐보신 것만으로도 절반은 하신 거예요. 저희도 통신비부터 줄였어요.'; if(i%4===1){ r.feedback='잘 하셨어요!'; r.feedbackBy='결영'; } }); return DATA; }
 function demoMine(h){ const rows=(DATA.rows||[]).filter(r=>r.h===h).map((r,i)=>Object.assign({},r,{feedback:i===0?'숫자를 펼쳐놓은 것부터 대단해요. 다음 주엔 고정비를 같이 봐요.':'',feedbackBy:'결영'})); return {ok:true,h,rows}; }
+
+// ─────────────────────────────────────────────────────────────
+// 졸업반 — 릴스 한 달 챌린지 (10/22~11/18, 주 2회 업로드 · 4주 8편)
+//   인증: 탈리(GRAD.form) → 웹훅 → Apps Script '졸업반챌린지' 탭 → ?action=grad (로그인 없이)
+// ─────────────────────────────────────────────────────────────
+const GRAD = {
+  start:'2026-10-22', weeks:4, form:'https://tally.so/r/J19zWK',
+  teams:['결영이네','2기 다와와','3기 민퐁듀','2기 순둥이네','3기 꾸꾸네'],
+  steps:['기획','촬영','편집','업로드','촬영','편집','업로드'],
+  stepLong:['벤치마킹 영상 찾기 + 첫 장면 뜯기 + 기획(대본·촬영 계획)','촬영 ①','편집 ①','업로드 ① + 다음 편 벤치마킹·기획','촬영 ②','편집 ②','업로드 ②'],
+  stepTitle:['벤치마킹 + 기획','촬영 ①','편집 ①','업로드 ①','촬영 ②','편집 ②','업로드 ②'],
+  stepDesc:['벤치마킹 영상 찾기 → 첫 장면 뜯기 → 대본·촬영 계획','어제 쓴 대본대로 찍어요. 내일은 편집','찍은 영상 편집하는 날. 내일 업로드!','올리고 나서 다음 편 벤치마킹·기획까지','두 번째 편 촬영. 내일은 편집','편집하는 날. 내일 업로드!','이번 주 두 번째 업로드. 두 편 끝!'],
+  days:['목','금','토','일','월','화','수']
+};
+let GD=null, gdAt=0, gdBusy=false;
+try{ GD=JSON.parse(localStorage.getItem('ot5grad')||'null'); }catch(e){}
+const kstDay = t => new Date(t+9*3600000).toISOString().slice(0,10);
+const gdIdx = d => Math.round((Date.parse(d+'T00:00:00Z')-Date.parse(GRAD.start+'T00:00:00Z'))/86400000);
+async function loadGrad(force){
+  if(DEMO){ if(!GD||!GD._demo){ GD=gradDemo(); render(); } return; }
+  if(gdBusy || (!force && Date.now()-gdAt<60000) || !API) return;
+  gdBusy=true;
+  try{ const r=await getJSON(API+'?action=grad'); if(r.ok){ GD=r; gdAt=Date.now(); try{ localStorage.setItem('ot5grad',JSON.stringify(r)); }catch(e){} if(view==='grad') render(); } }catch(e){}
+  gdBusy=false;
+}
+function gradView(){
+  const today=kstDay(NOW()), ti=gdIdx(today), last=GRAD.weeks*7-1;
+  const rows=((GD&&GD.rows)||[]).filter(r=>GRAD.teams.includes(r.team));
+  const md=d=>{ const [,m,dd]=d.split('-').map(Number); return m+'/'+dd; };
+  const dayOf=i=>{ const t=Date.parse(GRAD.start+'T00:00:00Z')+i*86400000; return md(new Date(t).toISOString().slice(0,10)); };
+  let h=`<section class="sec gd-up"><span class="eyebrow">졸업반 · 릴스 한 달 챌린지</span><div class="h2">주 2회 업로드, <span class="hl">4주 8편</span></div>
+    <div class="body1">10/21 릴스 스터디에서 시작했어요. 벤치마킹 영상 하나 골라 첫 장면부터 뜯고, 일주일에 두 편 올려요. 매일 한 일을 인증하면 도장이 찍혀요.</div>`;
+  // 오늘
+  let lbl, what, desc, on=-1;
+  if(ti<0){ lbl=`${dayOf(0)}(목) 시작`; what='1일차 · 벤치마킹 + 기획'; desc='벤치마킹 영상 찾기 + 첫 장면 뜯기 + 대본·촬영 계획'; }
+  else if(ti>last){ lbl='챌린지가 끝났어요'; what='4주 동안 고생 많으셨어요'; desc='다음 스터디에서 같이 돌아봐요.'; }
+  else { on=ti%7; lbl=`오늘 ${md(today)}(${GRAD.days[on]}) · ${Math.floor(ti/7)+1}주차 ${on+1}일차`; what=GRAD.stepTitle[on]; desc=GRAD.stepDesc[on]; }
+  h+=`<div class="gd-today"><div class="l">${esc(lbl)}</div><div class="w">${esc(what)}</div><div class="d">${esc(desc)}</div>
+    <div class="gd-week">${GRAD.days.map((d,i)=>`<div class="${i===on?'on':''}${i===3||i===6?' u':''}"><b>${d}</b>${GRAD.steps[i]}</div>`).join('')}</div>
+    <a class="btn" href="${GRAD.form}" target="_blank" rel="noopener">오늘 인증하기</a><div class="note">팀 고르고 한 일만 누르면 돼요 · 링크·캡처는 선택</div></div></section>`;
+  // 도장판
+  const passed=Math.min(ti,last+1);   // 오늘 전까지 지난 칸 수
+  const board=GRAD.teams.map(t=>{
+    const mine=rows.filter(r=>r.team===t), by={};
+    mine.forEach(r=>{ const i=gdIdx(r.d); if(i<0||i>last) return; (by[i]=by[i]||[]).push(r.step); });
+    const ups=Math.min(8, mine.filter(r=>/업로드/.test(r.step)&&gdIdx(r.d)>=0&&gdIdx(r.d)<=last).length);
+    return {t,by,ups,days:Object.keys(by).length};
+  }).sort((a,b)=>b.ups-a.ups||b.days-a.days||GRAD.teams.indexOf(a.t)-GRAD.teams.indexOf(b.t));
+  h+=`<section class="sec gd-up"><span class="eyebrow">팀별 도장판${GD?'':' · 불러오는 중…'}</span><div class="h2">업로드 많은 순</div>
+    <div class="gd-legend"><span><i style="background:var(--acc)"></i>인증</span><span><i style="background:var(--up)"></i>업로드</span><span><i style="border:1px dashed var(--acc-lt)"></i>빈 날</span></div>`;
+  board.forEach(b=>{
+    h+=`<div class="gd-team"><div class="top"><span class="nm">${esc(b.t)}</span><span class="ct">업로드 <b>${b.ups}</b> / 8</span></div><div class="gd-bar"><i style="width:${b.ups/8*100}%"></i></div><div class="gd-grid">`;
+    for(let w=0;w<GRAD.weeks;w++){
+      h+=`<span class="wk">${w+1}주</span>`;
+      for(let d=0;d<7;d++){
+        const i=w*7+d, st=b.by[i]; let c='gd-c';
+        if(st) c+=' done'+(st.some(x=>/업로드/.test(x))?' up':'');
+        else if(i<passed) c+=' miss';
+        if(i===ti) c+=' now';
+        h+=`<span class="${c}" title="${dayOf(i)}${st?' · '+esc(st.join(', ')):''}">${GRAD.steps[d].slice(0,1)}</span>`;
+      }
+    }
+    h+=`</div></div>`;
+  });
+  h+=`</section>`;
+  // 최근 인증
+  const ago=v=>{ const s=(NOW()-new Date(v).getTime())/1000; return s<3600?Math.max(1,Math.round(s/60))+'분 전':s<86400?Math.round(s/3600)+'시간 전':fmtD(v); };
+  const feed=rows.slice().sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,30);
+  h+=`<section class="sec gd-up"><span class="eyebrow">최근 인증</span><div class="gd-feed">`;
+  if(!feed.length) h+=`<div class="gd-empty">${ti<0?'10/22(목)부터 여기에 인증이 쌓여요.':'아직 인증이 없어요. 첫 도장을 찍어주세요.'}</div>`;
+  feed.forEach(r=>{
+    const i=gdIdx(r.d), wd=i>=0&&i<=last?`${Math.floor(i/7)+1}주차 ${i%7+1}일차`:md(r.d);
+    const img=String(r.img||'').split(' ')[0], up=/업로드/.test(r.step);
+    h+=`<div class="gd-item">${img?`<a href="${esc(img)}" target="_blank" rel="noopener"><img src="${esc(img)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></a>`:''}
+      <div class="h"><b>${esc(r.team)}</b><span>${ago(r.at)}</span></div>
+      <span class="gd-chip">${wd}</span><span class="gd-chip${up?' up':''}">${esc(r.step)}</span>
+      ${r.memo?`<p>${esc(r.memo)}</p>`:''}
+      ${r.link?`<a class="l" href="${esc(r.link)}" target="_blank" rel="noopener">${up?'릴스 보기':'영상 보기'} ›</a>`:''}</div>`;
+  });
+  h+=`</div></section>`;
+  // 루틴
+  h+=`<section class="sec gd-up"><span class="eyebrow">일주일 루틴</span><div class="h2">하루에 한 가지만</div><div class="gd-rt" style="margin-top:14px">
+    ${GRAD.stepLong.map((s,i)=>`<div class="${i===3||i===6?'u':''}"><b>${i+1}일차 ${GRAD.days[i]}</b>${esc(s)}</div>`).join('')}</div>
+    <div class="note" style="text-align:left;margin-top:12px">1주차 10/22~10/28 · 2주차 10/29~11/4 · 3주차 11/5~11/11 · 4주차 11/12~11/18</div></section>`;
+  return h;
+}
+function gradDemo(){
+  const t=(d,team,step,memo,link)=>({id:d+team+step,at:d+'T13:00:00+09:00',d,team,step,memo:memo||'',link:link||'',img:''});
+  const S=['벤치마킹·기획','촬영','편집','업로드','촬영','편집','업로드'], rows=[];
+  const add=(team,pat)=>pat.split('').forEach((c,i)=>{ if(c==='1'){ const d=new Date(Date.parse('2026-10-22T00:00:00Z')+i*86400000).toISOString().slice(0,10); rows.push(t(d,team,S[i%7])); } });
+  add('2기 순둥이네','1111111111'); add('3기 민퐁듀','1111101111'); add('결영이네','110111111'); add('2기 다와와','1110100101'); add('3기 꾸꾸네','00000001');
+  rows.push(t('2026-10-31','3기 민퐁듀','편집','컷 편집까지 끝. 자막은 내일 아침에!'));
+  rows.push(t('2026-10-29','3기 꾸꾸네','벤치마킹·기획','팔로워 3천 · 조회 8만 영상. 첫 장면이 영수증 클로즈업','https://www.instagram.com/reel/example'));
+  return {ok:true,rows,_demo:true};
+}
 
 window.addEventListener('hashchange',()=>{ render(); window.scrollTo(0,0); });
 tick(); setInterval(tick,1000);
