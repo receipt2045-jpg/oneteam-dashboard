@@ -276,6 +276,9 @@ body[data-v=grad] #banner{display:none!important}
 .gd-today .l{font-size:12.5px;color:var(--text-md)}
 .gd-today .w{font-size:21px;font-weight:800;margin:4px 0 2px;letter-spacing:-.03em}
 .gd-today .d{font-size:13.5px;color:var(--text-md)}
+.gd-today .sub{margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.6}
+.gd-today .sub b{display:block;font-size:12px;color:var(--acc);margin-bottom:2px}
+.gd-rt .s{display:block;font-size:12.5px;color:var(--text-lt);margin-top:2px}
 .gd-week{display:flex;gap:5px;margin-top:14px}
 .gd-week div{flex:1;text-align:center;font-size:11px;color:var(--mute);padding:6px 0;border-radius:8px;background:#fff}
 .gd-week div b{display:block;font-size:13px;color:var(--text-md)}
@@ -1243,12 +1246,13 @@ function demoMine(h){ const rows=(DATA.rows||[]).filter(r=>r.h===h).map((r,i)=>O
 //   인증: 탈리(GRAD.form) → 웹훅 → Apps Script '졸업반챌린지' 탭 → ?action=grad (로그인 없이)
 // ─────────────────────────────────────────────────────────────
 const GRAD = {
-  start:'2026-10-22', weeks:4, form:'https://tally.so/r/J19zWK',
+  start:'2026-10-22', weeks:4, form:'https://tally.so/r/BEzAkY',   // 10/22 2차 폼: 요일을 고르면 그날 낼 칸만 나온다 (1차 J19zWK는 닫음)
   teams:['결영이네','2기 다와와','3기 민퐁듀','2기 순둥이네','3기 꾸꾸네'],
   steps:['기획','촬영','편집','업로드','촬영','편집','업로드'],
   stepLong:['벤치마킹 영상 찾기 + 첫 장면 뜯기 + 기획(대본·촬영 계획)','촬영 ①','편집 ①','업로드 ① + 다음 편 벤치마킹·기획','촬영 ②','편집 ②','업로드 ②'],
   stepTitle:['벤치마킹 + 기획','촬영 ①','편집 ①','업로드 ①','촬영 ②','편집 ②','업로드 ②'],
   stepDesc:['벤치마킹 영상 찾기 → 첫 장면 뜯기 → 대본·촬영 계획','어제 쓴 대본대로 찍어요. 내일은 편집','찍은 영상 편집하는 날. 내일 업로드!','올리고 나서 다음 편 벤치마킹·기획까지','두 번째 편 촬영. 내일은 편집','편집하는 날. 내일 업로드!','이번 주 두 번째 업로드. 두 편 끝!'],
+  submit:['벤치마킹 릴스 링크 · 첫 문장 · 첫 장면 · 내 대본 (첫 문장 · 첫 장면 · 흐름)','찍은 장면 캡처','편집 화면 캡처','올린 릴스 링크 · 다음 편 벤치마킹 링크 · 다음 편 대본 첫 문장','찍은 장면 캡처','편집 화면 캡처','올린 릴스 링크'],
   days:['목','금','토','일','월','화','수']
 };
 let GD=null, gdAt=0, gdBusy=false;
@@ -1274,9 +1278,11 @@ function gradView(){
   if(ti<0){ lbl=`${dayOf(0)}(목) 시작`; what='1일차 · 벤치마킹 + 기획'; desc='벤치마킹 영상 찾기 + 첫 장면 뜯기 + 대본·촬영 계획'; }
   else if(ti>last){ lbl='챌린지가 끝났어요'; what='4주 동안 고생 많으셨어요'; desc='다음 스터디에서 같이 돌아봐요.'; }
   else { on=ti%7; lbl=`오늘 ${md(today)}(${GRAD.days[on]}) · ${Math.floor(ti/7)+1}주차 ${on+1}일차`; what=GRAD.stepTitle[on]; desc=GRAD.stepDesc[on]; }
+  const sub=GRAD.submit[on<0?0:on];
   h+=`<div class="gd-today"><div class="l">${esc(lbl)}</div><div class="w">${esc(what)}</div><div class="d">${esc(desc)}</div>
+    ${ti<=last?`<div class="sub"><b>${ti<0?'1일차에 낼 것':'오늘 낼 것'}</b>${esc(sub)}</div>`:''}
     <div class="gd-week">${GRAD.days.map((d,i)=>`<div class="${i===on?'on':''}${i===3||i===6?' u':''}"><b>${d}</b>${GRAD.steps[i]}</div>`).join('')}</div>
-    <a class="btn" href="${GRAD.form}" target="_blank" rel="noopener">오늘 인증하기</a><div class="note">팀 고르고 한 일만 누르면 돼요 · 링크·캡처는 선택</div></div></section>`;
+    <a class="btn" href="${GRAD.form}" target="_blank" rel="noopener">오늘 인증하기</a><div class="note">폼에서 팀 → 오늘 요일을 고르면 낼 칸만 나와요 · 늦게 내도 요일만 맞으면 그 칸에 찍혀요</div></div></section>`;
   // 도장판
   const passed=Math.min(ti,last+1);   // 오늘 전까지 지난 칸 수
   const board=GRAD.teams.map(t=>{
@@ -1319,7 +1325,7 @@ function gradView(){
   h+=`</div></section>`;
   // 루틴
   h+=`<section class="sec gd-up"><span class="eyebrow">일주일 루틴</span><div class="h2">하루에 한 가지만</div><div class="gd-rt" style="margin-top:14px">
-    ${GRAD.stepLong.map((s,i)=>`<div class="${i===3||i===6?'u':''}"><b>${i+1}일차 ${GRAD.days[i]}</b>${esc(s)}</div>`).join('')}</div>
+    ${GRAD.stepLong.map((s,i)=>`<div class="${i===3||i===6?'u':''}"><b>${i+1}일차 ${GRAD.days[i]}</b><span>${esc(s)}<span class="s">낼 것 : ${esc(GRAD.submit[i])}</span></span></div>`).join('')}</div>
     <div class="note" style="text-align:left;margin-top:12px">1주차 10/22~10/28 · 2주차 10/29~11/4 · 3주차 11/5~11/11 · 4주차 11/12~11/18</div></section>`;
   return h;
 }
