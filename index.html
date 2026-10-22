@@ -313,6 +313,20 @@ body[data-v=grad] #banner{display:none!important}
 .gd-item p{font-size:14px;margin-top:6px;white-space:pre-wrap;word-break:break-all}
 .gd-item a.l{font-size:13px;color:var(--acc);font-weight:600;text-decoration:none;display:inline-block;margin-top:6px}
 .gd-item img{width:56px;height:72px;object-fit:cover;border-radius:8px;float:right;margin-left:10px;background:var(--bg)}
+.gd-item.open img.th{display:none}
+.gd-filter{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 12px}
+.gd-filter button{font:600 13px Pretendard,sans-serif;border:1px solid var(--border);background:#fff;color:var(--text-md);border-radius:99px;padding:6px 12px;cursor:pointer}
+.gd-filter button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.gd-more{font:600 13px Pretendard,sans-serif;color:var(--text-md);background:#F1F2F4;border:0;border-radius:8px;padding:6px 10px;margin-top:8px;cursor:pointer}
+.gd-full{display:none;margin-top:10px;border-top:1px dashed var(--border);padding-top:10px}
+.gd-item.open .gd-full{display:block}
+.gd-full .f{margin-bottom:10px}
+.gd-full .f b{display:block;font-size:12px;color:var(--acc);margin-bottom:2px}
+.gd-full .f div{font-size:14px;white-space:pre-wrap;word-break:break-all}
+.gd-full .f a{color:var(--acc);font-weight:600;text-decoration:none}
+.gd-full img.big{display:block;width:100%;max-width:320px;height:auto;float:none;margin:4px 0 0;border-radius:10px}
+.gd-item.hl{background:var(--acc-soft)}
+.gd-c.done{cursor:pointer}
 .gd-rt{border:1px solid var(--border);border-radius:14px;padding:4px 16px;background:#fff}
 .gd-rt div{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
 .gd-rt div:last-child{border:0}
@@ -1255,7 +1269,13 @@ const GRAD = {
   submit:['벤치마킹 릴스 링크 · 첫 문장 · 첫 장면 · 내 대본 (첫 문장 · 첫 장면 · 흐름)','찍은 장면 캡처','편집 화면 캡처','올린 릴스 링크 · 다음 편 벤치마킹 링크 · 다음 편 대본 첫 문장','찍은 장면 캡처','편집 화면 캡처','올린 릴스 링크'],
   days:['목','금','토','일','월','화','수']
 };
-let GD=null, gdAt=0, gdBusy=false;
+let GD=null, gdAt=0, gdBusy=false, gdTeam='', gdOpen={};
+// 도장 칸을 누르면 그 팀 인증만 보이게 하고 그 인증을 펼친다
+function gdGo(team,id){ gdTeam=team; gdOpen={}; gdOpen[id]=1; render(); setTimeout(()=>{ const e=document.getElementById('gd-'+id); if(e){ e.scrollIntoView({behavior:'smooth',block:'center'}); e.classList.add('hl'); setTimeout(()=>e.classList.remove('hl'),1600); } },50); }
+function gdToggle(id){ gdOpen[id]=!gdOpen[id]; const e=document.getElementById('gd-'+id); if(e){ e.classList.toggle('open',!!gdOpen[id]); const b=e.querySelector('.gd-more'); if(b) b.textContent=gdOpen[id]?'접기':'전체 보기'; } }
+// 인증 내용 '칸 이름 : 답' 줄을 칸별로 (여러 줄 답은 다음 칸 이름이 나올 때까지 이어 붙인다)
+const GD_LABELS=['벤치마킹 릴스 링크','벤치마킹 첫 문장','벤치마킹 첫 장면','벤치마킹 뒤 흐름','내 대본 첫 문장','내 대본 첫 장면','내 대본 흐름','촬영 계획','촬영 캡처','촬영 메모','편집 캡처','편집 남은 것','올린 릴스 링크','다음 편 벤치마킹 링크','다음 편 내 대본 첫 문장','다음 편 첫 장면·흐름','이번 주 한 줄 회고'];
+function gdFields(body){ const out=[]; String(body||'').split('\n').forEach(l=>{ const m=l.match(/^(.+?) : ([\s\S]*)$/); if(m && GD_LABELS.includes(m[1].trim())) out.push({k:m[1].trim(),v:m[2]}); else if(out.length) out[out.length-1].v+='\n'+l; }); return out.filter(f=>f.v.trim()); }
 try{ GD=JSON.parse(localStorage.getItem('ot5grad')||'null'); }catch(e){}
 const kstDay = t => new Date(t+9*3600000).toISOString().slice(0,10);
 const gdIdx = d => Math.round((Date.parse(d+'T00:00:00Z')-Date.parse(GRAD.start+'T00:00:00Z'))/86400000);
@@ -1287,11 +1307,12 @@ function gradView(){
   const passed=Math.min(ti,last+1);   // 오늘 전까지 지난 칸 수
   const board=GRAD.teams.map(t=>{
     const mine=rows.filter(r=>r.team===t), by={};
-    mine.forEach(r=>{ const i=gdIdx(r.d); if(i<0||i>last) return; (by[i]=by[i]||[]).push(r.step); });
+    const ids={}; mine.forEach(r=>{ const i=gdIdx(r.d); if(i<0||i>last) return; (by[i]=by[i]||[]).push(r.step); ids[i]=r.id; });
     const ups=Math.min(8, mine.filter(r=>/업로드/.test(r.step)&&gdIdx(r.d)>=0&&gdIdx(r.d)<=last).length);
-    return {t,by,ups,days:Object.keys(by).length};
+    return {t,by,ids,ups,days:Object.keys(by).length};
   }).sort((a,b)=>b.ups-a.ups||b.days-a.days||GRAD.teams.indexOf(a.t)-GRAD.teams.indexOf(b.t));
   h+=`<section class="sec gd-up"><span class="eyebrow">팀별 도장판${GD?'':' · 불러오는 중…'}</span><div class="h2">업로드 많은 순</div>
+    <div class="note" style="text-align:left;margin-top:6px">찍힌 도장을 누르면 그날 낸 내용이 아래에 펼쳐져요</div>
     <div class="gd-legend"><span><i style="background:var(--acc)"></i>인증</span><span><i style="background:var(--up)"></i>업로드</span><span><i style="border:1px dashed var(--acc-lt)"></i>빈 날</span></div>`;
   board.forEach(b=>{
     h+=`<div class="gd-team"><div class="top"><span class="nm">${esc(b.t)}</span><span class="ct">업로드 <b>${b.ups}</b> / 8</span></div><div class="gd-bar"><i style="width:${b.ups/8*100}%"></i></div><div class="gd-grid">`;
@@ -1302,27 +1323,34 @@ function gradView(){
         if(st) c+=' done'+(st.some(x=>/업로드/.test(x))?' up':'');
         else if(i<passed) c+=' miss';
         if(i===ti) c+=' now';
-        h+=`<span class="${c}" title="${dayOf(i)}${st?' · '+esc(st.join(', ')):''}">${GRAD.steps[d].slice(0,1)}</span>`;
+        h+=`<span class="${c}" title="${dayOf(i)}${st?' · '+esc(st.join(', ')):''}"${st?` onclick="gdGo(${esc(JSON.stringify(b.t))},${esc(JSON.stringify(b.ids[i]))})"`:''}>${GRAD.steps[d].slice(0,1)}</span>`;
       }
     }
     h+=`</div></div>`;
   });
   h+=`</section>`;
-  // 최근 인증
+  // 모두의 인증 — 다른 팀이 낸 것까지 펼쳐 본다 (10/22 결영)
   const ago=v=>{ const s=(NOW()-new Date(v).getTime())/1000; return s<3600?Math.max(1,Math.round(s/60))+'분 전':s<86400?Math.round(s/3600)+'시간 전':fmtD(v); };
-  const feed=rows.slice().sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,30);
-  h+=`<section class="sec gd-up"><span class="eyebrow">최근 인증</span><div class="gd-feed">`;
-  if(!feed.length) h+=`<div class="gd-empty">${ti<0?'10/22(목)부터 여기에 인증이 쌓여요.':'아직 인증이 없어요. 첫 도장을 찍어주세요.'}</div>`;
+  const all=rows.slice().sort((a,b)=>new Date(b.at)-new Date(a.at));
+  const feed=gdTeam?all.filter(r=>r.team===gdTeam):all.slice(0,30);
+  h+=`<section class="sec gd-up"><span class="eyebrow">모두의 인증</span><div class="h2">다른 팀은 이렇게 했어요</div>
+    <div class="gd-filter"><button class="${gdTeam?'':'on'}" onclick="gdTeam='';render()">전체</button>${GRAD.teams.map(t=>`<button class="${gdTeam===t?'on':''}" onclick="gdTeam=${esc(JSON.stringify(t))};render()">${esc(t)}</button>`).join('')}</div><div class="gd-feed">`;
+  if(!feed.length) h+=`<div class="gd-empty">${gdTeam?'아직 이 팀 인증이 없어요.':ti<0?'10/22(목)부터 여기에 인증이 쌓여요.':'아직 인증이 없어요. 첫 도장을 찍어주세요.'}</div>`;
   feed.forEach(r=>{
-    const i=gdIdx(r.d), wd=i>=0&&i<=last?`${Math.floor(i/7)+1}주차 ${i%7+1}일차`:md(r.d);
-    const img=String(r.img||'').split(' ')[0], up=/업로드/.test(r.step);
-    h+=`<div class="gd-item">${img?`<a href="${esc(img)}" target="_blank" rel="noopener"><img src="${esc(img)}" alt="" loading="lazy" onerror="this.parentNode.remove()"></a>`:''}
+    const i=gdIdx(r.d), wd=i>=0&&i<=last?`${Math.floor(i/7)+1}주차 ${i%7+1}일차 (${GRAD.days[i%7]})`:md(r.d);
+    const img=String(r.img||'').split(' ')[0], up=/업로드/.test(r.step), F=gdFields(r.body), open=!!gdOpen[r.id];
+    const more=F.length>0||!!img;
+    h+=`<div class="gd-item${open?' open':''}" id="gd-${esc(r.id)}">${img?`<img class="th" src="${esc(img)}" alt="" loading="lazy" onerror="this.remove()">`:''}
       <div class="h"><b>${esc(r.team)}</b><span>${ago(r.at)}</span></div>
       <span class="gd-chip">${wd}</span><span class="gd-chip${up?' up':''}">${esc(r.step)}</span>
       ${r.memo?`<p>${esc(r.memo)}</p>`:''}
-      ${r.link?`<a class="l" href="${esc(r.link)}" target="_blank" rel="noopener">${up?'릴스 보기':'영상 보기'} ›</a>`:''}</div>`;
+      ${r.link?`<a class="l" href="${esc(r.link)}" target="_blank" rel="noopener">${up?'릴스 보기':'영상 보기'} ›</a>`:''}
+      ${more?`<div><button class="gd-more" onclick="gdToggle(${esc(JSON.stringify(r.id))})">${open?'접기':'전체 보기'}</button></div>
+      <div class="gd-full">${F.map(f=>{ const v=f.v.trim(), url=/^https?:\/\//.test(v); const isImg=/캡처/.test(f.k);
+        return `<div class="f"><b>${esc(f.k)}</b><div>${isImg?v.split(' ').map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img class="big" src="${esc(u)}" alt="" loading="lazy" onerror="this.parentNode.textContent='사진 열기 ›'"></a>`).join(''):url?`<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>`:esc(v)}</div></div>`; }).join('')}
+        ${!F.length&&img?`<a href="${esc(img)}" target="_blank" rel="noopener"><img class="big" src="${esc(img)}" alt=""></a>`:''}</div>`:''}</div>`;
   });
-  h+=`</div></section>`;
+  h+=`</div>${!gdTeam&&all.length>30?'<div class="note">최근 30개까지 보여요. 팀을 누르면 그 팀 것 전부 볼 수 있어요.</div>':''}</section>`;
   // 루틴
   h+=`<section class="sec gd-up"><span class="eyebrow">일주일 루틴</span><div class="h2">하루에 한 가지만</div><div class="gd-rt" style="margin-top:14px">
     ${GRAD.stepLong.map((s,i)=>`<div class="${i===3||i===6?'u':''}"><b>${i+1}일차 ${GRAD.days[i]}</b><span>${esc(s)}<span class="s">낼 것 : ${esc(GRAD.submit[i])}</span></span></div>`).join('')}</div>
@@ -1335,7 +1363,8 @@ function gradDemo(){
   const add=(team,pat)=>pat.split('').forEach((c,i)=>{ if(c==='1'){ const d=new Date(Date.parse('2026-10-22T00:00:00Z')+i*86400000).toISOString().slice(0,10); rows.push(t(d,team,S[i%7])); } });
   add('2기 순둥이네','1111111111'); add('3기 민퐁듀','1111101111'); add('결영이네','110111111'); add('2기 다와와','1110100101'); add('3기 꾸꾸네','00000001');
   rows.push(t('2026-10-31','3기 민퐁듀','편집','컷 편집까지 끝. 자막은 내일 아침에!'));
-  rows.push(t('2026-10-29','3기 꾸꾸네','벤치마킹·기획','팔로워 3천 · 조회 8만 영상. 첫 장면이 영수증 클로즈업','https://www.instagram.com/reel/example'));
+  rows.push(t('2026-10-29','3기 꾸꾸네','벤치마킹·기획','벤치마킹 : 월 300 직장인 / 자산 6000만원 → 20억 만들어준 8가지\n내 대본 : 외벌이 월급 300 / 순자산 10억 만들려고 한 6가지','https://www.instagram.com/reel/example'));
+  rows[rows.length-1].body=['벤치마킹 릴스 링크 : https://www.instagram.com/reel/example','벤치마킹 첫 문장 : 월 300 직장인 / 자산 6000만원 → 20억 만들어준 8가지','벤치마킹 첫 장면 : 밤 책상, 키보드 치는 손. 큰 글자 6000만원 → 20억','벤치마킹 뒤 흐름 : 제목 고정','8가지를 2개씩 4화면','내 대본 첫 문장 : 외벌이 월급 300 / 순자산 10억 만들려고 한 6가지','내 대본 첫 장면 : 아기 사진, 큰 글자 빚 3천 → 순자산 10억','내 대본 흐름 : 1. 절약 · 통신비 월 3만 원대','2. 절세 · 부부 각자 ISA','3. 부수입 · 통장 하나 더'].join('\n');
   return {ok:true,rows,_demo:true};
 }
 
