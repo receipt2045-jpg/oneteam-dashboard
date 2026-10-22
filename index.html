@@ -1010,7 +1010,7 @@ async function enterHub(h,code){
   mineBusy=true; mineErr=''; render();
   try{
     const r=await getJSON(API+'?h='+encodeURIComponent(h)+'&code='+encodeURIComponent(code));
-    if(r.ok){ setMine({h,code}); keep(r); keepLinks(r.links); DATA=withSns(r); mineBusy=false; pullChecks(); if(location.hash==='#home') render(); else location.hash='#home'; return; }
+    if(r.ok){ setMine({h,code}); keep(r); keepLinks(r.links); DATA=withSns(r); mineBusy=false; pullChecks(); /* 피드백도 미리 받아 둔다 */ setTimeout(()=>openMine(h,code,true),0); if(location.hash==='#home') render(); else location.hash='#home'; return; }
     mineIdDraft=h; mineErr=MINE_ERR[r.error]||'다시 해 주세요.';
   }catch(e){ mineErr='불러오지 못했어요. 잠시 뒤에 다시 해 주세요.'; }
   mineBusy=false; render();
@@ -1057,6 +1057,8 @@ function mineView(){
     if(c && !mineErr){ MINE=c; MINE._stale=true; setTimeout(()=>openMine(saved.h,saved.code,true),0); return mineView(); }
     if(saved && !mineBusy && !mineErr) setTimeout(()=>openMine(saved.h,saved.code),0);
     const busy=mineBusy||(saved&&!mineErr);
+    // 이미 로그인한 기기면 다시 묻지 않는다 — 피드백을 받는 동안 로그인 칸 대신 '불러오는 중' (10/22, 두 번 로그인하는 줄 알았다는 제보)
+    if(saved && !mineErr && !isLocked()) return `<section class="sec"><span class="eyebrow">피드백</span><div class="h2">${esc(saved.h)}님 피드백을 불러오는 중이에요…</div><div class="body1" style="margin-top:8px">처음엔 몇 초 걸릴 수 있어요.</div></section>`;
     return `<section class="sec login"><span class="eyebrow">피드백</span><div class="h1">로그인하고<br><span class="hl">받은 피드백</span> 보기</div>
       <div class="box">
         <label for="mH">아이디</label>
