@@ -715,6 +715,8 @@ function render(){
   const locked=isLocked() && view!=='admin' && view!=='grad';
   document.body.dataset.locked=locked?'1':'';
   if(view==='grad'){ if(bn) bn.innerHTML=''; el.innerHTML=gradView(); loadGrad(); return; }
+  // 운영진 로그인 칸은 과제 데이터 없이 그린다 (로그인 전엔 DATA가 비어 있다)
+  if(view==='admin'){ if(bn) bn.innerHTML=''; el.innerHTML=adminLogin(); return; }
   if(locked){ if(bn) bn.innerHTML=''; el.innerHTML=gateView(); return; }
   if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
