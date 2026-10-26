@@ -235,6 +235,14 @@ body[data-locked="1"] #menu,body[data-locked="1"] footer{display:none}
 .fb.wait{background:var(--bg);color:var(--mute);font-size:13px}
 
 /* 결영님 화면 */
+#opsTab{color:var(--warn)}
+#opsTab i{font-style:normal;font-size:11px;font-weight:700;background:var(--warn);color:#fff;border-radius:99px;padding:1px 7px;margin-left:5px}
+.opsnav{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.opsnav button{font-family:inherit;font-size:13px;font-weight:600;padding:7px 13px;border-radius:99px;border:1px solid var(--warn-line);background:#fff;color:var(--warn);cursor:pointer}
+.opsnav button.on{background:var(--warn);border-color:var(--warn);color:#fff}
+.opsnav button i{font-style:normal;margin-left:4px;opacity:.85}
+.opsp{display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid var(--warn-line);font-size:13px;cursor:pointer}
+.opsp b{flex:1;font-weight:600}.opsp span{font-size:12px;color:var(--text-lt)}
 .admin{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:14px;padding:16px;margin-top:4px}
 .admin h3{font-size:15px;font-weight:700;color:var(--warn);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
 .admin h3 button{font-size:11.5px;font-weight:600;color:var(--warn);background:none;border:1px solid var(--warn-line);border-radius:6px;padding:3px 8px;cursor:pointer}
@@ -270,6 +278,7 @@ footer a{color:var(--text-lt);margin:0 6px}
 body[data-v=ex] #banner{display:none}
 /* 졸업반 — 릴스 한 달 챌린지 (10/21~) */
 body[data-v=grad] #banner{display:none!important}
+body[data-v=ops] #banner{display:none!important}
 .gd-up{--up:#C2410C;--up-soft:#FFF1E8}
 .gd-up>*{max-width:640px}
 .gd-today{background:var(--bg);border-radius:14px;padding:18px;margin-top:16px}
@@ -362,8 +371,8 @@ body[data-v=grad] #banner{display:none!important}
   .admin .fbq .fbR{position:sticky;top:70px}
   .admin .fbq .fbR textarea{min-height:300px!important}
   /* 결영님이 로그인한 첫 화면은 오른쪽 할 일을 접고 본문을 넓게 */
-  body[data-admin="1"][data-v=home] .page{grid-template-columns:200px minmax(0,1fr) 0}
-  body[data-admin="1"][data-v=home] #banner{display:none}
+  body[data-v=ops] .page{grid-template-columns:200px minmax(0,1fr) 0}
+  body[data-v=ops] #banner{display:none}
   .admin .fbq details>summary{pointer-events:none;list-style:none}
 }
 .fbqq{font-size:12.5px;color:var(--text-md);background:var(--warn-bg);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.6}
@@ -374,6 +383,7 @@ body[data-v=grad] #banner{display:none!important}
   <div class="top">
     <div class="timer" id="timer"><span class="l" id="tl">마감까지</span><span class="c" id="tc">--</span></div>
     <nav class="menu" id="menu">
+      <a href="#ops" data-v="ops" id="opsTab" hidden>운영진</a>
       <a href="#home" data-v="home">5기</a>
       <a href="#mine" data-v="mine">피드백</a>
       <a href="#read" data-v="read">독서</a>
@@ -705,29 +715,29 @@ function choiceOf(h){
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
   const v=(location.hash||'#home').slice(1), exm=v.match(/^ex\/(read|money|house|sns|live)\/(\d)$/);
-  view=exm?'ex':['home','read','money','house','sns','qa','files','mine','admin','grad'].includes(v)?v:'home';
+  view=exm?'ex':['home','read','money','house','sns','qa','files','mine','admin','grad','ops'].includes(v)?v:'home';
   const tab=exm?(exm[1]==='live'?'home':exm[1]):view;
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
   document.body.dataset.v=view; document.body.dataset.admin=ADMIN?'1':'';
+  const ot=document.getElementById('opsTab'); if(ot){ ot.hidden=!ADMIN; ot.innerHTML='운영진'+(ADMIN&&opsWait()?`<i>${opsWait()}</i>`:''); }
   const bn=document.getElementById('banner'), el=document.getElementById('view');
   // 졸업반 탭은 5기 로그인 없이 본다 (졸업반 멤버도 들어온다)
   const locked=isLocked() && view!=='admin' && view!=='grad';
   document.body.dataset.locked=locked?'1':'';
   if(view==='grad'){ if(bn) bn.innerHTML=''; el.innerHTML=gradView(); loadGrad(); return; }
   // 운영진 로그인 칸은 과제 데이터 없이 그린다 (로그인 전엔 DATA가 비어 있다)
-  if(view==='admin'){ if(bn) bn.innerHTML=''; el.innerHTML=adminLogin(); return; }
+  if(view==='admin' || (view==='ops' && !ADMIN)){ if(bn) bn.innerHTML=''; el.innerHTML=adminLogin(); return; }
   if(locked){ if(bn) bn.innerHTML=''; el.innerHTML=gateView(); return; }
   if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
-  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : trackView(view);
+  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : view==='ops'?opsView() : trackView(view);
 }
 
 // 5기 (첫 화면): MVP → 부부 진행판
 function homeView(){
   const now=NOW(), cw=curWeek(now);
   let h='';
-  if(ADMIN) h+=`<div class="sec" style="padding-bottom:6px">${adminPanel(cw)}</div>`;
   // MVP
   const mv=(DATA.mvp||[]);
   h+=`<div class="homegrid">`;
@@ -1110,24 +1120,46 @@ function mineView(){
 // ─────────────────────────────────────────────────────────────
 // 결영님 화면 (비밀번호가 맞을 때만 서버가 상세를 내려준다)
 // ─────────────────────────────────────────────────────────────
-function adminPanel(cw){
-  const rows=ADMIN.rows||[], wk=cw||1;
+// 운영진 탭 — 피드백 · 질문 · 진행 현황 · MVP · 링크 (10/26 결영: 5기 홈에 쌓여 있던 걸 따로 뺐다)
+let opsSub=(()=>{ try{ return sessionStorage.getItem('ot5ops')||'fb'; }catch(e){ return 'fb'; } })();
+function setOps(k){ opsSub=k; try{ sessionStorage.setItem('ot5ops',k); }catch(e){} render(); window.scrollTo(0,0); }
+const opsWait = () => ADMIN ? (ADMIN.rows||[]).filter(r=>!r.feedback).length : 0;
+function opsView(){
+  const rows=ADMIN.rows||[], cw=curWeek(NOW()), wk=cw||1;
+  const unans=rows.filter(r=>r.q && !r.answer);
+  const SUBS=[['fb','피드백',opsWait()],['qa','질문',unans.length],['prog','진행 현황',0],['mvp','MVP',0],['link','링크',0]];
+  if(!SUBS.some(x=>x[0]===opsSub)) opsSub='fb';
+  let h=`<section class="sec"><div class="admin"><h3>🔒 운영진 <button onclick="logout()">나가기</button></h3>
+    <div class="opsnav">${SUBS.map(([k,n,c])=>`<button class="${k===opsSub?'on':''}" onclick="setOps('${k}')">${n}${c?`<i>${c}</i>`:''}</button>`).join('')}</div>`;
+  h+=opsSub==='qa'?opsQa(rows,unans) : opsSub==='prog'?opsProg(rows,cw,wk) : opsSub==='mvp'?opsMvp(rows) : opsSub==='link'?opsLink(wk) : opsFb(rows);
+  return h+`</div></section>`;
+}
+function opsProg(rows,cw,wk){
   const zero=REAL.filter(r=>progress(r,wk).done===0);
   const part=REAL.filter(r=>{const d=progress(r,wk).done; return d>0&&d<PER;});
-  const unans=rows.filter(r=>r.q && !r.answer);
-  const cand=rows.filter(r=>r.shareOk && !r.isMvp).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,12);
-  let h=`<div class="admin"><h3>🔒 결영님만 보여요 <button onclick="logout()">나가기</button></h3>
+  let h=`
     ${!cw?`<div class="sub">OT 출석 안 한 부부 · ${REAL.filter(r=>!progress(r,0).live).length}</div>${REAL.filter(r=>!progress(r,0).live).map(r=>`<span class="chip">${esc(r)}</span>`).join('')||'<span class="chip ok">없어요</span>'}`:`
     <div class="sub">${wk}주차 하나도 안 낸 부부 · ${zero.length}</div>${zero.map(r=>`<span class="chip">${esc(r)}</span>`).join('')||'<span class="chip ok">없어요</span>'}
     <div class="sub">${wk}주차 덜 낸 부부 · ${part.length}</div>${part.map(r=>`<span class="chip" style="background:#FAEEDA;color:#633806">${esc(r)} ${progress(r,wk).done}/${PER}</span>`).join('')||'<span class="chip ok">없어요</span>'}`}
     ${(DATA.snsUnmatched||[]).length?`<div class="sub">SNS 방향성 체크 · 이름 확인 필요 ${DATA.snsUnmatched.length}</div><div style="font-size:12px;color:var(--text-lt)">과제방 부부 이름과 안 맞아서 진행판에 안 잡혔어요. 시트 '방향성체크' 탭 닉네임을 부부 이름으로 고치면 잡혀요.</div>${DATA.snsUnmatched.map(x=>`<span class="chip">${esc(x.h)} · ${fmtD(x.at)}</span>`).join('')}`:''}
     ${(()=>{ const sent=rows.filter(r=>r.feedback), un=sent.filter(r=>!r.readAt); if(!sent.length) return ''; const by={}; un.forEach(r=>{by[r.h]=(by[r.h]||0)+1;});
-      return `<div class="sub">보낸 피드백 · 읽음 ${sent.length-un.length} / ${sent.length}</div>${Object.keys(by).length?`<div style="font-size:12px;color:var(--text-lt)">아직 안 읽은 부부 — 피드백 탭에 로그인하면 읽음으로 바뀌어요</div>`+Object.keys(by).map(h=>`<span class="chip">${esc(h)}${by[h]>1?' '+by[h]:''}</span>`).join(''):'<span class="chip ok">모두 읽었어요</span>'}`; })()}
-    <div class="sub">답 안 단 질문 · ${unans.length}</div>`;
+      return `<div class="sub">보낸 피드백 · 읽음 ${sent.length-un.length} / ${sent.length}</div>${Object.keys(by).length?`<div style="font-size:12px;color:var(--text-lt)">아직 안 읽은 부부 — 피드백 탭에 로그인하면 읽음으로 바뀌어요</div>`+Object.keys(by).map(h=>`<span class="chip">${esc(h)}${by[h]>1?' '+by[h]:''}</span>`).join(''):'<span class="chip ok">모두 읽었어요</span>'}`; })()}`;
+  h+=`<div class="sub">부부별 낸 과제 · 이름을 누르면 펼쳐져요</div>`;
+  REAL.forEach(x=>{ const n=rows.filter(r=>r.h===x).length, k=JSON.stringify(x).replace(/"/g,'&quot;');
+    h+=`<div class="opsp" onclick="openDetail=openDetail===${k}?null:${k};render()"><b>${esc(x)}</b><span>${wk}주차 ${progress(x,wk).done}/${PER} · 전체 ${n}개</span>${chev(openDetail===x)}</div>${openDetail===x?detailOf(x):''}`; });
+  return h;
+}
+function opsQa(rows,unans){
+  let h=`<div class="sub">답 안 단 질문 · ${unans.length}</div>`;
+  if(!unans.length) h+=`<span class="chip ok">없어요</span>`;
   unans.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><div style="margin-top:4px">${esc(r.q)}</div>
     ${r.answerDraft?`<div style="font-size:11.5px;color:var(--warn);margin-top:6px">AI 답변 초안이에요. ${r.shareOk?'Q&A에 닉네임 없이 공개되니':'이 부부 피드백 탭에만 보이니'} 고쳐서 저장해주세요</div>`:''}
     <textarea id="ans-${esc(r.id)}" placeholder="${r.shareOk?'답변을 쓰면 Q&A에 닉네임 없이 올라가요':'공유 동의 X — 답변은 Q&A에 안 올라가고 이 부부 피드백 탭에만 보여요'}">${esc(r.answerDraft||'')}</textarea>
     <div class="row2"><select id="by-${esc(r.id)}"><option>머니그랩</option><option>결영</option></select><button class="sbtn" onclick="saveAnswer('${esc(r.id)}',this)">저장</button></div></div>`; });
+  return h;
+}
+function opsFb(rows){
+  let h='';
   // 피드백 — 초안기가 넣은 초안이 미리 채워져 있다. 고쳐서 보내면 그 부부 '피드백' 탭에 뜬다
   const waitFb=rows.filter(r=>!r.feedback).sort((a,b)=>new Date(a.at)-new Date(b.at));
   const nDraft=waitFb.filter(r=>r.draft).length;
@@ -1150,15 +1182,23 @@ function adminPanel(cw){
     });
     if(sentFb.length>3) h+=`<button class="more" onclick="fbSentAll=!fbSentAll;render()">${fbSentAll?`접기 ${chev(true)}`:`보낸 피드백 ${sentFb.length-3}개 더 보기 ${chev(false)}`}</button>`;
   }
+  return h;
+}
+function opsMvp(rows){
+  const cand=rows.filter(r=>r.shareOk && !r.isMvp).sort((a,b)=>new Date(b.at)-new Date(a.at)).slice(0,12);
+  let h='';
   h+=`<div class="sub">MVP 후보 (공유 동의 O) · ${cand.length}</div>`;
   if(!cand.length) h+=`<div style="font-size:12.5px;color:var(--text-lt)">아직 없어요</div>`;
   cand.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><pre style="white-space:pre-wrap;font-family:inherit;margin-top:4px;color:var(--text-md)">${esc(String(r.body).slice(0,220))}${String(r.body).length>220?'…':''}</pre>
     <input id="q-${esc(r.id)}" placeholder="소개 문구 (비우면 첫 두 줄)"><div class="row2"><button class="sbtn" onclick="setMvp('${esc(r.id)}',this)">★ MVP로 올리기</button></div></div>`; });
   const cur=rows.filter(r=>r.isMvp);
   if(cur.length){ h+=`<div class="sub">지금 올라간 MVP</div>`; cur.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)}</div><div class="row2"><button class="sbtn ghost" onclick="unMvp('${esc(r.id)}',this)">내리기</button></div></div>`; }); }
+  return h;
+}
+function opsLink(wk){
+  let h='';
   h+=`<div class="sub">라이브 다시보기 링크</div><div class="row2"><select id="lkW">${WEEKS.map(w=>`<option value="${w.n}" ${w.n===wk?'selected':''}>${w.n}주차</option>`).join('')}</select><select id="lkT"><option>내집마련</option><option>SNS</option></select></div>
-    <input id="lkU" placeholder="https://youtu.be/..."><div class="row2"><button class="sbtn" onclick="saveLink(this)">링크 저장</button></div>
-    <div style="font-size:12px;color:var(--text-lt);margin-top:10px">부부 이름을 누르면 낸 과제 내용이 펼쳐져요.</div></div>`;
+    <input id="lkU" placeholder="https://youtu.be/..."><div class="row2"><button class="sbtn" onclick="saveLink(this)">링크 저장</button></div>`;
   return h;
 }
 function detailOf(h){
@@ -1212,7 +1252,7 @@ function logout(){ setKey(''); try{ sessionStorage.removeItem('ot5adminData'); }
 // 운영진 로그인 — 페이지 안 화면 (prompt는 카톡 안 브라우저에서 안 뜰 수 있다)
 let adminBusy=false, adminErr='';
 function adminLogin(){
-  if(ADMIN){ setTimeout(()=>{ location.hash='#home'; },0); return ''; }
+  if(ADMIN){ setTimeout(()=>{ location.hash='#ops'; },0); return ''; }
   return `<section class="sec login"><span class="eyebrow">운영진</span><div class="h1">결영님 화면<br><span class="hl">로그인</span></div>
     <div class="box">
       <label for="aK">운영진 비밀번호</label>
@@ -1227,12 +1267,12 @@ async function submitAdmin(){
   adminBusy=true; adminErr=''; render();
   setKey(k); await load();
   adminBusy=false;
-  if(ADMIN){ toast('운영진으로 들어왔어요'); location.hash='#home'; window.scrollTo(0,0); }
+  if(ADMIN){ toast('운영진으로 들어왔어요'); location.hash='#ops'; window.scrollTo(0,0); }
   else { setKey(''); adminErr='비밀번호가 맞지 않거나 연결이 늦어요. 다시 해 주세요.'; render(); }
 }
 document.getElementById('adminLink').addEventListener('click',e=>{
   e.preventDefault();
-  location.hash = ADMIN ? '#home' : '#admin';
+  location.hash = ADMIN ? '#ops' : '#admin';
   window.scrollTo(0,0);
 });
 let toastT; function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2200); }
