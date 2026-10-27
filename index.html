@@ -1643,6 +1643,14 @@ function gradDemo(){
 // 알림톡 버튼은 ?go=grad 처럼 들어온다 (카카오 버튼 주소에 #을 변수로 못 넣어서) → 그 탭으로
 (()=>{ const g=new URLSearchParams(location.search).get('go'); if(g && /^[a-z]+$/.test(g) && !location.hash) history.replaceState(null,'',location.pathname+'#'+g); })();
 window.addEventListener('hashchange',()=>{ render(); window.scrollTo(0,0); });
+// 운영진 창을 열어둔 채 다른 데 갔다 오면 새 초안·과제를 다시 받는다 (10/27 결영: 올린 초안이 안 보임)
+//   1분 안에 받았거나, 고쳐 쓰던 글이 있으면 건너뛴다 (다시 그리면 쓴 글이 지워져서)
+let lastLoad=Date.now();
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden || !ADMIN || Date.now()-lastLoad<60000) return;
+  if([...document.querySelectorAll('#view textarea, #view input')].some(t=>t.value!==t.defaultValue)) return;
+  lastLoad=Date.now(); load();
+});
 tick(); setInterval(tick,1000);
 warm();
 load();
