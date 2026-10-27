@@ -377,6 +377,55 @@ body[data-v=ops] #banner{display:none!important}
   .admin .fbq details>summary{pointer-events:none;list-style:none}
 }
 .fbqq{font-size:12.5px;color:var(--text-md);background:var(--warn-bg);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.6}
+/* 입지 분석 쓰기 (#write/house/3) — 폰: 위에서 아래로 큰 칸 / PC: 엑셀처럼 구분 | 항목 | 쓰는 칸 + 오른쪽 올리기·제출 */
+.ipnote{margin-top:12px;font-size:13px;background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn);border-radius:10px;padding:10px 12px}
+.ipnote a{font-weight:700}
+.ipw .gk{background:var(--acc-soft);color:var(--acc);font-weight:700;font-size:13.5px;padding:10px 20px}
+.ipw .rw{padding:12px 20px;border-bottom:1px solid var(--border)}
+.ipw .rw>label{display:block;font-size:12.5px;font-weight:600;color:var(--text-md);margin-bottom:6px}
+.ipw .rw label i{color:var(--miss);font-style:normal}
+.ipw textarea{width:100%;min-height:84px;border:1px solid var(--border);border-radius:10px;padding:11px 12px;font-family:inherit;font-size:14.5px;line-height:1.65;color:var(--text);background:#fff;resize:vertical;transition:background .4s}
+.ipw textarea:focus{outline:2px solid var(--acc-lt);outline-offset:0;border-color:var(--acc-lt)}
+.ipw textarea::placeholder{color:#B4B8C2}
+.ipw textarea.flash{background:#FFF6D8}
+.ipsrc{margin-top:5px;font-size:11.5px;color:var(--mute)}
+.ipsrc a{color:var(--text-lt);margin-left:8px;text-decoration:none}
+.ipsrc a:hover{color:var(--acc);text-decoration:underline}
+.ipchk{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.5;color:var(--text)}
+.ipchk input{margin-top:3px}
+.ipside{position:sticky;bottom:0;background:var(--white);border-top:1px solid var(--border);padding:12px 20px 16px;display:flex;flex-direction:column;gap:8px;z-index:5}
+.ipside .b{display:block;flex:none;width:100%;min-height:0;height:auto;padding:11px 12px;text-align:center;cursor:pointer;font-size:13.5px}
+.ipside .b[disabled]{opacity:.45;cursor:not-allowed}
+.iph{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-md)}
+.iph b{color:var(--acc)}
+.iph .ipsv{margin-left:auto;font-size:11.5px;color:var(--mute)}
+.ipbar{height:6px;background:var(--acc-soft);border-radius:9px;overflow:hidden}
+.ipbar i{display:block;height:100%;width:0;background:var(--acc);transition:width .3s}
+.iph2{font-size:12.5px;font-weight:700;color:var(--acc);margin-top:4px}
+.ipsub{font-size:11.5px;color:var(--text-lt);line-height:1.5}
+.ipmsg{font-size:12.5px;min-height:0;line-height:1.5}
+.ipmsg:empty{display:none}
+/* 폰에선 엑셀 안내를 줄이고 제출만 붙여둔다 */
+@media (max-width:959px){
+  .ipside .iph2,.ipside .ipsub,.ipside a.b,.ipside label.b{display:none}
+  .ipw{padding-bottom:6px}
+}
+.ipup{display:block;margin:0 20px 14px;font-size:12.5px;background:var(--acc-soft);border-radius:10px;padding:10px 12px;color:var(--acc)}
+.ipup .b{display:inline-block;margin:6px 6px 0 0;padding:7px 12px;font-size:12.5px;cursor:pointer}
+@media (min-width:960px){
+  body[data-v=write] .page{grid-template-columns:200px minmax(0,1fr) 0}
+  .ipup{display:none}
+  body[data-v=write] #banner{display:none}
+  .ipwrap{display:grid;grid-template-columns:minmax(0,1fr) 250px;align-items:start;border-top:1px solid var(--border)}
+  .ipw .grp{display:grid;grid-template-columns:130px minmax(0,1fr);border-bottom:1px solid var(--border)}
+  .ipw .gk{padding:14px 16px;border-right:1px solid var(--border)}
+  .ipw .rw{display:grid;grid-template-columns:120px minmax(0,1fr);gap:0 14px;padding:10px 18px 10px 14px}
+  .ipw .gb .rw:last-child{border-bottom:0}
+  .ipw .rw>label{margin:10px 0 0}
+  .ipw textarea{min-height:64px}
+  .ipside{position:sticky;top:70px;bottom:auto;border-top:0;border-left:1px solid var(--border);padding:18px;min-height:calc(100vh - 70px)}
+}
+body[data-v=write] #banner{display:none!important}
 </style>
 </head>
 <body>
@@ -485,10 +534,11 @@ const TASKS = {
       how:['부부 합산 소득으로 대출 한도 조회하기','디딤돌·보금자리론 같은 정책대출 대상인지 확인하기','한 달에 감당할 수 있는 월 상환금액 정하기','가진 돈 + 대출로 매수 가능 예산 계산하기'],
       form:'[감당 가능한 대출 한도]\n대출 한도 :\n대출 기간·상환 방식 :\n월 상환액 :\n\n월 대출 상환금액 :\n정책대출 대상 :\n매수 가능 예산 :',
       ex:'[감당 가능한 대출 한도]\n대출 한도 : 4.2억\n대출 기간·상환 방식 : 30년, 원리금 균등 상환\n월 상환액 : 220만원\n\n월 대출 상환금액 : 최대 250만원으로 잡았어요\n정책대출 대상 : 해당 없음 (일반 주택담보대출로 계산)\n매수 가능 예산 : 가진 자금과 합쳐서 9~10억대 집'},
-    3:{name:'대장 단지 입지 분석',
-      how:['아실·호갱노노로 우리가 살고 싶은 지역의 대장 단지 찾기','입지 5요소(일자리·교통·학군·환경·재건축)로 입지 분석표 채우기','장점·단점·느낀 점 적기'],
-      form:'[OO 지역 대장 단지 분석]\n\n<장점>\n1)\n2)\n3)\n\n<단점>\n1)\n2)\n\n<느낀 점>\n\n(입지 분석표 캡처 첨부)',
-      ex:'[수색 증산 뉴타운 대장 단지 분석]\n\n<장점>\n1) DMC 직주근접이 가능한 신축 대장 단지\n2) 광화문·여의도·마곡 접근성도 30분권\n3) 6호선, 공항철도, 경의중앙선 트리플 역세권\n4) 증산초 초품아\n5) 변전소 지중화, 서부선, 강북횡단선 같은 호재\n\n<단점>\n1) 강남 접근성 아쉬움\n2) 트리플 역세권이지만 노선의 중요성이 떨어짐\n3) 학원가가 작고 학군이 아쉬움\n\n<느낀 점>\n다른 지역 대장 단지에 비해 신축치고 가격이 비싸지 않다고 생각했는데, 단점도 보여서 그렇지 않을까 싶었어요. 단지 분석과 임장을 더 해보면 더 느껴지는 게 있을 것 같아요.',
+    // 10/27 결영: 엑셀 입지 분석표와 같은 칸을 과제방 '입지 분석 쓰기'에서 바로 쓰고 낸다 (엑셀로 써서 올려도 된다)
+    3:{name:'대장 단지 입지 분석', writer:true,
+      how:['호갱노노·네이버 부동산으로 우리가 살고 싶은 지역의 대장 단지 찾기','입지 4대 요소(일자리·교통 · 학군 · 상권·생활환경 · 프리미엄)로 입지 분석 쓰기 — 칸마다 찾아볼 곳 바로가기가 있어요','장점·단점·느낀 점 적기','엑셀이 편하면 빈 양식을 받아 쓰고, 다 쓴 엑셀을 올리면 칸이 채워져요'],
+      fields:['기본 정보 — 단지명* · 주소 · 연식 · 용적률·건폐율 · 세대수 · 주차대수 · 평형 · 매매가 · 전세가','일자리·교통 — 일자리* · 역세권* · 도로·버스','학군 — 초품아* · 중학교 · 고등학교 · 학원가','상권·생활환경 — 상권·쇼핑* · 의료 · 편의시설 · 문화·여가','프리미엄 — 개발호재* · 환경','정리 — 장점* · 단점* · 느낀 점 (*는 꼭 쓸 칸)'],
+      ex:'[DMC센트럴자이 입지 분석]\n\n기본 정보 : 서울 은평구 증산동 · 2023년 1월(4년차) · 1,256세대 · 용적률 250.93% · 주차 세대당 1.22대 · 전용 59/74/84㎡ · 매매 15/16/17.5억 · 전세 7/7.9/8.8억\n\n일자리 : DMC 업무지구 도보 출퇴근, 마곡 20분, 광화문·여의도 약 30분\n역세권 : 디지털미디어시티역(6호선·공항철도·경의중앙선) 도보 5분\n도로·버스 : 버스 도보 5분 이내, 내부순환로(성산IC)·강변북로·월드컵대교 접근 용이\n\n초품아 : 증산초 도보 5분 이내 (동마다 차이 있음)\n중학교 : 증산중(도보권), 서부2학교군 배정\n고등학교 : 가재울고(도보권), 숭실고·충암고 등 진학\n학원가 : 가재울뉴타운 학원가, 대흥동 학원가 셔틀버스\n\n상권·쇼핑 : 이마트·홈플러스 도보권, DMC롯데몰 예정\n의료 : 신촌세브란스, 은평성모병원 접근성 양호\n편의시설 : 주민센터, 은평구청, 보건소\n문화·여가 : 증산도서관, 상암월드컵경기장, 영화관\n\n개발호재 : 교통 - 서부선 경전철, 강북횡단선 예정 / 인프라 - 롯데몰, 삼표부지 개발\n환경 : 불광천 수변산책로, 증산체육공원, 상암 월드컵공원\n\n'+'[수색 증산 뉴타운 대장 단지 분석]\n\n<장점>\n1) DMC 직주근접이 가능한 신축 대장 단지\n2) 광화문·여의도·마곡 접근성도 30분권\n3) 6호선, 공항철도, 경의중앙선 트리플 역세권\n4) 증산초 초품아\n5) 변전소 지중화, 서부선, 강북횡단선 같은 호재\n\n<단점>\n1) 강남 접근성 아쉬움\n2) 트리플 역세권이지만 노선의 중요성이 떨어짐\n3) 학원가가 작고 학군이 아쉬움\n\n<느낀 점>\n다른 지역 대장 단지에 비해 신축치고 가격이 비싸지 않다고 생각했는데, 단점도 보여서 그렇지 않을까 싶었어요. 단지 분석과 임장을 더 해보면 더 느껴지는 게 있을 것 같아요.',
       warn:'지금 사시는 곳은 가려주세요.'},
     4:{name:'후보 단지 분석·평가표',
       how:['내 예산으로 가능한 후보 단지 3곳 정하기','그중 한 곳을 골라 입지·단지 분석 양식 채우기 (브역대신평초)','주말(11/7~8) 임장으로 손품에서 부족했던 부분 채우기','평가표로 후보 단지 점수 매기기'],
@@ -547,7 +597,7 @@ function curWeek(now){ let c=0; WEEKS.forEach(w=>{ if(now>=kst(w.open)) c=w.n; }
 function nextDue(now){ return WEEKS.find(w=>now<=kst(w.due,true)); }
 const W = n => WEEKS[n-1];
 // 과제 내용은 여기까지만 공개 (결영님 결정 10/6: 일단 1주차까지). 다음 주차를 열 때 숫자만 올린다
-const SHOW_UPTO = 2;
+const SHOW_UPTO = 3;
 // 운영진(결영님 화면 로그인)은 공개 전 주차도 미리 본다 (10/19)
 const hiddenWeek = n => n>SHOW_UPTO && !ADMIN;
 
@@ -715,9 +765,9 @@ function choiceOf(h){
 // ─────────────────────────────────────────────────────────────
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
-  const v=(location.hash||'#home').slice(1), exm=v.match(/^ex\/(read|money|house|sns|live)\/(\d)$/);
-  view=exm?'ex':['home','read','money','house','sns','qa','files','mine','admin','grad','ops'].includes(v)?v:'home';
-  const tab=exm?(exm[1]==='live'?'home':exm[1]):view;
+  const v=(location.hash||'#home').slice(1), exm=v.match(/^ex\/(read|money|house|sns|live)\/(\d)$/), wrm=v.match(/^write\/(house)\/(\d)$/);
+  view=exm?'ex':wrm?'write':['home','read','money','house','sns','qa','files','mine','admin','grad','ops'].includes(v)?v:'home';
+  const tab=exm?(exm[1]==='live'?'home':exm[1]):wrm?wrm[1]:view;
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
   document.body.dataset.v=view; document.body.dataset.admin=ADMIN?'1':'';
@@ -732,7 +782,7 @@ function render(){
   if(locked){ if(bn) bn.innerHTML=''; el.innerHTML=gateView(); return; }
   if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
-  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : view==='ops'?opsView() : trackView(view);
+  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='write'?writeView(wrm[1],+wrm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : view==='ops'?opsView() : trackView(view);
 }
 
 // 5기 (첫 화면): MVP → 부부 진행판
@@ -936,7 +986,7 @@ function exView(k,n){
     <div class="h1">${esc(t.name)}</div>${live}${n>SHOW_UPTO?'<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:var(--warn)">운영진 미리보기 · 부부들에게는 아직 안 보여요</div>':''}</section>`;
   h+=`<div class="exgrid"><div class="exL">`;
   h+=`<section class="sec-alt"><div class="exh"><span>1</span>이렇게 하세요</div><div class="ex flat"><ol>${t.how.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${t.link?`<div class="btns" style="max-width:260px"><a class="b" href="${esc(t.link.url)}" target="_blank" rel="noopener">${esc(t.link.label)} ›</a></div>`:''}${t.warn?`<div class="warn">⚠️ ${warnTx(t.warn)}</div>`:''}${t.tbd?`<div class="tbd">SNS 과제는 목요일 라이브 내용에 맞춰 바뀔 수 있어요.</div>`:''}</div></section>`;
-  h+=`<section class="sec"><div class="exh"><span>2</span>${t.submit?'제출 방법':t.fields?'제출할 때 채울 칸':'제출 양식'}</div>${t.submit?`<div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`:t.fields?`<div class="exsub">'과제 제출하러 가기'에서 이 과제를 고르면 아래 칸이 나와요</div><div class="ex flat"><ol>${t.fields.map(f=>`<li>${esc(f)}</li>`).join('')}</ol></div>`:`<div class="exsub">복사해서 제출 페이지 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`}</section>`;
+  h+=`<section class="sec"><div class="exh"><span>2</span>${t.submit?'제출 방법':t.writer?'쓸 칸':t.fields?'제출할 때 채울 칸':'제출 양식'}</div>${t.submit?`<div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`:t.fields?`<div class="exsub">${t.writer?"아래 '입지 분석 쓰기'를 누르면 이 칸들이 나와요":"'과제 제출하러 가기'에서 이 과제를 고르면 아래 칸이 나와요"}</div><div class="ex flat"><ol>${t.fields.map(f=>`<li>${esc(f)}</li>`).join('')}</ol></div>`:`<div class="exsub">복사해서 제출 페이지 '과제 내용' 칸에 붙여넣고 채우세요</div><div class="ex flat"><pre id="exForm">${esc(t.form)}</pre></div>`}</section>`;
   h+=`</div><div class="exR">`;
   if(t.ex||SHOT){
     h+=`<section class="sec-alt"><div class="exh"><span>3</span>결영이네 예시</div><div class="ex flat">${t.ex?`<pre>${esc(t.ex)}</pre>`:''}`;
@@ -946,10 +996,175 @@ function exView(k,n){
   const bc=t.noBest?'':bestCards(k,n);
   if(bc) h+=`<section class="sec"><div class="exh"><span>${t.ex||SHOT?4:3}</span>4기 잘한 과제</div><div class="exsub">${bestCap(k,n)}</div><div class="ex flat">${bc}</div></section>`;
   h+=`</div></div>`;
-  if(t.submit) h+=`<div class="exbar"><a class="b fill" href="${t.submit.url}" target="_blank" rel="noopener">${esc(t.submit.label)} ›</a></div>`;
+  if(t.writer) h+=`<div class="exbar"><a class="b" href="${IPJI_TEMPLATE}" download="입지분석_양식.xlsx">빈 양식 받기</a><a class="b fill" href="#write/${k}/${n}">입지 분석 쓰기 ›</a></div>`;
+  else if(t.submit) h+=`<div class="exbar"><a class="b fill" href="${t.submit.url}" target="_blank" rel="noopener">${esc(t.submit.label)} ›</a></div>`;
   else if(t.fields) h+=`<div class="exbar"><a class="b fill" href="${FORM}" target="_blank" rel="noopener">과제 제출하러 가기 ›</a></div>`;
   else h+=`<div class="exbar"><button class="b" onclick="copyTxt(document.getElementById('exForm').textContent)">양식 복사</button><a class="b fill" href="${FORM}" target="_blank" rel="noopener">과제 제출하러 가기 ›</a></div>`;
   return h;
+}
+// ─────────────────────────────────────────────────────────────
+// 입지 분석 쓰기 (#write/house/3) — 제출 페이지 대신 과제방에서 바로 낸다 (10/27 결영)
+//   엑셀로 쓴 부부는 엑셀을 올리면 칸이 채워지고, 쓴 내용은 엑셀로 받을 수 있다
+// ─────────────────────────────────────────────────────────────
+const IPJI_TEMPLATE = 'files/fe63f44fcca5/ipji-template.xlsx';
+const SITES = {
+  naver: ['네이버 부동산', 'https://fin.land.naver.com/'],
+  hogang: ['호갱노노', 'https://hogangnono.com/'],
+  richgo: ['리치고', 'https://m.richgo.ai/'],
+  school: ['학구도안내서비스', 'https://schoolzone.emac.kr/']
+};
+// [묶음, [[칸 이름, 꼭 쓸 칸, 예시, 찾아볼 곳]]]
+const IPJI = [
+  ['기본 정보', [
+    ['단지명', 1, 'DMC센트럴자이', ['naver', 'hogang']],
+    ['주소', 0, '서울시 은평구 증산동', ['naver']],
+    ['연식', 0, '2023년 1월 · 4년차', ['naver', 'hogang']],
+    ['용적률·건폐율', 0, '용적률 250.93%, 건폐율 21.43%', ['naver']],
+    ['세대수', 0, '총 1,256세대 (임대 164세대)', ['naver', 'hogang']],
+    ['주차대수', 0, '총 1,541대 (세대당 1.22대)', ['naver']],
+    ['평형', 0, '전용 59㎡ / 74㎡ / 84㎡', ['naver']],
+    ['매매가', 0, '15 / 16 / 17.5억', ['naver', 'hogang']],
+    ['전세가', 0, '7 / 7.9 / 8.8억', ['naver', 'hogang']]]],
+  ['일자리·교통', [
+    ['일자리', 1, 'DMC 업무지구 도보 출퇴근, 마곡 20분, 광화문·여의도 약 30분', ['richgo', 'hogang']],
+    ['역세권', 1, '디지털미디어시티역(6호선·공항철도·경의중앙선) 도보 5분', ['hogang', 'naver']],
+    ['도로·버스', 0, '버스 도보 5분 이내, 내부순환로·강변북로 접근 용이', ['naver']]]],
+  ['학군', [
+    ['초품아', 1, '증산초 도보 5분 이내 (동마다 차이 있음)', ['school', 'hogang']],
+    ['중학교', 0, '증산중 (도보권), 서부2학교군 배정', ['school']],
+    ['고등학교', 0, '가재울고 (도보권), 숭실고·충암고 등 진학', ['school']],
+    ['학원가', 0, '가재울뉴타운 학원가, 대흥동 학원가 셔틀', ['hogang', 'richgo']]]],
+  ['상권·생활환경', [
+    ['상권·쇼핑', 1, '이마트, 홈플러스 도보권, DMC롯데몰 예정', ['richgo', 'naver']],
+    ['의료', 0, '신촌세브란스, 은평성모병원 접근성 양호', ['naver']],
+    ['편의시설', 0, '주민센터, 은평구청, 보건소', ['naver']],
+    ['문화·여가', 0, '증산도서관, 상암월드컵경기장, 영화관', ['naver']]]],
+  ['프리미엄', [
+    ['개발호재', 1, '교통 - 서부선, 강북횡단선 예정 / 인프라 - 롯데몰, 삼표부지 개발', ['hogang', 'richgo']],
+    ['환경', 0, '불광천 산책로, 증산체육공원, 상암 월드컵공원', ['naver']]]],
+  ['정리', [
+    ['장점', 1, '1) 직주근접 신축 대장 단지\n2) 트리플 역세권', []],
+    ['단점', 1, '1) 강남 접근성 아쉬움\n2) 학원가가 작음', []],
+    ['느낀 점', 0, '단점도 보여서 가격이 이 정도인가 싶었어요', []]]]
+];
+const IPJI_F = IPJI.flatMap(g => g[1]);
+const ipNorm = s => String(s == null ? '' : s).replace(/[\s,·・.()]/g, '');
+const ipKey = n => 'ot5ipji_' + ((getMine() || {}).h || 'admin') + '_' + n;
+let ipVals = {}, ipN = 0, ipBusy = false;
+function ipLoad(n){ ipN = n; try{ ipVals = JSON.parse(localStorage.getItem(ipKey(n)) || '{}'); }catch(e){ ipVals = {}; } }
+let ipSaveT;
+function ipSet(k, v){
+  ipVals[k] = v;
+  document.querySelectorAll('.ipsv').forEach(e => e.textContent = '저장하는 중…');
+  clearTimeout(ipSaveT);
+  ipSaveT = setTimeout(() => { try{ localStorage.setItem(ipKey(ipN), JSON.stringify(ipVals)); }catch(e){} document.querySelectorAll('.ipsv').forEach(e => e.textContent = '이 기기에 저장됨'); }, 500);
+  ipCount();
+}
+function ipCount(){
+  const req = IPJI_F.filter(f => f[1]), n = req.filter(f => String(ipVals[f[0]] || '').trim()).length;
+  document.querySelectorAll('.ipcnt').forEach(e => e.textContent = n + '/' + req.length);
+  document.querySelectorAll('.ipbar i').forEach(e => e.style.width = (n / req.length * 100) + '%');
+  return req.length - n;
+}
+function ipMsg(t, ok){ document.querySelectorAll('.ipmsg').forEach(e => { e.textContent = t; e.style.color = ok ? 'var(--acc)' : 'var(--miss)'; }); }
+function writeView(k, n){
+  const t = TASKS[k] && TASKS[k][n];
+  if(!t || !t.writer || hiddenWeek(n)) return `<section class="sec"><a class="back" href="#${k}">‹ 돌아가기</a><div class="h2">아직 공개 전인 과제예요</div></section>`;
+  const m = getMine();
+  ipLoad(n);
+  const done = (MINE && MINE.rows || []).find(r => r.task === taskLabel(k, n));
+  let h = `<section class="sec" style="padding-bottom:18px"><a class="back" href="#ex/${k}/${n}">‹ 과제 예시</a>
+    <span class="eyebrow">${wkName(n)} · ${esc(TRACKS[k].name)}</span><div class="h1">${esc(t.name)} 쓰기</div>
+    <div class="body1">칸을 다 채우고 맨 아래 '제출하기'를 누르면 끝이에요. 쓰는 동안 이 기기에 저장돼서 나중에 이어 써도 돼요.</div>
+    ${!m ? `<div class="ipnote">피드백 탭에서 로그인한 부부만 낼 수 있어요. <a href="#mine">로그인하러 가기 ›</a></div>` : ''}
+    ${done ? `<div class="ipnote">${fmtD(done.at)}에 이미 냈어요. 다시 내면 마지막에 낸 것으로 바뀌어요.</div>` : ''}</section>`;
+  h += `<div class="ipup"><b>엑셀로 쓰셨나요?</b> 쓴 엑셀을 올리면 아래 칸이 채워져요.<br>
+    <a class="b" href="${IPJI_TEMPLATE}" download="입지분석_양식.xlsx">빈 양식 받기</a><label class="b">쓴 엑셀 올리기<input type="file" accept=".xlsx" hidden onchange="ipUpload(this)"></label></div>`;
+  h += `<div class="ipwrap"><div class="ipw">`;
+  IPJI.forEach(([g, fs]) => {
+    h += `<div class="grp"><div class="gk">${esc(g)}</div><div class="gb">`;
+    fs.forEach(([l, r, ex, src]) => {
+      const id = 'ip-' + ipNorm(l);
+      h += `<div class="rw"><label for="${id}">${esc(l)}${r ? ' <i>*</i>' : ''}</label><div>
+        <textarea id="${id}" data-k="${esc(l)}" rows="${g === '정리' ? 4 : 2}" placeholder="예: ${esc(ex)}" oninput="ipSet(this.dataset.k,this.value)">${esc(ipVals[l] || '')}</textarea>
+        ${src.length ? `<div class="ipsrc">찾아보기 ${src.map(s => `<a href="${SITES[s][1]}" target="_blank" rel="noopener">${SITES[s][0]} ›</a>`).join('')}</div>` : ''}</div></div>`;
+    });
+    h += `</div></div>`;
+  });
+  h += `<div class="grp"><div class="gk">마지막</div><div class="gb">
+    <div class="rw"><label for="ip-q">질문 (선택)</label><div><textarea id="ip-q" data-k="질문" rows="2" placeholder="머니그랩님께 물어보고 싶은 것" oninput="ipSet(this.dataset.k,this.value)">${esc(ipVals['질문'] || '')}</textarea></div></div>
+    <div class="rw"><label>공유 동의</label><div><label class="ipchk"><input type="checkbox" id="ip-share" ${ipVals.share ? 'checked' : ''} onchange="ipSet('share',this.checked)"> 잘한 과제로 다른 부부에게 공유돼도 괜찮아요 (닉네임은 가려요)</label></div></div>
+  </div></div></div>`;
+  h += `<aside class="ipside"><div class="iph">꼭 쓸 칸 <b class="ipcnt">0/8</b><span class="ipsv">이 기기에 저장됨</span></div><div class="ipbar"><i></i></div>
+    <div class="iph2">엑셀로 쓰셨나요?</div>
+    <a class="b" href="${IPJI_TEMPLATE}" download="입지분석_양식.xlsx">① 빈 양식 받기</a>
+    <label class="b">② 쓴 엑셀 올리기<input type="file" accept=".xlsx" hidden onchange="ipUpload(this)"></label>
+    <div class="ipsub">올리면 칸이 자동으로 채워져요. 확인하고 제출만 누르세요</div>
+    <div class="ipmsg"></div>
+    <button class="b" onclick="ipDownload()">쓴 내용 엑셀로 받기</button>
+    <button class="b fill" onclick="ipSubmit()" ${m ? '' : 'disabled'}>제출하기</button>
+  </aside></div>`;
+  setTimeout(ipCount, 0);
+  return h;
+}
+function taskLabel(k, n){ return `${n}주차 - ${TRACKS[k].name} (${TASKS[k][n].name})`; }
+function needXLSX(){
+  if(window.XLSX) return Promise.resolve();
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+}
+// 엑셀 읽기 — 칸 위치가 아니라 칸 이름(단지명·역세권…) 옆 값을 찾는다. 시트가 여럿이면 가장 많이 채운 시트(결영이네 예시 시트는 뺀다)
+function ipFromSheet(ws){
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }), names = {}, out = {};
+  IPJI_F.forEach(f => names[ipNorm(f[0])] = f[0]);
+  names[ipNorm('용적률, 건폐율')] = '용적률·건폐율';
+  rows.forEach(r => {
+    for(let i = 0; i < r.length; i++){
+      const key = names[ipNorm(r[i])];
+      if(!key) continue;
+      const v = r.slice(i + 1).find(x => String(x).trim() !== '' && !names[ipNorm(x)]);
+      if(v !== undefined && !out[key]) out[key] = String(v).trim();
+      break;
+    }
+  });
+  return out;
+}
+async function ipUpload(inp){
+  const f = inp.files[0]; inp.value = '';
+  if(!f) return;
+  if(!/\.xlsx$/i.test(f.name)){ ipMsg('엑셀(.xlsx) 파일만 올릴 수 있어요'); return; }
+  try{ await needXLSX(); }catch(e){ ipMsg('엑셀 읽기 도구를 못 불러왔어요. 잠시 뒤 다시 해 주세요'); return; }
+  try{
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    let best = {}, bn = 0;
+    wb.SheetNames.forEach(sn => { const o = ipFromSheet(wb.Sheets[sn]); const c = Object.keys(o).length; if(o['단지명'] === 'DMC센트럴자이' && wb.SheetNames.length > 1) return; if(c > bn){ best = o; bn = c; } });
+    if(!bn){ ipMsg('채워진 칸을 못 찾았어요. 과제방에서 받은 양식에 쓰셨는지 확인해 주세요'); return; }
+    Object.keys(best).forEach(k => { ipVals[k] = best[k]; const ta = document.querySelector(`textarea[data-k="${k}"]`); if(ta){ ta.value = best[k]; ta.classList.add('flash'); setTimeout(() => ta.classList.remove('flash'), 1200); } });
+    ipSet('_from', f.name);
+    ipMsg(`${bn}칸을 채웠어요. 확인하고 제출하세요`, true);
+  }catch(e){ ipMsg('파일을 읽지 못했어요. 엑셀에서 다시 저장해서 올려 주세요'); }
+}
+async function ipDownload(){
+  try{ await needXLSX(); }catch(e){ toast('엑셀 도구를 못 불러왔어요. 잠시 뒤 다시 해 주세요'); return; }
+  const v = k => ipVals[k] || '', aoa = [['아파트 입지 분석'], ['입지 4대 요소 · 원팀 프로젝트'], []];
+  IPJI[0][1].forEach(f => aoa.push([f[0], v(f[0])]));
+  aoa.push([], ['구분', '세부 항목', '분석 내용']);
+  IPJI.slice(1).forEach(([g, fs]) => fs.forEach((f, i) => aoa.push([i ? '' : g, f[0], v(f[0])])));
+  const ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 70 }];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '입지분석');
+  XLSX.writeFile(wb, `입지분석_${(v('단지명') || '우리집').replace(/[\\/:*?"<>|]/g, '')}.xlsx`);
+}
+async function ipSubmit(){
+  const m = getMine();
+  if(!m){ ipMsg('피드백 탭에서 먼저 로그인해 주세요'); return; }
+  const miss = ipCount();
+  if(miss){ ipMsg(`* 표시 칸 ${miss}개가 비어 있어요. 채워야 낼 수 있어요`); const f = IPJI_F.find(f => f[1] && !String(ipVals[f[0]] || '').trim()); const ta = f && document.querySelector(`textarea[data-k="${f[0]}"]`); if(ta) ta.focus(); return; }
+  if(ipBusy) return; ipBusy = true; ipMsg('내는 중이에요…', true);
+  try{
+    const r = await post({ op: 'ipji', h: m.h, code: m.code, task: taskLabel('house', ipN), cells: IPJI_F.map(f => [f[0], ipVals[f[0]] || '']), share: !!ipVals.share, q: ipVals['질문'] || '' });
+    if(!r.ok) throw r.error;
+    try{ localStorage.removeItem(ipKey(ipN)); }catch(e){}
+    ipBusy = false; toast('입지 분석을 냈어요'); openMine(m.h, m.code, true); location.hash = '#mine'; window.scrollTo(0, 0);
+  }catch(e){ ipBusy = false; ipMsg(e === 'code' || e === 'locked' ? '로그인 정보가 맞지 않아요. 피드백 탭에서 다시 로그인해 주세요' : '내지 못했어요. 쓴 내용은 그대로 있으니 잠시 뒤 다시 눌러 주세요'); }
 }
 function copyTxt(txt){
   const done=()=>toast('양식을 복사했어요. 제출 페이지 "과제 내용"에 붙여넣으세요');
