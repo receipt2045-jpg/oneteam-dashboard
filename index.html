@@ -204,6 +204,14 @@ body[data-locked="1"] #menu,body[data-locked="1"] footer{display:none}
 .qa .qt{font-size:14.5px;font-weight:600;line-height:1.6}
 .qa .qt::before{content:"Q. ";color:var(--acc);font-weight:800}
 .qa .at{font-size:13.5px;color:var(--text-md);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);line-height:1.7;white-space:pre-wrap}
+.qa{cursor:pointer}.qa .qt{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.qa .at{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.qa.open .qt,.qa.open .at{display:block;-webkit-line-clamp:unset;overflow:visible}
+.qa .more-t{float:right;color:var(--acc);font-weight:600}.qa .more-t svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;vertical-align:-1px}
+.qnav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 2px}
+.qnav button{font-family:inherit;font-size:13px;font-weight:600;padding:7px 13px;border-radius:99px;border:1px solid var(--border);background:#fff;color:var(--text-md);cursor:pointer}
+.qnav button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.qnav button i{font-style:normal;margin-left:4px;opacity:.8}
 .qa .at.wait{color:var(--mute)}
 .qa .meta{font-size:11.5px;color:var(--text-lt);margin-top:5px}
 .empty{font-size:14px;color:var(--text-lt);padding:22px 0;text-align:center}
@@ -1236,16 +1244,25 @@ function filesBanner(){
 }
 function seenFile(){ try{ const f=FILES_OF()[0]; if(f) localStorage.setItem('ot5file_seen',f.id); }catch(e){} }
 
+// 11/2 결영: 질문이 많아져서 과정별 메뉴로 나누고, 답 달린 것부터 최근 순으로. 길면 줄여두고 누르면 펼친다
+let qaTab=(()=>{ try{ return sessionStorage.getItem('ot5qa')||'all'; }catch(e){ return 'all'; } })();
+const qaOpen=new Set();
+function setQa(k){ qaTab=k; try{ sessionStorage.setItem('ot5qa',k); }catch(e){} render(); }
 function qaView(){
-  const list=DATA.qa||[];
+  const all=DATA.qa||[], trk=q=>{ const t=parseTask(q.task); return t?t.track:''; };
+  const tabs=[['all','전체']].concat(['money','house','sns','read','live'].map(k=>[k,TRACKS[k].name])).map(([k,n])=>[k,n,k==='all'?all.length:all.filter(q=>trk(q)===k).length]).filter(x=>x[0]==='all'||x[2]);
+  if(!tabs.some(x=>x[0]===qaTab)) qaTab='all';
+  const list=all.filter(q=>qaTab==='all'||trk(q)===qaTab), byNew=(a,b)=>new Date(b.at)-new Date(a.at);
+  const done=list.filter(q=>q.a).sort(byNew), wait=list.filter(q=>!q.a).sort(byNew);
   let h=`<section class="sec-alt"><span class="eyebrow">Q&amp;A</span><div class="h1">물어봐 주신 것들</div>
     <div class="body1">과제를 낼 때 제출 페이지 맨 아래 칸에 질문을 남겨주세요. 공유 동의를 O로 한 질문만 답과 함께 닉네임 없이 여기 올라와요. X로 하면 답은 내 피드백 탭에서만 볼 수 있어요.</div>`;
-  if(!list.length) h+=`<div class="empty">${DATA._loading?'불러오는 중이에요…':'아직 올라온 질문이 없어요'}</div>`;
-  list.forEach(q=>{
-    const t=parseTask(q.task), tag=t?`${wkName(t.week)} ${TRACKS[t.track].name}`:'';
-    h+=`<div class="qa"><div class="qt">${esc(q.q)}</div>${q.a?`<div class="at">${esc(q.a)}</div>`:`<div class="at wait">답변을 준비하고 있어요</div>`}
-      <div class="meta">${esc(tag)}${q.by?' · '+esc(q.by):''}</div></div>`;
-  });
+  if(all.length) h+=`<div class="qnav">${tabs.map(([k,n,c])=>`<button class="${k===qaTab?'on':''}" onclick="setQa('${k}')">${n}<i>${c}</i></button>`).join('')}</div>`;
+  if(!all.length) h+=`<div class="empty">${DATA._loading?'불러오는 중이에요…':'아직 올라온 질문이 없어요'}</div>`;
+  const card=q=>{ const t=parseTask(q.task), tag=t?`${wkName(t.week)} ${TRACKS[t.track].name}`:'', op=qaOpen.has(q.id), k=JSON.stringify(String(q.id)).replace(/"/g,'&quot;');
+    return `<div class="qa${op?' open':''}" onclick="qaOpen.has(${k})?qaOpen.delete(${k}):qaOpen.add(${k});render()"><div class="qt">${esc(q.q)}</div>${q.a?`<div class="at">${esc(q.a)}</div>`:`<div class="at wait">답변을 준비하고 있어요</div>`}
+      <div class="meta">${esc(tag)}${q.by?' · '+esc(q.by):''}${q.at?' · '+fmtD(q.at):''}<span class="more-t">${op?'접기':'전체 보기'} ${chev(op)}</span></div></div>`; };
+  if(done.length) h+=`<div class="sub" style="margin-top:14px">답변 완료 · ${done.length}</div>`+done.map(card).join('');
+  if(wait.length) h+=`<div class="sub" style="margin-top:18px">답변 준비 중 · ${wait.length}</div>`+wait.map(card).join('');
   return h+`</section>`;
 }
 
