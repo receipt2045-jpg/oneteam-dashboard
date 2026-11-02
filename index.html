@@ -1248,9 +1248,14 @@ function seenFile(){ try{ const f=FILES_OF()[0]; if(f) localStorage.setItem('ot5
 let qaTab=(()=>{ try{ return sessionStorage.getItem('ot5qa')||'all'; }catch(e){ return 'all'; } })();
 const qaOpen=new Set();
 function setQa(k){ qaTab=k; try{ sessionStorage.setItem('ot5qa',k); }catch(e){} render(); }
+// 강의 출석에 달린 질문은 내용으로 과정을 나눈다 (11/2 결영) — 애매하면 기타
+const qaTopic = q => /릴스|영상|인스타|팔로워|소개글|대본|캡컷|계정|CTA|후킹|콘텐츠|촬영|편집|자막|SNS/i.test(q) ? 'sns'
+  : /대출|청약|아파트|단지|입지|매수|전세|임장|ISA|ETF|S&P|나스닥|연금|투자|발행어음|주식|금리/i.test(q) ? 'house'
+  : /가계부|통장|생활비|비상금|저축|경조사|용돈|고정비|변동비|모아불리|보험|예산|지출/.test(q) ? 'money'
+  : /책|독서/.test(q) ? 'read' : 'etc';
 function qaView(){
-  const all=DATA.qa||[], trk=q=>{ const t=parseTask(q.task); return t?t.track:''; };
-  const tabs=[['all','전체']].concat(['money','house','sns','read','live'].map(k=>[k,TRACKS[k].name])).map(([k,n])=>[k,n,k==='all'?all.length:all.filter(q=>trk(q)===k).length]).filter(x=>x[0]==='all'||x[2]);
+  const all=DATA.qa||[], trk=q=>{ const t=parseTask(q.task); return !t?'etc':t.track==='live'?qaTopic(q.q):t.track; };
+  const tabs=[['all','전체']].concat(['money','house','sns','read'].map(k=>[k,TRACKS[k].name]),[['etc','기타']]).map(([k,n])=>[k,n,k==='all'?all.length:all.filter(q=>trk(q)===k).length]).filter(x=>x[0]==='all'||x[2]);
   if(!tabs.some(x=>x[0]===qaTab)) qaTab='all';
   const list=all.filter(q=>qaTab==='all'||trk(q)===qaTab), byNew=(a,b)=>new Date(b.at)-new Date(a.at);
   const done=list.filter(q=>q.a).sort(byNew), wait=list.filter(q=>!q.a).sort(byNew);
