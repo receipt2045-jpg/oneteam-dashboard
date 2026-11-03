@@ -456,7 +456,7 @@ body[data-v=write] #banner,body[data-v=coach] #banner{display:none!important}
       <a href="#ops" data-v="ops" id="opsTab" hidden>운영진</a>
       <a href="#home" data-v="home">5기</a>
       <a href="#mine" data-v="mine">피드백</a>
-      <a href="#coach" data-v="coach">내집 코칭</a>
+      <a href="#coach" data-v="coach">1:1 내집마련</a>
       <a href="#read" data-v="read">독서</a>
       <a href="#money" data-v="money">돈관리</a>
       <a href="#house" data-v="house">내집마련</a>
@@ -1124,10 +1124,10 @@ const WR = {
 // 1:1 내집 코칭 — 4기 '[신혼집] 1:1 상담 신청서' 칸에서 상담 날짜만 빼고 글로 받는다. 답변은 머니그랩이 피드백 탭으로 (11/3 결영)
 const COACH_TASK = '코칭 - 내집마련 (1:1 내집 코칭)', COACH_DUE = '2026-11-16T23:59:59+09:00';
 const isCoach = r => /^코칭 - /.test(String(r && r.task || ''));
-WR.coach = { title: '1:1 내집 코칭', groups: [
+WR.coach = { title: '1:1 내집마련 피드백', groups: [
   ['신청', [
     ['가장 궁금한 것 한 가지', 1, '지금 예산으로 매수할지, 전세로 2년 더 살지 고민이에요', []],
-    ['희망 코칭 유형', 1, '', [], { choices: ['매매', '앞으로의 방향성'] }],
+    ['원하는 피드백 유형', 1, '', [], { choices: ['매매', '앞으로의 방향성'] }],
     ['부동산 공부 정도', 1, '', [], { choices: ['공부한 지 꽤 되었어요', '기본적인 건 알아요', '아는 건 별로 없어요', '처음이에요'] }]]],
   ['자금·현상황', [
     ['집에 쓸 수 있는 현금', 1, '2억', []],
@@ -1215,9 +1215,9 @@ function coachView(){
   const m = getMine(), W = WR.coach, F = ipF('coach'), closed = NOW() > new Date(COACH_DUE).getTime();
   ipLoad('coach');
   const done = (MINE && MINE.rows || []).find(isCoach);
-  let h = `<section class="sec" style="padding-bottom:18px"><span class="eyebrow">내집마련 · 머니그랩</span><div class="h1">1:1 내집 코칭</div>
+  let h = `<section class="sec" style="padding-bottom:18px"><span class="eyebrow">내집마련 · 머니그랩</span><div class="h1">1:1 내집마련 피드백</div>
     <div class="body1">우리 집 고민을 글로 남기면 머니그랩님이 글로 답해 드려요. 답변은 피드백 탭에 와요.</div>
-    <div class="ipnote">11월 16일(월) 23:59까지 신청받아요.<br>코칭 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div>
+    <div class="ipnote">11월 16일(월) 23:59까지 신청받아요.<br>피드백 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div>
     ${!m ? `<div class="ipnote">피드백 탭에서 로그인한 부부만 신청할 수 있어요. <a href="#mine">로그인하러 가기 ›</a></div>` : ''}
     ${done ? `<div class="ipnote">${fmtD(done.at)}에 신청했어요. 다시 내면 마지막에 낸 것으로 바뀌어요.${done.feedback ? ' 답변은 피드백 탭에서 볼 수 있어요.' : ''}</div>` : ''}
     ${closed ? `<div class="ipnote">신청이 마감됐어요.</div>` : ''}</section>`;
@@ -1318,7 +1318,7 @@ async function ipSubmit(){
     const r = await post({ op: 'ipji', h: m.h, code: m.code, task: coach ? COACH_TASK : taskLabel('house', ipN), cells, share: coach ? false : !!ipVals.share, q: coach ? '' : (ipVals['질문'] || '') });
     if(!r.ok) throw r.error;
     try{ localStorage.removeItem(ipKey(ipN)); }catch(e){}
-    ipBusy = false; toast(ipN === 'coach' ? '1:1 내집 코칭을 신청했어요' : `${WR[ipN].title}을 냈어요`); openMine(m.h, m.code, true); location.hash = '#mine'; window.scrollTo(0, 0);
+    ipBusy = false; toast(ipN === 'coach' ? '1:1 내집마련 피드백을 신청했어요' : `${WR[ipN].title}을 냈어요`); openMine(m.h, m.code, true); location.hash = '#mine'; window.scrollTo(0, 0);
   }catch(e){ ipBusy = false; ipMsg(e === 'code' || e === 'locked' ? '로그인 정보가 맞지 않아요. 피드백 탭에서 다시 로그인해 주세요' : '내지 못했어요. 쓴 내용은 그대로 있으니 잠시 뒤 다시 눌러 주세요'); }
 }
 function copyTxt(txt){
@@ -1491,9 +1491,9 @@ function mineView(){
   let h=`<section class="sec"><div class="who-bar"><span><b>${esc(MINE.h)}</b>님 로그인 중${MINE._stale?' <span style="color:var(--text-lt);font-size:12px">· 새 내용 확인 중…</span>':''}</span><button onclick="leaveMine()">로그아웃</button></div>
     <div class="h1">낸 과제 <span class="hl">${rows.length}개</span>,<br>피드백 ${got}개</div>
     <div class="body1">피드백은 마감 뒤 며칠 안에 하나씩 달려요.</div><div style="margin-top:14px">`;
-  coach.forEach(r=>{ h+=`<div class="mrow"><div class="t">1:1 내집 코칭</div><div class="m">${fmtD(r.at)} 신청</div>
+  coach.forEach(r=>{ h+=`<div class="mrow"><div class="t">1:1 내집마련 피드백</div><div class="m">${fmtD(r.at)} 신청</div>
       <details><summary>내가 쓴 신청서 보기</summary><pre>${esc(r.body)}</pre></details>
-      ${r.feedback?`<div class="fb"><b>${esc(r.feedbackBy||'머니그랩')}의 코칭 답변</b>${esc(r.feedback)}<div style="margin-top:10px;font-size:12px;color:var(--text-lt)">코칭 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div></div>`:`<div class="fb wait">머니그랩님이 답변을 준비하고 있어요</div>`}</div>`; });
+      ${r.feedback?`<div class="fb"><b>${esc(r.feedbackBy||'머니그랩')}의 피드백</b>${esc(r.feedback)}<div style="margin-top:10px;font-size:12px;color:var(--text-lt)">피드백 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div></div>`:`<div class="fb wait">머니그랩님이 답변을 준비하고 있어요</div>`}</div>`; });
   if(!rows.length) h+=`<div class="empty">아직 낸 과제가 없어요</div>`;
   rows.forEach(r=>{
     const t=parseTask(r.task), name=t&&TASKS[t.track][t.week]?(t.week?`${t.week}주차 ${TRACKS[t.track].name} · ${TASKS[t.track][t.week].name}`:TASKS[t.track][0].name):r.task;
@@ -1524,7 +1524,7 @@ function opsView(){
   const rows=ADMIN.rows||[], cw=curWeek(NOW()), wk=cw||1;
   const unans=rows.filter(r=>r.q && !r.answer);
   const coachRows=rows.filter(isCoach), taskRows=rows.filter(r=>!isCoach(r));
-  const SUBS=[['fb','피드백',taskRows.filter(r=>!r.feedback).length],['coach','1:1 코칭',coachRows.filter(r=>!r.feedback).length],['qa','질문',unans.length],['prog','진행 현황',0],['mvp','MVP',0],['link','링크',0]];
+  const SUBS=[['fb','피드백',taskRows.filter(r=>!r.feedback).length],['coach','1:1 내집마련',coachRows.filter(r=>!r.feedback).length],['qa','질문',unans.length],['prog','진행 현황',0],['mvp','MVP',0],['link','링크',0]];
   if(!SUBS.some(x=>x[0]===opsSub)) opsSub='fb';
   let h=`<section class="sec"><div class="admin"><h3>🔒 운영진 <button onclick="logout()">나가기</button></h3>
     <div class="opsnav">${SUBS.map(([k,n,c])=>`<button class="${k===opsSub?'on':''}" onclick="setOps('${k}')">${n}${c?`<i>${c}</i>`:''}</button>`).join('')}</div>`;
@@ -1552,8 +1552,8 @@ function opsProg(rows,cw,wk){
 }
 // 1:1 내집 코칭 — 피드백과 같은 보내기(초안·보내기·보낸 것 줄 긋기), 보내면 그 부부 피드백 탭에 '코칭 답변'으로
 function opsCoach(rows){
-  if(!rows.length) return `<div class="sub">1:1 내집 코칭 신청</div><span class="chip ok">아직 신청이 없어요</span>`;
-  return opsFb(rows).replace('피드백 기다리는 과제','답변 기다리는 코칭 신청').replace(/새로 들어온 과제는[^<]*/,'신청서를 보고 답변을 써서 보내면 그 부부 피드백 탭에 "코칭 답변"으로 떠요. 금액·가족 이야기는 운영진만 봐요.').replace(/보낸 피드백 · /,'보낸 코칭 답변 · ').replace(/코칭 - 내집마련 \(1:1 내집 코칭\)/g,'1:1 내집 코칭').replace(/>과제 내용</g,'>신청서<').replace(/초안 준비 중 · 오전 10시에 채워져요/g,'초안 없음 · 직접 써서 보내거나 Claude에게 “코칭 초안 써줘”라고 하세요');
+  if(!rows.length) return `<div class="sub">1:1 내집마련 피드백 신청</div><span class="chip ok">아직 신청이 없어요</span>`;
+  return opsFb(rows).replace('피드백 기다리는 과제','답변 기다리는 1:1 내집마련 피드백 신청').replace(/새로 들어온 과제는[^<]*/,'신청서를 보고 답변을 써서 보내면 그 부부 피드백 탭에 "1:1 내집마련 피드백"으로 떠요. 금액·가족 이야기는 운영진만 봐요.').replace(/보낸 피드백 · /,'보낸 1:1 피드백 · ').replace(/코칭 - 내집마련 \(1:1 내집 코칭\)/g,'1:1 내집마련 피드백').replace(/>과제 내용</g,'>신청서<').replace(/초안 준비 중 · 오전 10시에 채워져요/g,'초안 없음 · 직접 써서 보내거나 Claude에게 “1:1 피드백 초안 써줘”라고 하세요');
 }
 function opsQa(rows,unans){
   let h=`<div class="sub">답 안 단 질문 · ${unans.length}</div>`;
