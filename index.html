@@ -407,6 +407,10 @@ body[data-v=ops] #banner{display:none!important}
 .ipw select.ipscore{font-family:inherit;font-size:15px;font-weight:600;border:1px solid var(--border);border-radius:10px;padding:9px 12px;min-width:110px;background:#fff;color:var(--text)}
 .ipw select.ipscore.flash{background:#FFF6D8}
 .ipcrit{margin-top:5px;font-size:12px;color:var(--text-lt);line-height:1.5}
+.ipch{display:flex;flex-wrap:wrap;gap:8px}
+.ipch label{display:flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:99px;padding:8px 14px;font-size:14px;cursor:pointer;background:#fff}
+.ipch label.on{border-color:var(--acc);background:var(--acc-soft);color:var(--acc);font-weight:600}
+.ipch input{accent-color:var(--acc)}
 .ipchk{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.5;color:var(--text)}
 .ipchk input{margin-top:3px}
 .ipside{position:sticky;bottom:0;background:var(--white);border-top:1px solid var(--border);padding:12px 20px 16px;display:flex;flex-direction:column;gap:8px;z-index:5}
@@ -429,7 +433,7 @@ body[data-v=ops] #banner{display:none!important}
 .ipup{display:block;margin:0 20px 14px;font-size:12.5px;background:var(--acc-soft);border-radius:10px;padding:10px 12px;color:var(--acc)}
 .ipup .b{display:inline-block;margin:6px 6px 0 0;padding:7px 12px;font-size:12.5px;cursor:pointer}
 @media (min-width:960px){
-  body[data-v=write] .page{grid-template-columns:200px minmax(0,1fr) 0}
+  body[data-v=write] .page,body[data-v=coach] .page{grid-template-columns:200px minmax(0,1fr) 0}
   .ipup{display:none}
   body[data-v=write] #banner{display:none}
   .ipwrap{display:grid;grid-template-columns:minmax(0,1fr) 250px;align-items:start;border-top:1px solid var(--border)}
@@ -441,7 +445,7 @@ body[data-v=ops] #banner{display:none!important}
   .ipw textarea{min-height:64px}
   .ipside{position:sticky;top:70px;bottom:auto;border-top:0;border-left:1px solid var(--border);padding:18px;min-height:calc(100vh - 70px)}
 }
-body[data-v=write] #banner{display:none!important}
+body[data-v=write] #banner,body[data-v=coach] #banner{display:none!important}
 </style>
 </head>
 <body>
@@ -452,6 +456,7 @@ body[data-v=write] #banner{display:none!important}
       <a href="#ops" data-v="ops" id="opsTab" hidden>운영진</a>
       <a href="#home" data-v="home">5기</a>
       <a href="#mine" data-v="mine">피드백</a>
+      <a href="#coach" data-v="coach">내집 코칭</a>
       <a href="#read" data-v="read">독서</a>
       <a href="#money" data-v="money">돈관리</a>
       <a href="#house" data-v="house">내집마련</a>
@@ -787,7 +792,7 @@ function choiceOf(h){
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
   const v=(location.hash||'#home').slice(1), exm=v.match(/^ex\/(read|money|house|sns|live)\/(\d)$/), wrm=v.match(/^write\/(house)\/(\d)$/);
-  view=exm?'ex':wrm?'write':['home','read','money','house','sns','qa','files','mine','admin','grad','ops'].includes(v)?v:'home';
+  view=exm?'ex':wrm?'write':['home','read','money','house','sns','qa','files','mine','admin','grad','ops','coach'].includes(v)?v:'home';
   const tab=exm?(exm[1]==='live'?'home':exm[1]):wrm?wrm[1]:view;
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
@@ -803,7 +808,7 @@ function render(){
   if(locked){ if(bn) bn.innerHTML=''; el.innerHTML=gateView(); return; }
   if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
-  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='write'?writeView(wrm[1],+wrm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : view==='ops'?opsView() : trackView(view);
+  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='write'?writeView(wrm[1],+wrm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : view==='ops'?opsView() : view==='coach'?coachView() : trackView(view);
 }
 
 // 5기 (첫 화면): MVP → 부부 진행판
@@ -1116,7 +1121,28 @@ const WR = {
       ['비고', 0, '', [], { sh: 'scoreSum' }]]]
   ] }
 };
-const ipF = n => WR[n].groups.flatMap(([g, fs, sh]) => fs.map(f => ({ k: f[0], r: f[1], ex: f[2], src: f[3], g, sh: (f[4] && f[4].sh) || sh || null, xl: (f[4] && f[4].xl) || f[0], max: f[4] && f[4].max })));
+// 1:1 내집 코칭 — 4기 '[신혼집] 1:1 상담 신청서' 칸에서 상담 날짜만 빼고 글로 받는다. 답변은 머니그랩이 피드백 탭으로 (11/3 결영)
+const COACH_TASK = '코칭 - 내집마련 (1:1 내집 코칭)', COACH_DUE = '2026-11-16T23:59:59+09:00';
+const isCoach = r => /^코칭 - /.test(String(r && r.task || ''));
+WR.coach = { title: '1:1 내집 코칭', groups: [
+  ['신청', [
+    ['가장 궁금한 것 한 가지', 1, '지금 예산으로 매수할지, 전세로 2년 더 살지 고민이에요', []],
+    ['희망 코칭 유형', 1, '', [], { choices: ['매매', '앞으로의 방향성'] }],
+    ['부동산 공부 정도', 1, '', [], { choices: ['공부한 지 꽤 되었어요', '기본적인 건 알아요', '아는 건 별로 없어요', '처음이에요'] }]]],
+  ['자금·현상황', [
+    ['집에 쓸 수 있는 현금', 1, '2억', []],
+    ['대출 포함 최대 가용 예산', 1, '6억', []],
+    ['월 실수령액 (부부 합산)', 1, '650만원', []],
+    ['월 이자 상환 최고액', 1, '200만원', []],
+    ['자녀 계획', 1, '2년 안에 한 명', []],
+    ['시댁·처가 위치', 1, '시댁 분당, 처가 수원', []]]],
+  ['희망 매물', [
+    ['관심 지역', 1, '성남시 분당구, 서울 송파구', ['naver', 'hogang']],
+    ['직장 위치', 1, '강남역, 판교역', []],
+    ['고민하는 단지', 0, '○○자이', ['naver', 'hogang']],
+    ['고민 내용', 0, '두 단지 중 어디가 나을지, 지금 사도 될지', []]]]
+] };
+const ipF = n => WR[n].groups.flatMap(([g, fs, sh]) => fs.map(f => ({ k: f[0], r: f[1], ex: f[2], src: f[3], g, sh: (f[4] && f[4].sh) || sh || null, xl: (f[4] && f[4].xl) || f[0], max: f[4] && f[4].max, choices: f[4] && f[4].choices })));
 const ipNorm = s => String(s == null ? '' : s).replace(/[\s,·・.()]/g, '');
 const ipKey = n => 'ot5ipji_' + ((getMine() || {}).h || 'admin') + '_' + n;
 let ipVals = {}, ipN = 0, ipBusy = false;
@@ -1155,14 +1181,7 @@ function writeView(k, n){
   W.groups.forEach(([g, fs]) => {
     const isScore = fs.some(f => f[4] && f[4].max);
     h += `<div class="grp"><div class="gk">${esc(g)}${isScore ? `<div class="ipsum">합계 <b class="iptot">0</b> / 100</div>` : ''}</div><div class="gb">`;
-    F.filter(f => f.g === g).forEach(f => {
-      const id = 'ip-' + ipNorm(f.k), v = ipVals[f.k] == null ? '' : ipVals[f.k];
-      h += `<div class="rw"><label for="${id}">${esc(f.k)}${f.max ? ` <span class="ipmax">${f.max}점</span>` : ''}${f.r ? ' <i>*</i>' : ''}</label><div>`;
-      if(f.max) h += `<select id="${id}" class="ipscore" data-k="${esc(f.k)}" onchange="ipSet(this.dataset.k,this.value)"><option value="">점수</option>${Array.from({ length: f.max + 1 }, (_, i) => `<option ${String(v) === String(i) ? 'selected' : ''}>${i}</option>`).join('')}</select><div class="ipcrit">${esc(f.ex)}</div>`;
-      else h += `<textarea id="${id}" data-k="${esc(f.k)}" rows="${/^정리|^후보/.test(g) ? 3 : 2}" placeholder="${f.ex ? '예: ' + esc(f.ex) : ''}" oninput="ipSet(this.dataset.k,this.value)">${esc(v)}</textarea>`;
-      if(f.src.length) h += `<div class="ipsrc">찾아보기 ${f.src.map(s => `<a href="${SITES[s][1]}" target="_blank" rel="noopener">${SITES[s][0]} ›</a>`).join('')}</div>`;
-      h += `</div></div>`;
-    });
+    F.filter(f => f.g === g).forEach(f => { h += ipFieldHtml(f); });
     h += `</div></div>`;
   });
   h += `<div class="grp"><div class="gk">마지막</div><div class="gb">
@@ -1178,6 +1197,36 @@ function writeView(k, n){
     <div class="ipmsg"></div>
     <button class="b" onclick="ipDownload()">쓴 내용 엑셀로 받기</button>
     <button class="b fill" onclick="ipSubmit()" ${m ? '' : 'disabled'}>제출하기</button>
+  </aside></div>`;
+  setTimeout(ipCount, 0);
+  return h;
+}
+function ipFieldHtml(f){
+  const id = 'ip-' + ipNorm(f.k), v = ipVals[f.k] == null ? '' : ipVals[f.k];
+  let h = `<div class="rw"><label for="${id}">${esc(f.k)}${f.max ? ` <span class="ipmax">${f.max}점</span>` : ''}${f.r ? ' <i>*</i>' : ''}</label><div>`;
+  if(f.max) h += `<select id="${id}" class="ipscore" data-k="${esc(f.k)}" onchange="ipSet(this.dataset.k,this.value)"><option value="">점수</option>${Array.from({ length: f.max + 1 }, (_, i) => `<option ${String(v) === String(i) ? 'selected' : ''}>${i}</option>`).join('')}</select><div class="ipcrit">${esc(f.ex)}</div>`;
+  else if(f.choices) h += `<div class="ipch" id="${id}" data-k="${esc(f.k)}" tabindex="-1">${f.choices.map(c => `<label class="${v === c ? 'on' : ''}"><input type="radio" name="${id}" value="${esc(c)}" ${v === c ? 'checked' : ''} onchange="ipSet('${esc(f.k)}',this.value);this.closest('.ipch').querySelectorAll('label').forEach(l=>l.classList.toggle('on',l.contains(this)))">${esc(c)}</label>`).join('')}</div>`;
+  else h += `<textarea id="${id}" data-k="${esc(f.k)}" rows="${/^정리|^후보|^신청|^희망/.test(f.g) && !/위치|지역/.test(f.k) ? 3 : 2}" placeholder="${f.ex ? '예: ' + esc(f.ex) : ''}" oninput="ipSet(this.dataset.k,this.value)">${esc(v)}</textarea>`;
+  if(f.src.length) h += `<div class="ipsrc">찾아보기 ${f.src.map(s => `<a href="${SITES[s][1]}" target="_blank" rel="noopener">${SITES[s][0]} ›</a>`).join('')}</div>`;
+  return h + `</div></div>`;
+}
+// 1:1 내집 코칭 신청 화면 (#coach) — 입지 분석 쓰기와 같은 칸·저장 방식, 엑셀은 없다
+function coachView(){
+  const m = getMine(), W = WR.coach, F = ipF('coach'), closed = NOW() > new Date(COACH_DUE).getTime();
+  ipLoad('coach');
+  const done = (MINE && MINE.rows || []).find(isCoach);
+  let h = `<section class="sec" style="padding-bottom:18px"><span class="eyebrow">내집마련 · 머니그랩</span><div class="h1">1:1 내집 코칭</div>
+    <div class="body1">우리 집 고민을 글로 남기면 머니그랩님이 글로 답해 드려요. 답변은 피드백 탭에 와요.</div>
+    <div class="ipnote">11월 16일(월) 23:59까지 신청받아요.<br>코칭 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div>
+    ${!m ? `<div class="ipnote">피드백 탭에서 로그인한 부부만 신청할 수 있어요. <a href="#mine">로그인하러 가기 ›</a></div>` : ''}
+    ${done ? `<div class="ipnote">${fmtD(done.at)}에 신청했어요. 다시 내면 마지막에 낸 것으로 바뀌어요.${done.feedback ? ' 답변은 피드백 탭에서 볼 수 있어요.' : ''}</div>` : ''}
+    ${closed ? `<div class="ipnote">신청이 마감됐어요.</div>` : ''}</section>`;
+  h += `<div class="ipwrap"><div class="ipw">`;
+  W.groups.forEach(([g]) => { h += `<div class="grp"><div class="gk">${esc(g)}</div><div class="gb">`; F.filter(f => f.g === g).forEach(f => { h += ipFieldHtml(f); }); h += `</div></div>`; });
+  h += `</div><aside class="ipside"><div class="iph">꼭 쓸 칸 <b class="ipcnt">0/0</b><span class="ipsv">이 기기에 저장됨</span></div><div class="ipbar"><i></i></div>
+    <div class="ipsub">금액과 가족 이야기는 운영진과 두 분만 봐요. 진행판·Q&A·MVP에는 나가지 않아요.</div>
+    <div class="ipmsg"></div>
+    <button class="b fill" onclick="ipSubmit()" ${m && !closed ? '' : 'disabled'}>신청하기</button>
   </aside></div>`;
   setTimeout(ipCount, 0);
   return h;
@@ -1258,16 +1307,18 @@ async function ipDownload(){
 async function ipSubmit(){
   const m = getMine(), F = ipF(ipN);
   if(!m){ ipMsg('피드백 탭에서 먼저 로그인해 주세요'); return; }
+  if(ipN === 'coach' && NOW() > new Date(COACH_DUE).getTime()){ ipMsg('신청이 마감됐어요'); return; }
   const miss = ipCount();
   if(miss){ ipMsg(`* 표시 칸 ${miss}개가 비어 있어요. 채워야 낼 수 있어요`); const f = F.find(f => f.r && !String(ipVals[f.k] == null ? '' : ipVals[f.k]).trim()); const el = f && document.querySelector(`[data-k="${f.k}"]`); if(el) el.focus(); return; }
   if(ipBusy) return; ipBusy = true; ipMsg('내는 중이에요…', true);
   try{
     const cells = F.map(f => [f.max ? `${f.k} (${f.max}점)` : f.k, String(ipVals[f.k] == null ? '' : ipVals[f.k])]);
     if(F.some(f => f.max)) cells.push(['평가표 합계 (100점)', String(ipTotal())]);
-    const r = await post({ op: 'ipji', h: m.h, code: m.code, task: taskLabel('house', ipN), cells, share: !!ipVals.share, q: ipVals['질문'] || '' });
+    const coach = ipN === 'coach';
+    const r = await post({ op: 'ipji', h: m.h, code: m.code, task: coach ? COACH_TASK : taskLabel('house', ipN), cells, share: coach ? false : !!ipVals.share, q: coach ? '' : (ipVals['질문'] || '') });
     if(!r.ok) throw r.error;
     try{ localStorage.removeItem(ipKey(ipN)); }catch(e){}
-    ipBusy = false; toast(`${WR[ipN].title}을 냈어요`); openMine(m.h, m.code, true); location.hash = '#mine'; window.scrollTo(0, 0);
+    ipBusy = false; toast(ipN === 'coach' ? '1:1 내집 코칭을 신청했어요' : `${WR[ipN].title}을 냈어요`); openMine(m.h, m.code, true); location.hash = '#mine'; window.scrollTo(0, 0);
   }catch(e){ ipBusy = false; ipMsg(e === 'code' || e === 'locked' ? '로그인 정보가 맞지 않아요. 피드백 탭에서 다시 로그인해 주세요' : '내지 못했어요. 쓴 내용은 그대로 있으니 잠시 뒤 다시 눌러 주세요'); }
 }
 function copyTxt(txt){
@@ -1435,11 +1486,14 @@ function mineView(){
       </div>
       <div class="help">아이디는 우리 부부 이름을 고르고,<br>비밀번호는 부부 중 한 분의 휴대폰 번호 뒷자리를 넣어주세요.</div></section>`;
   }
-  const rows=(MINE.rows||[]).slice().sort((a,b)=>new Date(a.at)-new Date(b.at));
+  const all=(MINE.rows||[]).slice().sort((a,b)=>new Date(a.at)-new Date(b.at)), rows=all.filter(r=>!isCoach(r)), coach=all.filter(isCoach);
   const got=rows.filter(r=>r.feedback).length;
   let h=`<section class="sec"><div class="who-bar"><span><b>${esc(MINE.h)}</b>님 로그인 중${MINE._stale?' <span style="color:var(--text-lt);font-size:12px">· 새 내용 확인 중…</span>':''}</span><button onclick="leaveMine()">로그아웃</button></div>
     <div class="h1">낸 과제 <span class="hl">${rows.length}개</span>,<br>피드백 ${got}개</div>
     <div class="body1">피드백은 마감 뒤 며칠 안에 하나씩 달려요.</div><div style="margin-top:14px">`;
+  coach.forEach(r=>{ h+=`<div class="mrow"><div class="t">1:1 내집 코칭</div><div class="m">${fmtD(r.at)} 신청</div>
+      <details><summary>내가 쓴 신청서 보기</summary><pre>${esc(r.body)}</pre></details>
+      ${r.feedback?`<div class="fb"><b>${esc(r.feedbackBy||'머니그랩')}의 코칭 답변</b>${esc(r.feedback)}<div style="margin-top:10px;font-size:12px;color:var(--text-lt)">코칭 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div></div>`:`<div class="fb wait">머니그랩님이 답변을 준비하고 있어요</div>`}</div>`; });
   if(!rows.length) h+=`<div class="empty">아직 낸 과제가 없어요</div>`;
   rows.forEach(r=>{
     const t=parseTask(r.task), name=t&&TASKS[t.track][t.week]?(t.week?`${t.week}주차 ${TRACKS[t.track].name} · ${TASKS[t.track][t.week].name}`:TASKS[t.track][0].name):r.task;
@@ -1469,15 +1523,16 @@ const byOwner = rows => opsWho==='all' ? rows : rows.filter(r=>ownerOf(r)===opsW
 function opsView(){
   const rows=ADMIN.rows||[], cw=curWeek(NOW()), wk=cw||1;
   const unans=rows.filter(r=>r.q && !r.answer);
-  const SUBS=[['fb','피드백',opsWait()],['qa','질문',unans.length],['prog','진행 현황',0],['mvp','MVP',0],['link','링크',0]];
+  const coachRows=rows.filter(isCoach), taskRows=rows.filter(r=>!isCoach(r));
+  const SUBS=[['fb','피드백',taskRows.filter(r=>!r.feedback).length],['coach','1:1 코칭',coachRows.filter(r=>!r.feedback).length],['qa','질문',unans.length],['prog','진행 현황',0],['mvp','MVP',0],['link','링크',0]];
   if(!SUBS.some(x=>x[0]===opsSub)) opsSub='fb';
   let h=`<section class="sec"><div class="admin"><h3>🔒 운영진 <button onclick="logout()">나가기</button></h3>
     <div class="opsnav">${SUBS.map(([k,n,c])=>`<button class="${k===opsSub?'on':''}" onclick="setOps('${k}')">${n}${c?`<i>${c}</i>`:''}</button>`).join('')}</div>`;
   if(opsSub==='fb'||opsSub==='qa'){
-    const base=opsSub==='fb'?rows.filter(r=>!r.feedback):unans, n=w=>base.filter(r=>ownerOf(r)===w).length;
+    const base=opsSub==='fb'?taskRows.filter(r=>!r.feedback):unans, n=w=>base.filter(r=>ownerOf(r)===w).length;
     h+=`<div class="opsnav who">${[['all','전체',base.length],['결영','결영 · 돈관리·SNS',n('결영')],['머니그랩','머니그랩 · 내집마련·독서',n('머니그랩')]].map(([k,t,c])=>`<button class="${k===opsWho?'on':''}" onclick="setWho('${k}')">${t}<i>${c}</i></button>`).join('')}</div>`;
   }
-  h+=opsSub==='qa'?opsQa(byOwner(rows),byOwner(unans)) : opsSub==='prog'?opsProg(rows,cw,wk) : opsSub==='mvp'?opsMvp(rows) : opsSub==='link'?opsLink(wk) : opsFb(byOwner(rows));
+  h+=opsSub==='qa'?opsQa(byOwner(rows),byOwner(unans)) : opsSub==='prog'?opsProg(rows,cw,wk) : opsSub==='mvp'?opsMvp(rows) : opsSub==='link'?opsLink(wk) : opsSub==='coach'?opsCoach(coachRows) : opsFb(byOwner(taskRows));
   return h+`</div></section>`;
 }
 function opsProg(rows,cw,wk){
@@ -1494,6 +1549,11 @@ function opsProg(rows,cw,wk){
   REAL.forEach(x=>{ const n=rows.filter(r=>r.h===x).length, k=JSON.stringify(x).replace(/"/g,'&quot;');
     h+=`<div class="opsp" onclick="openDetail=openDetail===${k}?null:${k};render()"><b>${esc(x)}</b><span>${wk}주차 ${progress(x,wk).done}/${PER} · 전체 ${n}개</span>${chev(openDetail===x)}</div>${openDetail===x?detailOf(x):''}`; });
   return h;
+}
+// 1:1 내집 코칭 — 피드백과 같은 보내기(초안·보내기·보낸 것 줄 긋기), 보내면 그 부부 피드백 탭에 '코칭 답변'으로
+function opsCoach(rows){
+  if(!rows.length) return `<div class="sub">1:1 내집 코칭 신청</div><span class="chip ok">아직 신청이 없어요</span>`;
+  return opsFb(rows).replace('피드백 기다리는 과제','답변 기다리는 코칭 신청').replace(/새로 들어온 과제는[^<]*/,'신청서를 보고 답변을 써서 보내면 그 부부 피드백 탭에 "코칭 답변"으로 떠요. 금액·가족 이야기는 운영진만 봐요.').replace(/보낸 피드백 · /,'보낸 코칭 답변 · ').replace(/코칭 - 내집마련 \(1:1 내집 코칭\)/g,'1:1 내집 코칭').replace(/>과제 내용</g,'>신청서<').replace(/초안 준비 중 · 오전 10시에 채워져요/g,'초안 없음 · 직접 써서 보내거나 Claude에게 “코칭 초안 써줘”라고 하세요');
 }
 function opsQa(rows,unans){
   let h=`<div class="sub">답 안 단 질문 · ${unans.length}</div>`;
