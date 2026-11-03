@@ -407,6 +407,11 @@ body[data-v=ops] #banner{display:none!important}
 .ipw select.ipscore{font-family:inherit;font-size:15px;font-weight:600;border:1px solid var(--border);border-radius:10px;padding:9px 12px;min-width:110px;background:#fff;color:var(--text)}
 .ipw select.ipscore.flash{background:#FFF6D8}
 .ipmax:has(.ipw8){display:flex;align-items:center;width:max-content;white-space:nowrap;margin:6px 0 0;padding:3px 8px}
+.ipcat{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 20px 8px;background:var(--bg);border-bottom:1px solid var(--border)}
+.ipcat b{font-size:14px;color:var(--acc)}
+.ipcat .ipmax{display:flex;align-items:center;white-space:nowrap}
+.ipcat .ipsub{flex-basis:100%}
+.ipdef{font-size:12px;color:var(--text-lt);background:#fff;border:1px dashed var(--border);border-radius:99px;padding:2px 9px}
 .ipreset{margin-top:8px;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--acc);background:#fff;border:1px solid var(--acc-lt);border-radius:99px;padding:4px 10px;cursor:pointer}
 .ipw8{width:48px;font-family:inherit;font-size:12px;font-weight:700;color:var(--acc);border:1px solid var(--acc-lt);border-radius:6px;padding:1px 4px;margin:0 2px;text-align:center;background:#fff}
 .ipcrit{margin-top:5px;font-size:12px;color:var(--text-lt);line-height:1.5}
@@ -1109,16 +1114,16 @@ const WR = {
       ['경사도', 0, '평지 / 완만한 언덕', ['nmap', 'hogang']],
       ['동별 경사', 0, '105동 쪽만 언덕', ['nmap'], { xl: '동별' }]], 'danji'],
     ['평가표 (100점)', [
-      ['직세권', 1, '고소득 일자리 (GBD·CBD·YBD·판교·가디·구디 등), 직주근접', [], { max: 20 }],
-      ['주요 업무지구 접근성', 1, 'GBD, CBD, YBD, 판교, 가디, 구디', [], { max: 20 }],
-      ['역세권 점수', 1, '지하철·GTX·버스·고속도로, 역과의 거리, 역까지 가는 동선', [], { max: 10, xl: '역세권' }],
-      ['초품아 점수', 1, '초등학교까지의 거리, 가는 동선, 배정 학교', [], { max: 10, xl: '초품아' }],
-      ['중학교 학군', 1, '특목·자사고 진학률, 학업성취도, 배정 학교', [], { max: 10 }],
-      ['학세권', 1, '학원가 수, 유명 프랜차이즈 학원, 학원의 다양성', [], { max: 10 }],
-      ['상권', 1, '백화점, 대형마트, 음식점, 유명 프랜차이즈 등', [], { max: 5 }],
-      ['병원', 1, '병원 수, 대형병원, 소아과, 24시간 병원, 약국 등', [], { max: 5 }],
-      ['환경 프리미엄', 1, '강뷰, 산뷰, 시티뷰, 공원 등', [], { max: 5 }],
-      ['단지 프리미엄', 1, '브랜드, 대단지, 신축, 평지', [], { max: 5 }]], 'score'],
+      ['직세권', 1, '고소득 일자리 (GBD·CBD·YBD·판교·가디·구디 등), 직주근접', [], { cat: '일자리', max: 20 }],
+      ['주요 업무지구 접근성', 1, 'GBD, CBD, YBD, 판교, 가디, 구디', [], { cat: '교통', max: 20 }],
+      ['역세권 점수', 1, '지하철·GTX·버스·고속도로, 역과의 거리, 역까지 가는 동선', [], { cat: '교통', max: 10, xl: '역세권' }],
+      ['초품아 점수', 1, '초등학교까지의 거리, 가는 동선, 배정 학교', [], { cat: '학군', max: 10, xl: '초품아' }],
+      ['중학교 학군', 1, '특목·자사고 진학률, 학업성취도, 배정 학교', [], { cat: '학군', max: 10 }],
+      ['학세권', 1, '학원가 수, 유명 프랜차이즈 학원, 학원의 다양성', [], { cat: '학군', max: 10 }],
+      ['상권', 1, '백화점, 대형마트, 음식점, 유명 프랜차이즈 등', [], { cat: '환경', max: 5 }],
+      ['병원', 1, '병원 수, 대형병원, 소아과, 24시간 병원, 약국 등', [], { cat: '환경', max: 5 }],
+      ['환경 프리미엄', 1, '강뷰, 산뷰, 시티뷰, 공원 등', [], { cat: '환경', max: 5 }],
+      ['단지 프리미엄', 1, '브랜드, 대단지, 신축, 평지', [], { cat: '환경', max: 5 }]], 'score'],
     ['정리', [
       ['장점', 1, '1) 역까지 평지로 7분\n2) 초등학교 길 건너지 않음', [], { sh: 'scoreSum' }],
       ['단점', 1, '1) 지하주차장 엘리베이터 연결 안 됨\n2) 학원가가 멀어요', [], { sh: 'scoreSum' }],
@@ -1147,7 +1152,7 @@ WR.coach = { title: '1:1 내집마련 피드백', groups: [
     ['고민하는 단지 3곳', 1, '○○자이 · ○○래미안 · ○○푸르지오', ['naver', 'hogang']],
     ['고민 내용', 0, '두 단지 중 어디가 나을지, 지금 사도 될지', []]]]
 ] };
-const ipF = n => WR[n].groups.flatMap(([g, fs, sh]) => fs.map(f => ({ k: f[0], r: f[1], ex: f[2], src: f[3], g, sh: (f[4] && f[4].sh) || sh || null, xl: (f[4] && f[4].xl) || f[0], max: f[4] && f[4].max, choices: f[4] && f[4].choices })));
+const ipF = n => WR[n].groups.flatMap(([g, fs, sh]) => fs.map(f => ({ k: f[0], r: f[1], ex: f[2], src: f[3], g, sh: (f[4] && f[4].sh) || sh || null, xl: (f[4] && f[4].xl) || f[0], max: f[4] && f[4].max, cat: f[4] && f[4].cat, choices: f[4] && f[4].choices })));
 const ipNorm = s => String(s == null ? '' : s).replace(/[\s,·・.()]/g, '');
 const ipKey = n => 'ot5ipji_' + ((getMine() || {}).h || 'admin') + '_' + n;
 let ipVals = {}, ipN = 0, ipBusy = false;
@@ -1161,22 +1166,39 @@ function ipSet(k, v){
   ipCount();
 }
 const ipTotal = () => ipF(ipN).filter(f => f.max).reduce((a, f) => a + (Number(ipVals[f.k]) || 0), 0);
-// 평가표 배점은 부부가 고칠 수 있다 (11/3 결영) — 기본은 양식 배점, 합계는 100 안에서
-const ipW = f => { const w = ipVals['배점:' + f.k]; return w === undefined || w === '' ? f.max : Math.max(0, Math.min(100, Math.round(Number(w)) || 0)); };
-const ipWTotal = () => ipF(ipN).filter(f => f.max).reduce((a, f) => a + ipW(f), 0);
-// 배점을 고치면 점수 고르는 칸도 0~배점으로 다시 만든다. 이미 고른 점수가 새 배점보다 크면 비운다
+// 평가표 배점은 부부가 고칠 수 있다 (11/3 결영) — 일자리·교통·학군·환경 묶음 배점만 바꾸고(한 묶음 최대 50, 합계 100 안에서),
+//   그 안 항목 배점은 묶음 배점을 양식 비율대로 나눈다 (교통 30 = 업무지구 20 + 역세권 10 → 교통 45면 30 + 15)
+const IP_CAT_MAX = 50;
+const ipCats = () => { const o = []; ipF(ipN).filter(f => f.cat).forEach(f => { let c = o.find(x => x.name === f.cat); if(!c){ c = { name: f.cat, base: 0, items: [] }; o.push(c); } c.base += f.max; c.items.push(f); }); return o; };
+const ipCatW = c => { const w = ipVals['배점:' + c.name]; return w === undefined || w === '' ? c.base : Math.max(0, Math.min(IP_CAT_MAX, Math.round(Number(w)) || 0)); };
+function ipSplit(c){
+  const W = ipCatW(c), raw = c.items.map(f => W * f.max / c.base), out = raw.map(Math.floor);
+  let left = W - out.reduce((a, x) => a + x, 0);
+  raw.map((x, i) => [x - Math.floor(x), i]).sort((p, q) => q[0] - p[0]).forEach(([, i]) => { if(left > 0){ out[i]++; left--; } });
+  return Object.fromEntries(c.items.map((f, i) => [f.k, out[i]]));
+}
+const ipW = f => { if(!f.cat) return f.max; const c = ipCats().find(x => x.name === f.cat); return c ? ipSplit(c)[f.k] : f.max; };
+const ipWTotal = () => ipCats().reduce((a, c) => a + ipCatW(c), 0);
+// 묶음 배점을 고치면 그 묶음 점수 칸들도 0~새 배점으로 다시 만든다. 이미 고른 점수가 새 배점보다 크면 비운다
 function ipSetW(el){
-  const k = el.dataset.w, f = ipF(ipN).find(x => x.k === k), room = 100 - (ipWTotal() - ipW(f));
-  let w = Math.max(0, Math.min(100, Math.round(Number(el.value)) || 0)), capped = false;
-  if(w > room){ w = Math.max(0, room); capped = true; el.value = w; }
-  const sel = document.querySelector(`select[data-k="${k}"]`);
-  if(sel){
-    const cur = sel.value, keep = cur !== '' && Number(cur) <= w;
-    sel.innerHTML = `<option value="">점수</option>` + Array.from({ length: w + 1 }, (_, i) => `<option ${keep && cur === String(i) ? 'selected' : ''}>${i}</option>`).join('');
-    if(!keep) ipVals[k] = '';
-  }
-  ipSet('배점:' + k, String(w));
-  ipMsg(capped ? `배점은 합쳐서 100점 안에서 나눠요. 다른 항목에 ${100 - room}점이 들어가 있어서 ${w}점까지만 넣었어요. 다른 항목을 줄이면 더 늘릴 수 있어요` : '', false);
+  const name = el.dataset.w, c = ipCats().find(x => x.name === name); if(!c) return;
+  const room = 100 - (ipWTotal() - ipCatW(c));
+  let w = Math.max(0, Math.round(Number(el.value)) || 0), msg = '';
+  if(w > IP_CAT_MAX){ w = IP_CAT_MAX; msg = `한 묶음은 ${IP_CAT_MAX}점까지예요`; }
+  if(w > room){ w = Math.max(0, room); msg = `배점은 합쳐서 100점 안에서 나눠요. 다른 묶음에 ${100 - room}점이 들어가 있어서 ${w}점까지만 넣었어요. 다른 묶음을 줄이면 더 늘릴 수 있어요`; }
+  if(String(w) !== el.value) el.value = w;
+  ipVals['배점:' + name] = String(w);
+  const split = ipSplit(c);
+  c.items.forEach(f => {
+    const mx = split[f.k], sel = document.querySelector(`select[data-k="${f.k}"]`), pill = document.querySelector(`[data-wi="${f.k}"]`);
+    if(pill) pill.textContent = mx + '점';
+    if(!sel) return;
+    const cur = sel.value, keep = cur !== '' && Number(cur) <= mx;
+    sel.innerHTML = `<option value="">점수</option>` + Array.from({ length: mx + 1 }, (_, i) => `<option ${keep && cur === String(i) ? 'selected' : ''}>${i}</option>`).join('');
+    if(!keep) ipVals[f.k] = '';
+  });
+  ipSet('배점:' + name, String(w));
+  ipMsg(msg, false);
 }
 function ipResetW(){
   Object.keys(ipVals).filter(k => k.startsWith('배점:')).forEach(k => delete ipVals[k]);
@@ -1209,8 +1231,13 @@ function writeView(k, n){
   h += `<div class="ipwrap"><div class="ipw">`;
   W.groups.forEach(([g, fs]) => {
     const isScore = fs.some(f => f[4] && f[4].max);
-    h += `<div class="grp"><div class="gk">${esc(g)}${isScore ? `<div class="ipsum">점수 <b class="iptot">0</b> · 배점 합계 <b class="ipwtot">100</b> / 100</div><div class="ipsub" style="margin-top:4px">우리 지역에 맞게 배점을 바꿔보세요. 예: 지방이라면 학군 위주로, 수도권이라면 직주근접 위주로. 배점 합계는 100 안에서 나눠요</div><div class="ipsum">남은 배점 <b class="ipwleft">0</b>점</div><button type="button" class="ipreset" onclick="ipResetW()">처음 배점으로</button>` : ''}</div><div class="gb">`;
-    F.filter(f => f.g === g).forEach(f => { h += ipFieldHtml(f); });
+    h += `<div class="grp"><div class="gk">${esc(g)}${isScore ? `<div class="ipsum">점수 <b class="iptot">0</b> · 배점 합계 <b class="ipwtot">100</b> / 100</div><div class="ipsub" style="margin-top:4px">우리 지역에 맞게 배점을 바꿔보세요. 예: 지방이라면 학군 위주로, 수도권이라면 직주근접 위주로. 일자리·교통·학군·환경 묶음 배점만 바꿀 수 있어요 (한 묶음 최대 50점, 합계 100 안에서). 그 안 항목 배점은 비율대로 나뉘어요. '기본' 점수(일자리 20 · 교통 30 · 학군 30 · 환경 20)는 보통 이렇게 본다는 예시예요</div><div class="ipsum">남은 배점 <b class="ipwleft">0</b>점</div><button type="button" class="ipreset" onclick="ipResetW()">처음 배점으로</button>` : ''}</div><div class="gb">`;
+    let lastCat = '';
+    F.filter(f => f.g === g).forEach(f => {
+      if(f.cat && f.cat !== lastCat){ const c = ipCats().find(x => x.name === f.cat); lastCat = f.cat;
+        h += `<div class="ipcat"><b>${esc(f.cat)}</b><span class="ipmax">배점 <input class="ipw8" type="number" inputmode="numeric" min="0" max="${IP_CAT_MAX}" value="${ipCatW(c)}" data-w="${esc(f.cat)}" aria-label="${esc(f.cat)} 배점" oninput="if(this.value!=='')ipSetW(this)">점</span><span class="ipdef">기본 ${c.base}점</span><span class="ipsub">최대 ${IP_CAT_MAX}점 · ${c.items.map(x => esc(x.k.replace(/ 점수$/, ''))).join(' · ')}</span></div>`; }
+      h += ipFieldHtml(f);
+    });
     h += `</div></div>`;
   });
   h += `<div class="grp"><div class="gk">마지막</div><div class="gb">
@@ -1232,7 +1259,7 @@ function writeView(k, n){
 }
 function ipFieldHtml(f){
   const id = 'ip-' + ipNorm(f.k), v = ipVals[f.k] == null ? '' : ipVals[f.k];
-  let h = `<div class="rw"><label for="${id}">${esc(f.k)}${f.r ? ' <i>*</i>' : ''}${f.max ? ` <span class="ipmax">배점 <input class="ipw8" type="number" inputmode="numeric" min="0" max="100" value="${ipW(f)}" data-w="${esc(f.k)}" aria-label="${esc(f.k)} 배점" oninput="if(this.value!=='')ipSetW(this)">점</span>` : ''}</label><div>`;
+  let h = `<div class="rw"><label for="${id}">${esc(f.k)}${f.r ? ' <i>*</i>' : ''}${f.max ? ` <span class="ipmax" data-wi="${esc(f.k)}">${ipW(f)}점</span>` : ''}</label><div>`;
   if(f.max) h += `<select id="${id}" class="ipscore" data-k="${esc(f.k)}" onchange="ipSet(this.dataset.k,this.value)"><option value="">점수</option>${Array.from({ length: ipW(f) + 1 }, (_, i) => `<option ${String(v) === String(i) ? 'selected' : ''}>${i}</option>`).join('')}</select><div class="ipcrit">${esc(f.ex)}</div>`;
   else if(f.choices) h += `<div class="ipch" id="${id}" data-k="${esc(f.k)}" tabindex="-1">${f.choices.map(c => `<label class="${v === c ? 'on' : ''}"><input type="radio" name="${id}" value="${esc(c)}" ${v === c ? 'checked' : ''} onchange="ipSet('${esc(f.k)}',this.value);this.closest('.ipch').querySelectorAll('label').forEach(l=>l.classList.toggle('on',l.contains(this)))">${esc(c)}</label>`).join('')}</div>`;
   else h += `<textarea id="${id}" data-k="${esc(f.k)}" rows="${/^정리|^후보|^신청|^희망/.test(f.g) && !/위치|지역/.test(f.k) ? 3 : 2}" placeholder="${f.ex ? '예: ' + esc(f.ex) : ''}" oninput="ipSet(this.dataset.k,this.value)">${esc(v)}</textarea>`;
@@ -1275,7 +1302,7 @@ function ipParse(wb){
     const type = /입지분석/.test(top) ? 'ipji' : /단지분석/.test(top) ? 'danji' : /평가표/.test(top) ? 'score' : '';
     if(!type) return;
     let hdr = rows.findIndex(r => ipNorm(r[0]) === '구분'); if(hdr < 0) hdr = rows.length;
-    const got = {};
+    const got = {}, wsum = {}, wlim = {};
     F.forEach(f => {
       let lc, from = hdr + 1, to = rows.length, vc = null;
       if(f.sh === 'basic'){ lc = 0; from = 0; to = hdr; }
@@ -1286,14 +1313,15 @@ function ipParse(wb){
       for(let i = from; i < to; i++){
         const r = rows[i] || [];
         if(ipNorm(r[lc]) !== ipNorm(f.xl)) continue;
-        if(f.max && String(r[3]).trim() !== '' && Number(r[3]) >= 0 && Number(r[3]) <= 100) got['배점:' + f.k] = String(Math.round(Number(r[3])));
+        if(f.cat && String(r[3]).trim() !== '' && Number(r[3]) >= 0 && Number(r[3]) <= 100){ wsum[f.cat] = (wsum[f.cat] || 0) + Math.round(Number(r[3])); wlim[f.k] = Math.round(Number(r[3])); }
         let v = vc != null ? r[vc] : r.slice(lc + 1).find(x => String(x).trim() !== '');
         if(v === undefined || String(v).trim() === '') break;
         v = String(v).trim();
-        if(f.max){ const lim = got['배점:' + f.k] != null ? Number(got['배점:' + f.k]) : f.max, x = Math.round(Number(v)); if(!(x >= 0 && x <= lim)) break; v = String(x); }
+        if(f.max){ const lim = wlim[f.k] != null ? wlim[f.k] : f.max, x = Math.round(Number(v)); if(!(x >= 0 && x <= lim)) break; v = String(x); }
         got[f.k] = v; break;
       }
     });
+    Object.keys(wsum).forEach(c => { got['배점:' + c] = String(Math.min(IP_CAT_MAX, wsum[c])); });
     if(got['단지명'] === 'DMC센트럴자이') return;
     Object.keys(got).forEach(k => { if(out[k] == null) out[k] = got[k]; });
   });
