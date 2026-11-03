@@ -1123,7 +1123,7 @@ const WR = {
   ] }
 };
 // 1:1 내집 코칭 — 4기 '[신혼집] 1:1 상담 신청서' 칸에서 상담 날짜만 빼고 글로 받는다. 답변은 머니그랩이 피드백 탭으로 (11/3 결영)
-const COACH_TASK = '코칭 - 내집마련 (1:1 내집 코칭)', COACH_DUE = '2026-11-16T23:59:59+09:00';
+const COACH_TASK = '코칭 - 내집마련 (1:1 내집 코칭)', COACH_DUE = '2026-11-12T23:59:59+09:00';
 const isCoach = r => /^코칭 - /.test(String(r && r.task || ''));
 WR.coach = { title: '1:1 내집마련 피드백', groups: [
   ['신청', [
@@ -1140,7 +1140,7 @@ WR.coach = { title: '1:1 내집마련 피드백', groups: [
   ['희망 매물', [
     ['관심 지역', 1, '성남시 분당구, 서울 송파구', ['naver', 'hogang']],
     ['직장 위치', 1, '강남역, 판교역', []],
-    ['고민하는 단지', 0, '○○자이', ['naver', 'hogang']],
+    ['고민하는 단지 3곳', 1, '○○자이 · ○○래미안 · ○○푸르지오', ['naver', 'hogang']],
     ['고민 내용', 0, '두 단지 중 어디가 나을지, 지금 사도 될지', []]]]
 ] };
 const ipF = n => WR[n].groups.flatMap(([g, fs, sh]) => fs.map(f => ({ k: f[0], r: f[1], ex: f[2], src: f[3], g, sh: (f[4] && f[4].sh) || sh || null, xl: (f[4] && f[4].xl) || f[0], max: f[4] && f[4].max, choices: f[4] && f[4].choices })));
@@ -1218,7 +1218,7 @@ function coachView(){
   const done = (MINE && MINE.rows || []).find(isCoach);
   let h = `<section class="sec" style="padding-bottom:18px"><span class="eyebrow">내집마련 · 머니그랩</span><div class="h1">1:1 내집마련 피드백</div>
     <div class="body1">우리 집 고민을 글로 남기면 머니그랩님이 글로 답해 드려요. 답변은 피드백 탭에 와요.</div>
-    <div class="ipnote">11월 16일(월) 23:59까지 신청받아요.<br>피드백 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div>
+    <div class="ipnote">11월 12일(목) 23:59까지 신청받아요.<br>피드백 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div>
     ${!m ? `<div class="ipnote">피드백 탭에서 로그인한 부부만 신청할 수 있어요. <a href="#mine">로그인하러 가기 ›</a></div>` : ''}
     ${done ? `<div class="ipnote">${fmtD(done.at)}에 신청했어요. 다시 내면 마지막에 낸 것으로 바뀌어요.${done.feedback ? ' 답변은 피드백 탭에서 볼 수 있어요.' : ''}</div>` : ''}
     ${closed ? `<div class="ipnote">신청이 마감됐어요.</div>` : ''}</section>`;
