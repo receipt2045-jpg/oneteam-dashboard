@@ -407,6 +407,7 @@ body[data-v=ops] #banner{display:none!important}
 .ipw select.ipscore{font-family:inherit;font-size:15px;font-weight:600;border:1px solid var(--border);border-radius:10px;padding:9px 12px;min-width:110px;background:#fff;color:var(--text)}
 .ipw select.ipscore.flash{background:#FFF6D8}
 .ipmax:has(.ipw8){display:flex;align-items:center;width:max-content;white-space:nowrap;margin:6px 0 0;padding:3px 8px}
+.ipreset{margin-top:8px;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--acc);background:#fff;border:1px solid var(--acc-lt);border-radius:99px;padding:4px 10px;cursor:pointer}
 .ipw8{width:48px;font-family:inherit;font-size:12px;font-weight:700;color:var(--acc);border:1px solid var(--acc-lt);border-radius:6px;padding:1px 4px;margin:0 2px;text-align:center;background:#fff}
 .ipcrit{margin-top:5px;font-size:12px;color:var(--text-lt);line-height:1.5}
 .ipch{display:flex;flex-wrap:wrap;gap:8px}
@@ -1165,13 +1166,22 @@ const ipW = f => { const w = ipVals['배점:' + f.k]; return w === undefined || 
 const ipWTotal = () => ipF(ipN).filter(f => f.max).reduce((a, f) => a + ipW(f), 0);
 // 배점을 고치면 점수 고르는 칸도 0~배점으로 다시 만든다. 이미 고른 점수가 새 배점보다 크면 비운다
 function ipSetW(el){
-  const k = el.dataset.w, w = Math.max(0, Math.min(100, Math.round(Number(el.value)) || 0)), sel = document.querySelector(`select[data-k="${k}"]`);
+  const k = el.dataset.w, f = ipF(ipN).find(x => x.k === k), room = 100 - (ipWTotal() - ipW(f));
+  let w = Math.max(0, Math.min(100, Math.round(Number(el.value)) || 0)), capped = false;
+  if(w > room){ w = Math.max(0, room); capped = true; el.value = w; }
+  const sel = document.querySelector(`select[data-k="${k}"]`);
   if(sel){
     const cur = sel.value, keep = cur !== '' && Number(cur) <= w;
     sel.innerHTML = `<option value="">점수</option>` + Array.from({ length: w + 1 }, (_, i) => `<option ${keep && cur === String(i) ? 'selected' : ''}>${i}</option>`).join('');
     if(!keep) ipVals[k] = '';
   }
-  ipSet('배점:' + k, String(w)); ipMsg('');
+  ipSet('배점:' + k, String(w));
+  ipMsg(capped ? `배점은 합쳐서 100점 안에서 나눠요. 다른 항목에 ${100 - room}점이 들어가 있어서 ${w}점까지만 넣었어요. 다른 항목을 줄이면 더 늘릴 수 있어요` : '', false);
+}
+function ipResetW(){
+  Object.keys(ipVals).filter(k => k.startsWith('배점:')).forEach(k => delete ipVals[k]);
+  try{ localStorage.setItem(ipKey(ipN), JSON.stringify(ipVals)); }catch(e){}
+  render(); ipMsg('배점을 처음 값으로 되돌렸어요', true);
 }
 function ipCount(){
   const req = ipF(ipN).filter(f => f.r), n = req.filter(f => String(ipVals[f.k] == null ? '' : ipVals[f.k]).trim()).length;
@@ -1179,6 +1189,7 @@ function ipCount(){
   document.querySelectorAll('.ipbar i').forEach(e => e.style.width = (n / req.length * 100) + '%');
   document.querySelectorAll('.iptot').forEach(e => e.textContent = ipTotal());
   document.querySelectorAll('.ipwtot').forEach(e => { const t = ipWTotal(); e.textContent = t; e.style.color = t > 100 ? 'var(--miss)' : ''; });
+  document.querySelectorAll('.ipwleft').forEach(e => e.textContent = Math.max(0, 100 - ipWTotal()));
   return req.length - n;
 }
 function ipMsg(t, ok){ document.querySelectorAll('.ipmsg').forEach(e => { e.textContent = t; e.style.color = ok ? 'var(--acc)' : 'var(--miss)'; }); }
@@ -1198,7 +1209,7 @@ function writeView(k, n){
   h += `<div class="ipwrap"><div class="ipw">`;
   W.groups.forEach(([g, fs]) => {
     const isScore = fs.some(f => f[4] && f[4].max);
-    h += `<div class="grp"><div class="gk">${esc(g)}${isScore ? `<div class="ipsum">점수 <b class="iptot">0</b> · 배점 합계 <b class="ipwtot">100</b> / 100</div><div class="ipsub" style="margin-top:4px">항목마다 배점을 바꿀 수 있어요. 배점 합계는 100 안에서 맞춰주세요</div>` : ''}</div><div class="gb">`;
+    h += `<div class="grp"><div class="gk">${esc(g)}${isScore ? `<div class="ipsum">점수 <b class="iptot">0</b> · 배점 합계 <b class="ipwtot">100</b> / 100</div><div class="ipsub" style="margin-top:4px">우리 지역에 맞게 배점을 바꿔보세요. 예: 지방이라면 학군 위주로, 수도권이라면 직주근접 위주로. 배점 합계는 100 안에서 나눠요</div><div class="ipsum">남은 배점 <b class="ipwleft">0</b>점</div><button type="button" class="ipreset" onclick="ipResetW()">처음 배점으로</button>` : ''}</div><div class="gb">`;
     F.filter(f => f.g === g).forEach(f => { h += ipFieldHtml(f); });
     h += `</div></div>`;
   });
