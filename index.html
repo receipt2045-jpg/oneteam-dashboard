@@ -406,6 +406,8 @@ body[data-v=ops] #banner{display:none!important}
 .ipmax{font-size:11px;font-weight:600;color:var(--acc);background:var(--acc-soft);border-radius:99px;padding:1px 7px;margin-left:4px}
 .ipw select.ipscore{font-family:inherit;font-size:15px;font-weight:600;border:1px solid var(--border);border-radius:10px;padding:9px 12px;min-width:110px;background:#fff;color:var(--text)}
 .ipw select.ipscore.flash{background:#FFF6D8}
+.ipmax:has(.ipw8){display:flex;align-items:center;width:max-content;white-space:nowrap;margin:6px 0 0;padding:3px 8px}
+.ipw8{width:48px;font-family:inherit;font-size:12px;font-weight:700;color:var(--acc);border:1px solid var(--acc-lt);border-radius:6px;padding:1px 4px;margin:0 2px;text-align:center;background:#fff}
 .ipcrit{margin-top:5px;font-size:12px;color:var(--text-lt);line-height:1.5}
 .ipch{display:flex;flex-wrap:wrap;gap:8px}
 .ipch label{display:flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:99px;padding:8px 14px;font-size:14px;cursor:pointer;background:#fff}
@@ -1158,11 +1160,25 @@ function ipSet(k, v){
   ipCount();
 }
 const ipTotal = () => ipF(ipN).filter(f => f.max).reduce((a, f) => a + (Number(ipVals[f.k]) || 0), 0);
+// 평가표 배점은 부부가 고칠 수 있다 (11/3 결영) — 기본은 양식 배점, 합계는 100 안에서
+const ipW = f => { const w = ipVals['배점:' + f.k]; return w === undefined || w === '' ? f.max : Math.max(0, Math.min(100, Math.round(Number(w)) || 0)); };
+const ipWTotal = () => ipF(ipN).filter(f => f.max).reduce((a, f) => a + ipW(f), 0);
+// 배점을 고치면 점수 고르는 칸도 0~배점으로 다시 만든다. 이미 고른 점수가 새 배점보다 크면 비운다
+function ipSetW(el){
+  const k = el.dataset.w, w = Math.max(0, Math.min(100, Math.round(Number(el.value)) || 0)), sel = document.querySelector(`select[data-k="${k}"]`);
+  if(sel){
+    const cur = sel.value, keep = cur !== '' && Number(cur) <= w;
+    sel.innerHTML = `<option value="">점수</option>` + Array.from({ length: w + 1 }, (_, i) => `<option ${keep && cur === String(i) ? 'selected' : ''}>${i}</option>`).join('');
+    if(!keep) ipVals[k] = '';
+  }
+  ipSet('배점:' + k, String(w)); ipMsg('');
+}
 function ipCount(){
   const req = ipF(ipN).filter(f => f.r), n = req.filter(f => String(ipVals[f.k] == null ? '' : ipVals[f.k]).trim()).length;
   document.querySelectorAll('.ipcnt').forEach(e => e.textContent = n + '/' + req.length);
   document.querySelectorAll('.ipbar i').forEach(e => e.style.width = (n / req.length * 100) + '%');
   document.querySelectorAll('.iptot').forEach(e => e.textContent = ipTotal());
+  document.querySelectorAll('.ipwtot').forEach(e => { const t = ipWTotal(); e.textContent = t; e.style.color = t > 100 ? 'var(--miss)' : ''; });
   return req.length - n;
 }
 function ipMsg(t, ok){ document.querySelectorAll('.ipmsg').forEach(e => { e.textContent = t; e.style.color = ok ? 'var(--acc)' : 'var(--miss)'; }); }
@@ -1182,7 +1198,7 @@ function writeView(k, n){
   h += `<div class="ipwrap"><div class="ipw">`;
   W.groups.forEach(([g, fs]) => {
     const isScore = fs.some(f => f[4] && f[4].max);
-    h += `<div class="grp"><div class="gk">${esc(g)}${isScore ? `<div class="ipsum">합계 <b class="iptot">0</b> / 100</div>` : ''}</div><div class="gb">`;
+    h += `<div class="grp"><div class="gk">${esc(g)}${isScore ? `<div class="ipsum">점수 <b class="iptot">0</b> · 배점 합계 <b class="ipwtot">100</b> / 100</div><div class="ipsub" style="margin-top:4px">항목마다 배점을 바꿀 수 있어요. 배점 합계는 100 안에서 맞춰주세요</div>` : ''}</div><div class="gb">`;
     F.filter(f => f.g === g).forEach(f => { h += ipFieldHtml(f); });
     h += `</div></div>`;
   });
@@ -1191,7 +1207,7 @@ function writeView(k, n){
     <div class="rw"><label>공유 동의</label><div><label class="ipchk"><input type="checkbox" id="ip-share" ${ipVals.share ? 'checked' : ''} onchange="ipSet('share',this.checked)"> 잘한 과제로 다른 부부에게 공유돼도 괜찮아요 (닉네임은 가려요)</label></div></div>
   </div></div></div>`;
   h += `<aside class="ipside"><div class="iph">꼭 쓸 칸 <b class="ipcnt">0/0</b><span class="ipsv">이 기기에 저장됨</span></div><div class="ipbar"><i></i></div>
-    ${F.some(f => f.max) ? `<div class="iph">평가표 합계 <b class="iptot">0</b> / 100</div>` : ''}
+    ${F.some(f => f.max) ? `<div class="iph">평가표 점수 <b class="iptot">0</b> · 배점 합계 <b class="ipwtot">100</b> / 100</div>` : ''}
     <div class="iph2">엑셀로 쓰셨나요?</div>
     ${tpl}① 빈 양식 받기</a>
     <label class="b">② 쓴 엑셀 올리기<input type="file" accept=".xlsx" hidden onchange="ipUpload(this)"></label>
@@ -1205,8 +1221,8 @@ function writeView(k, n){
 }
 function ipFieldHtml(f){
   const id = 'ip-' + ipNorm(f.k), v = ipVals[f.k] == null ? '' : ipVals[f.k];
-  let h = `<div class="rw"><label for="${id}">${esc(f.k)}${f.max ? ` <span class="ipmax">${f.max}점</span>` : ''}${f.r ? ' <i>*</i>' : ''}</label><div>`;
-  if(f.max) h += `<select id="${id}" class="ipscore" data-k="${esc(f.k)}" onchange="ipSet(this.dataset.k,this.value)"><option value="">점수</option>${Array.from({ length: f.max + 1 }, (_, i) => `<option ${String(v) === String(i) ? 'selected' : ''}>${i}</option>`).join('')}</select><div class="ipcrit">${esc(f.ex)}</div>`;
+  let h = `<div class="rw"><label for="${id}">${esc(f.k)}${f.r ? ' <i>*</i>' : ''}${f.max ? ` <span class="ipmax">배점 <input class="ipw8" type="number" inputmode="numeric" min="0" max="100" value="${ipW(f)}" data-w="${esc(f.k)}" aria-label="${esc(f.k)} 배점" oninput="if(this.value!=='')ipSetW(this)">점</span>` : ''}</label><div>`;
+  if(f.max) h += `<select id="${id}" class="ipscore" data-k="${esc(f.k)}" onchange="ipSet(this.dataset.k,this.value)"><option value="">점수</option>${Array.from({ length: ipW(f) + 1 }, (_, i) => `<option ${String(v) === String(i) ? 'selected' : ''}>${i}</option>`).join('')}</select><div class="ipcrit">${esc(f.ex)}</div>`;
   else if(f.choices) h += `<div class="ipch" id="${id}" data-k="${esc(f.k)}" tabindex="-1">${f.choices.map(c => `<label class="${v === c ? 'on' : ''}"><input type="radio" name="${id}" value="${esc(c)}" ${v === c ? 'checked' : ''} onchange="ipSet('${esc(f.k)}',this.value);this.closest('.ipch').querySelectorAll('label').forEach(l=>l.classList.toggle('on',l.contains(this)))">${esc(c)}</label>`).join('')}</div>`;
   else h += `<textarea id="${id}" data-k="${esc(f.k)}" rows="${/^정리|^후보|^신청|^희망/.test(f.g) && !/위치|지역/.test(f.k) ? 3 : 2}" placeholder="${f.ex ? '예: ' + esc(f.ex) : ''}" oninput="ipSet(this.dataset.k,this.value)">${esc(v)}</textarea>`;
   if(f.src.length) h += `<div class="ipsrc">찾아보기 ${f.src.map(s => `<a href="${SITES[s][1]}" target="_blank" rel="noopener">${SITES[s][0]} ›</a>`).join('')}</div>`;
@@ -1259,10 +1275,11 @@ function ipParse(wb){
       for(let i = from; i < to; i++){
         const r = rows[i] || [];
         if(ipNorm(r[lc]) !== ipNorm(f.xl)) continue;
+        if(f.max && String(r[3]).trim() !== '' && Number(r[3]) >= 0 && Number(r[3]) <= 100) got['배점:' + f.k] = String(Math.round(Number(r[3])));
         let v = vc != null ? r[vc] : r.slice(lc + 1).find(x => String(x).trim() !== '');
         if(v === undefined || String(v).trim() === '') break;
         v = String(v).trim();
-        if(f.max){ const x = Math.round(Number(v)); if(!(x >= 0 && x <= f.max)) break; v = String(x); }
+        if(f.max){ const lim = got['배점:' + f.k] != null ? Number(got['배점:' + f.k]) : f.max, x = Math.round(Number(v)); if(!(x >= 0 && x <= lim)) break; v = String(x); }
         got[f.k] = v; break;
       }
     });
@@ -1281,7 +1298,8 @@ async function ipUpload(inp){
     if(!keys.length){ ipMsg('채워진 칸을 못 찾았어요. 과제방에서 받은 양식에 쓰셨는지 확인해 주세요'); return; }
     keys.forEach(k => { ipVals[k] = got[k]; const el = document.querySelector(`[data-k="${k}"]`); if(el){ el.value = got[k]; el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200); } });
     ipSet('_from', f.name);
-    ipMsg(`${keys.length}칸을 채웠어요. 확인하고 제출하세요`, true);
+    if(keys.some(k => k.startsWith('배점:'))){ try{ localStorage.setItem(ipKey(ipN), JSON.stringify(ipVals)); }catch(e){} render(); }
+    ipMsg(`${keys.filter(k => !k.startsWith('배점:')).length}칸을 채웠어요. 확인하고 제출하세요`, true);
   }catch(e){ ipMsg('파일을 읽지 못했어요. 엑셀에서 다시 저장해서 올려 주세요'); }
 }
 // 쓴 내용 엑셀로 받기 — 양식과 같은 시트 제목·칸 이름으로 만들어서 다시 올려도 읽힌다
@@ -1298,7 +1316,7 @@ async function ipDownload(){
   });
   const sc = F.filter(f => f.sh === 'score');
   if(sc.length){
-    const aoa = [['아파트 단지 평가표'], [], ['구분', '평가 항목', '평가 기준', '배점', '점수'], ...sc.map(f => ['', f.xl, f.ex, f.max, v(f.k) === '' ? '' : Number(v(f.k))]), ['합계', '', '', 100, ipTotal()], []];
+    const aoa = [['아파트 단지 평가표'], [], ['구분', '평가 항목', '평가 기준', '배점', '점수'], ...sc.map(f => ['', f.xl, f.ex, ipW(f), v(f.k) === '' ? '' : Number(v(f.k))]), ['합계', '', '', ipWTotal(), ipTotal()], []];
     F.filter(f => f.sh === 'scoreSum').forEach(f => aoa.push([f.xl, v(f.k)]));
     add('단지 평가표', aoa, [12, 22, 50, 8, 8]);
   }
@@ -1311,11 +1329,12 @@ async function ipSubmit(){
   if(!m){ ipMsg('피드백 탭에서 먼저 로그인해 주세요'); return; }
   if(ipN === 'coach' && NOW() > new Date(COACH_DUE).getTime()){ ipMsg('신청이 마감됐어요'); return; }
   const miss = ipCount();
+  if(F.some(f => f.max) && ipWTotal() > 100){ ipMsg(`배점 합계가 100을 넘어요 (지금 ${ipWTotal()}점). 배점을 줄여 주세요`); return; }
   if(miss){ ipMsg(`* 표시 칸 ${miss}개가 비어 있어요. 채워야 낼 수 있어요`); const f = F.find(f => f.r && !String(ipVals[f.k] == null ? '' : ipVals[f.k]).trim()); const el = f && document.querySelector(`[data-k="${f.k}"]`); if(el) el.focus(); return; }
   if(ipBusy) return; ipBusy = true; ipMsg('내는 중이에요…', true);
   try{
-    const cells = F.map(f => [f.max ? `${f.k} (${f.max}점)` : f.k, String(ipVals[f.k] == null ? '' : ipVals[f.k])]);
-    if(F.some(f => f.max)) cells.push(['평가표 합계 (100점)', String(ipTotal())]);
+    const cells = F.map(f => [f.max ? `${f.k} (${ipW(f)}점)` : f.k, String(ipVals[f.k] == null ? '' : ipVals[f.k])]);
+    if(F.some(f => f.max)) cells.push([`평가표 합계 (배점 ${ipWTotal()}점 중)`, String(ipTotal())]);
     const coach = ipN === 'coach';
     const r = await post({ op: 'ipji', h: m.h, code: m.code, task: coach ? COACH_TASK : taskLabel('house', ipN), cells, share: coach ? false : !!ipVals.share, q: coach ? '' : (ipVals['질문'] || '') });
     if(!r.ok) throw r.error;
