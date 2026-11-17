@@ -422,6 +422,10 @@ body[data-v=ops] #banner{display:none!important}
 .att textarea:focus{outline:2px solid var(--acc-lt);outline-offset:0;border-color:var(--acc-lt)}
 .att textarea::placeholder{color:#B4B8C2}
 .att .rw>.ipchk{display:flex;font-weight:500;color:var(--text);font-size:13.5px}
+/* 과제 하위 메뉴 (11/17) */
+.subtabs{display:flex;gap:6px;padding:14px 16px 0;flex-wrap:wrap}
+.subtabs a{padding:8px 14px;border:1px solid var(--border);border-radius:99px;font-size:14px;font-weight:600;color:var(--text-md);text-decoration:none;background:#fff}
+.subtabs a.on{background:var(--acc);border-color:var(--acc);color:#fff}
 /* 녹화본 모음 (#vod) 체크 동그라미 */
 .replay .ck{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--acc-lt);background:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;cursor:pointer;padding:0;font-family:inherit}
 .replay .ck:not(:empty){background:var(--acc);border-color:var(--acc)}
@@ -484,10 +488,7 @@ body[data-v=write] #banner,body[data-v=coach] #banner{display:none!important}
       <a href="#mine" data-v="mine">피드백</a>
       <a href="#vod" data-v="vod">다시보기</a>
       <a href="#coach" data-v="coach">1:1 내집마련</a>
-      <a href="#read" data-v="read">독서</a>
-      <a href="#money" data-v="money">돈관리</a>
-      <a href="#house" data-v="house">내집마련</a>
-      <a href="#sns" data-v="sns">SNS</a>
+      <a href="#read" data-v="tasks">과제</a>
       <a href="#files" data-v="files">자료실</a>
       <a href="#qa" data-v="qa">Q&amp;A</a>
       
@@ -831,7 +832,8 @@ let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
   const v=(location.hash||'#home').slice(1), exm=v.match(/^ex\/(read|money|house|sns|live)\/(\d)$/), wrm=v.match(/^write\/(house)\/(\d)$/);
   view=exm?'ex':wrm?'write':['home','read','money','house','sns','qa','files','mine','admin','grad','ops','coach','vod'].includes(v)?v:'home';
-  const tab=exm?(exm[1]==='live'?'home':exm[1]):wrm?wrm[1]:view;
+  let tab=exm?(exm[1]==='live'?'home':exm[1]):wrm?wrm[1]:view;
+  if(['read','money','house','sns'].includes(tab)) tab='tasks';   // 11/17 결영: 과정 넷은 '과제' 아래 하위 메뉴로
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
   document.body.dataset.v=view; document.body.dataset.admin=ADMIN?'1':'';
@@ -1535,7 +1537,8 @@ function fallbackCopy(txt,done){ const a=document.createElement('textarea'); a.v
 // 과정별 화면 (독서·돈관리·내집마련·SNS)
 function trackView(k){
   const tr=TRACKS[k], now=NOW(), cw=curWeek(now);
-  let h=`<section class="sec"><span class="eyebrow">과정별 바로가기</span><div class="h1">${tr.name}</div><div class="body1">${tr.desc}</div>`;
+  let h=`<nav class="subtabs" aria-label="과제 과정">${[['read','독서'],['money','돈관리'],['sns','SNS'],['house','내집마련']].map(([x,n])=>`<a href="#${x}" class="${x===k?'on':''}">${n}</a>`).join('')}</nav>`;
+  h+=`<section class="sec"><span class="eyebrow">과정별 바로가기</span><div class="h1">${tr.name}</div><div class="body1">${tr.desc}</div>`;
   if(k==='read') h+=`<a class="card" href="${BOOK.url}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><span class="lb">6기 책</span><div class="nm">${esc(BOOK.title)}</div><div class="ds">${esc(BOOK.sub)}</div><div style="margin-top:8px;font-size:13px;font-weight:700;color:var(--acc)">예스24에서 사기 ›</div></a>`;
   h+=`<div style="margin-top:18px">`;
   WEEKS.forEach(w=>{
