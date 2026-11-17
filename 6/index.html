@@ -415,7 +415,17 @@ body[data-v=ops] #banner{display:none!important}
 .ipcleft:empty{display:none}
 /* 강의 출석 바로 내기 (11/17) */
 .att{border-top:1px solid var(--border)}
-.att.ipw .rw{padding:12px 0;border-bottom:none}
+.att .rw{padding:12px 0;border-bottom:none;max-width:720px}
+.att .rw>label{display:block;font-size:12.5px;font-weight:600;color:var(--text-md);margin-bottom:6px}
+.att .rw label i{color:var(--miss);font-style:normal}
+.att textarea{width:100%;min-height:84px;border:1px solid var(--border);border-radius:10px;padding:11px 12px;font-family:inherit;font-size:14.5px;line-height:1.65;color:var(--text);background:#fff;resize:vertical}
+.att textarea:focus{outline:2px solid var(--acc-lt);outline-offset:0;border-color:var(--acc-lt)}
+.att textarea::placeholder{color:#B4B8C2}
+.att .rw>.ipchk{display:flex;font-weight:500;color:var(--text);font-size:13.5px}
+/* 녹화본 모음 (#vod) 체크 동그라미 */
+.replay .ck{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--acc-lt);background:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;cursor:pointer;padding:0;font-family:inherit}
+.replay .ck:not(:empty){background:var(--acc);border-color:var(--acc)}
+.replay .go{flex-shrink:0;font-size:13px;font-weight:700;color:var(--acc);text-decoration:none}
 .att .attwho{display:flex;flex-wrap:wrap;gap:8px 16px}
 .att .attgo{display:block;width:100%;max-width:360px;margin-top:8px;padding:14px 16px;font-size:15.5px}
 .att .attmsg{font-size:13px;font-weight:600;min-height:1em}
@@ -472,6 +482,7 @@ body[data-v=write] #banner,body[data-v=coach] #banner{display:none!important}
       <a href="#ops" data-v="ops" id="opsTab" hidden>운영진</a>
       <a href="#home" data-v="home">6기</a>
       <a href="#mine" data-v="mine">피드백</a>
+      <a href="#vod" data-v="vod">다시보기</a>
       <a href="#coach" data-v="coach">1:1 내집마련</a>
       <a href="#read" data-v="read">독서</a>
       <a href="#money" data-v="money">돈관리</a>
@@ -819,7 +830,7 @@ function choiceOf(h){
 let view='home', boardMode='week', boardAll=false, openDetail=null;
 function render(){
   const v=(location.hash||'#home').slice(1), exm=v.match(/^ex\/(read|money|house|sns|live)\/(\d)$/), wrm=v.match(/^write\/(house)\/(\d)$/);
-  view=exm?'ex':wrm?'write':['home','read','money','house','sns','qa','files','mine','admin','grad','ops','coach'].includes(v)?v:'home';
+  view=exm?'ex':wrm?'write':['home','read','money','house','sns','qa','files','mine','admin','grad','ops','coach','vod'].includes(v)?v:'home';
   const tab=exm?(exm[1]==='live'?'home':exm[1]):wrm?wrm[1]:view;
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
   const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
@@ -835,7 +846,7 @@ function render(){
   if(locked){ if(bn) bn.innerHTML=''; el.innerHTML=gateView(); return; }
   if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
-  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='write'?writeView(wrm[1],+wrm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : view==='ops'?opsView() : view==='coach'?coachView() : trackView(view);
+  el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='write'?writeView(wrm[1],+wrm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : view==='ops'?opsView() : view==='coach'?coachView() : view==='vod'?vodView() : trackView(view);
 }
 
 // 5기 (첫 화면): MVP → 부부 진행판
@@ -917,8 +928,43 @@ function replays(){
     <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',curWeek(NOW()),'ex-live')}</div></section>`;
   return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
     out.map(r=>`<a class="replay" href="${esc(r.url)}" target="_blank" rel="noopener"><span class="d">${r.day}<b>${r.d}</b></span><span class="t">${esc(r.t)}</span><span class="go">▶ 보기</span></a>`).join('')+
-    `</div><div class="note" style="text-align:left">녹화본은 한 달간 볼 수 있어요.</div>
+    `</div><div class="note" style="text-align:left">녹화본은 한 달간 볼 수 있어요 · <a href="#vod">녹화본 모음 전체 보기 ›</a></div>
     <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',curWeek(NOW()),'ex-live')}</div></section>`;
+}
+
+// 녹화본 모음 (#vod, 11/17 결영 '녹화본 모음집 게시판') — OT + 주차별 화(내집마련)·목(SNS) 강의를 한 줄씩
+//   링크는 운영진 화면 '링크'에서 넣는 그대로(liveLinks). 미트 주소는 녹화본이 아니라 '라이브 입장'으로 본다
+//   본 강의는 이 기기에 체크(ot6vod) — 출석은 출석 칸에서 따로
+function vodSeen(){ try{ return JSON.parse(localStorage.getItem('ot6vod')||'{}'); }catch(e){ return {}; } }
+function vodToggle(k){ const o=vodSeen(); o[k]=!o[k]; if(!o[k]) delete o[k]; try{ localStorage.setItem('ot6vod',JSON.stringify(o)); }catch(e){} render(); }
+function vodView(){
+  const L=liveLinks(), now=NOW(), seen=vodSeen(), yr=String((WEEKS[0]&&WEEKS[0].open)||'2026').slice(0,4);
+  const at=md=>{ const [m,d]=String(md).split('/').map(Number); return new Date(`${yr}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T21:00:00+09:00`).getTime(); };
+  const rows=[{k:'0|OT', wk:'OT', d:OT.date, day:OT.day||'목', t:OT.title, url:L['0|OT'], live:0}];
+  WEEKS.forEach(w=>{
+    [['내집마련','house',w.tue],['SNS','sns',w.thu]].forEach(([tr,k,d])=>rows.push({k:w.n+'|'+tr, wk:w.n+'주차', d, day:TRACKS[k].live,
+      t:`${tr} · ${TASKS[k][w.n].name}`, who:TRACKS[k].who, url:L[w.n+'|'+tr], live:w.n}));
+  });
+  const isMeet=u=>/meet\.google\.com/.test(u||'');
+  const nSeen=rows.filter(r=>seen[r.k]).length, nRec=rows.filter(r=>r.url&&!isMeet(r.url)).length;
+  let h=`<section class="sec"><span class="eyebrow">라이브 다시보기</span><div class="h1">녹화본 모음</div>
+    <div class="body1">강의가 끝나면 녹화본이 여기에 올라와요. 못 오신 날은 다시보기로 보고 출석하면 돼요.</div>
+    <div class="note" style="text-align:left;margin-top:8px">올라온 녹화본 ${nRec}/${rows.length} · 내가 본 것 ${nSeen} · 녹화본은 한 달간 볼 수 있어요</div></section>`;
+  if(!hasLinks()) return h+`<section class="sec-alt"><div class="body1">다시보기는 6기 부부만 볼 수 있어요. 피드백 탭에서 한 번 로그인하면 목록이 열려요.</div><a class="btn" href="#mine" style="margin-top:14px">로그인하기</a></section>`;
+  let lastWk='';
+  h+=`<section class="sec-alt">`;
+  rows.forEach(r=>{
+    if(r.wk!==lastWk){ h+=`<div class="lb" style="margin-top:${lastWk?18:0}px">${r.wk}</div>`; lastWk=r.wk; }
+    const t0=at(r.d), past=now>t0+2*3600e3, today=now>t0-12*3600e3&&!past;
+    let go;
+    if(r.url&&!isMeet(r.url)) go=`<a class="go" href="${esc(r.url)}" target="_blank" rel="noopener">▶ 다시보기</a>`;
+    else if(today&&r.url) go=`<a class="go" href="${esc(r.url)}" target="_blank" rel="noopener">▶ 라이브 입장</a>`;
+    else if(!past) go=`<span class="go" style="color:var(--text-lt)">예정 · 밤 9시</span>`;
+    else go=`<span class="go" style="color:var(--text-lt)">녹화본 준비 중</span>`;
+    const ck=seen[r.k];
+    h+=`<div class="replay"><button class="ck" style="flex-shrink:0" onclick="vodToggle('${r.k}')" title="본 강의 체크" aria-label="${ck?'봤어요':'보면 체크'}">${ck?'✓':''}</button><span class="d">${r.day}<b>${r.d}</b></span><span class="t">${esc(r.t)}${r.who?` <small style="color:var(--text-lt);font-weight:500">· ${esc(r.who)}</small>`:''}<br><a href="#ex/live/${r.live}" style="font-size:12px;font-weight:500;color:var(--text-lt)">이 강의 출석하기 ›</a></span>${go}</div>`;
+  });
+  return h+`</section>`;
 }
 
 // 이번 주 해야 할 일 — 모든 화면 맨 위. 로그인한 부부면 낸 것에 ✓
@@ -1073,7 +1119,7 @@ function attendBox(n){
   const v = attGet(n), task = attTask(n);
   const done = DATA && Array.isArray(DATA.rows) && DATA.rows.some(r => r.task === task);
   const who = v.who || '';
-  return `<section class="sec att ipw" id="att"><div class="exh"><span>✓</span>여기서 바로 출석하기</div>
+  return `<section class="sec att" id="att"><div class="exh"><span>✓</span>여기서 바로 출석하기</div>
     <div class="exsub"><b>${esc(m.h)}</b> · ${esc(task)}${done ? ' · <span style="color:var(--acc);font-weight:700">이미 냈어요 — 다시 내면 새 글로 바뀌어요</span>' : ''}</div>
     <div class="rw"><label>누가 쓰나요</label><div class="attwho">${['남편', '아내', '둘이 함께'].map(x => `<label class="ipchk"><input type="radio" name="attwho" value="${x}" ${who === x ? 'checked' : ''} onchange="attSet(${n},'who',this.value)"> ${x}</label>`).join('')}</div></div>
     ${n ? `<div class="rw"><label>어느 라이브를 봤나요? <i>*</i></label><div class="attwho">${['화 내집마련', '목 SNS'].map(x => `<label class="ipchk"><input type="radio" name="attlive" value="${x}" ${v.l === x ? 'checked' : ''} onchange="attSet(${n},'l',this.value)"> ${x}</label>`).join('')}</div></div>` : ''}
