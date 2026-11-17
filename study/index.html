@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>원팀 졸업반 · 스터디방</title>
+<meta property="og:title" content="원팀 졸업반 · 스터디방">
+<meta property="og:description" content="이번 달 스터디 일정, 참석 체크, 과제 올리기를 한곳에서">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F8FA; --white:#FFF; --dark:#1C2B4A;
+  --acc:#1B2A4E; --acc-soft:#EEF1F7; --acc-lt:#B9C8E2;
+  --pink:#D6336C; --pink-soft:#FDF1F5;
+  --text:#14181F; --text-md:#5A6172; --text-lt:#6B7280; --mute:#9AA0AC;
+  --border:#E6E8EE; --ok:#0F6E3A; --ok-bg:#EAF6EF; --warn:#854F0B; --warn-bg:#FBF6EC;
+}
+body{font-family:'Pretendard',-apple-system,sans-serif;color:var(--text);line-height:1.6;background:var(--bg);-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word}
+.page{max-width:520px;margin:0 auto;background:var(--white);min-height:100vh;padding-bottom:60px}
+button,input,textarea,select{font-family:inherit}
+a{color:var(--acc)}
+.hd{background:var(--dark);color:#fff;padding:22px 20px 18px}
+.hd small{display:block;font-size:12px;color:var(--acc-lt);font-weight:600;letter-spacing:.04em}
+.hd h1{font-size:21px;font-weight:800;margin-top:2px}
+.me{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 20px;background:var(--acc-soft);font-size:13px;color:var(--text-md)}
+.me b{color:var(--acc)}
+.me button{border:0;background:none;color:var(--text-lt);text-decoration:underline;font-size:12.5px;cursor:pointer}
+.sec{padding:22px 20px;border-bottom:8px solid var(--bg)}
+.sec h2{font-size:17px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec h2 .n{font-size:12px;font-weight:700;color:var(--pink);background:var(--pink-soft);border-radius:99px;padding:2px 9px}
+.card{border:1px solid var(--border);border-radius:14px;padding:16px}
+.when{font-size:22px;font-weight:800;color:var(--acc);letter-spacing:-.01em}
+.when.vote{font-size:17px;color:var(--pink)}
+.ttl{font-size:16px;font-weight:700;margin-top:4px}
+.topic{font-size:14px;color:var(--text-md);margin-top:4px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:0;border-radius:11px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer;background:var(--acc);color:#fff}
+.btn.ghost{background:#fff;color:var(--acc);border:1.5px solid var(--acc-lt)}
+.btn.pink{background:var(--pink)}
+.btn.on{box-shadow:0 0 0 3px var(--acc-lt)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.wide{width:100%}
+.hw{white-space:pre-wrap;font-size:14px;line-height:1.75;background:var(--bg);border-radius:12px;padding:14px;margin-top:4px}
+.due{font-size:13px;color:var(--warn);background:var(--warn-bg);border-radius:8px;padding:6px 10px;margin-top:10px;display:inline-block;font-weight:600}
+.zoom{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--ok-bg);font-size:14px}
+.zoom a{font-weight:700;color:var(--ok)}
+.hint{font-size:13px;color:var(--text-lt);margin-top:8px}
+.chips{display:flex;flex-direction:column;gap:8px}
+.chip{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;font-size:15px;font-weight:600;background:#fff;cursor:pointer;text-align:left;width:100%}
+.chip.on{border-color:var(--acc);background:var(--acc-soft)}
+.chip .c{font-size:12.5px;color:var(--text-lt);font-weight:600;white-space:nowrap}
+.who{font-size:13px;color:var(--text-md);margin-top:10px;line-height:1.8}
+.who b{color:var(--acc)}
+.login label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+.login input,.login select,.edit textarea,.edit input,.adm input,.adm textarea,.adm select{width:100%;font-size:16px;border:1px solid var(--border);border-radius:10px;padding:12px 13px;background:var(--bg);outline:none}
+.login .agree{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--text-md);margin-top:12px;font-weight:500}
+.login .agree input{width:auto;margin-top:4px}
+.tabs{display:flex;gap:6px;margin-bottom:6px}
+.tabs button{flex:1;border:1px solid var(--border);background:#fff;border-radius:10px;padding:10px;font-size:14px;font-weight:700;color:var(--text-md);cursor:pointer}
+.tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.err{color:var(--pink);font-size:13px;margin-top:8px;font-weight:600}
+.edit textarea{min-height:110px;resize:vertical;line-height:1.6}
+.edit label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.thumbs div{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--bg)}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbs button{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:14px;cursor:pointer}
+.pick{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--acc-lt);border-radius:12px;padding:14px;font-size:14px;font-weight:700;color:var(--acc);cursor:pointer;margin-top:6px}
+.pick input{display:none}
+.posts{display:flex;flex-direction:column;gap:12px}
+.post{border:1px solid var(--border);border-radius:14px;padding:14px}
+.post .h{font-size:15px;font-weight:800;color:var(--acc);display:flex;justify-content:space-between;gap:8px}
+.post .h small{font-size:12px;color:var(--mute);font-weight:500}
+.post pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.7;margin-top:6px;color:var(--text)}
+.post .imgs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.post .imgs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:zoom-in;display:block;background:var(--bg)}
+.post .imgs.one{grid-template-columns:1fr}
+.post .imgs.one img{aspect-ratio:auto;max-height:420px;object-fit:contain}
+.empty{font-size:14px;color:var(--mute);text-align:center;padding:24px 0}
+.past button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--border);background:none;padding:12px 2px;font-size:14px;cursor:pointer;color:var(--text)}
+.past button small{color:var(--text-lt);margin-left:6px}
+.past button.on{font-weight:800;color:var(--acc)}
+.big{position:fixed;inset:0;background:rgba(10,14,25,.92);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;cursor:zoom-out}
+.big img{max-width:100%;max-height:100%;border-radius:8px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--dark);color:#fff;padding:11px 18px;border-radius:99px;font-size:14px;font-weight:600;z-index:60}
+.adm .st{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;font-size:14px;cursor:pointer}
+.adm .st b{color:var(--acc)}
+.adm label{display:block;font-size:12.5px;font-weight:700;margin:10px 0 5px;color:var(--text-md)}
+.adm textarea{min-height:90px;font-size:14px}
+.adm .m{font-size:13px;color:var(--text-md);display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:7px 0}
+.adm .m button{border:0;background:none;color:var(--pink);font-size:12px;cursor:pointer}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;border-radius:99px;padding:1px 8px;margin-left:6px}
+.tag.draft{background:#EEE;color:#555}.tag.vote{background:var(--pink-soft);color:var(--pink)}.tag.set{background:var(--ok-bg);color:var(--ok)}.tag.done{background:var(--acc-soft);color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hd"><small>원팀 프로젝트 졸업반</small><h1>스터디방</h1></div>
+  <div id="app"><div class="empty">불러오는 중…</div></div>
+</div>
+<script>
+const U = 'https://vfgfvwqejfuqaxvtordh.supabase.co';
+const KEY = 'sb_publishable_W_XKLh1kA5hZ-zFatXOhLQ_icQ-j1aW';
+const IMG_PREFIX = U + '/storage/v1/object/public/study/';
+function api(p){ return fetch(U + '/rest/v1/rpc/study_api', {method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'}, body: JSON.stringify({p})}).then(r => r.json()); }
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = s => document.querySelector(s);
+const W = ['일','월','화','수','목','금','토'];
+function when(iso){
+  if(!iso) return '';
+  const d = new Date(new Date(iso).toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
+  const h = d.getHours(), m = d.getMinutes();
+  const part = h < 12 ? '오전' : h < 18 ? '오후' : '밤';
+  const hh = h % 12 || 12;
+  return `${d.getMonth()+1}/${d.getDate()}(${W[d.getDay()]}) ${part} ${hh}시${m ? ' ' + m + '분' : ''}`;
+}
+function toast(t){ const e = document.createElement('div'); e.className = 'toast'; e.textContent = t; document.body.appendChild(e); setTimeout(() => e.remove(), 2200); }
+let ME = null; try { ME = JSON.parse(localStorage.getItem('ot_study_me') || 'null'); } catch(e) {}
+function saveMe(m){ ME = m; try { m ? localStorage.setItem('ot_study_me', JSON.stringify(m)) : localStorage.removeItem('ot_study_me'); } catch(e) {} }
+let D = null, VIEW_ID = null, MODE = 'login', DRAFT = null, BUSY = false;
+
+async function load(){
+  const p = {}; if(VIEW_ID) p.study = VIEW_ID;
+  if(ME){ p.h = ME.h; p.code = ME.code; }
+  D = await api(p);
+  if(ME && D.login && D.login !== 'ok'){ saveMe(null); }
+  render();
+}
+
+function mine(){ return ME && D && D.login === 'ok' ? ME.h : null; }
+
+function render(){
+  if(location.hash === '#admin') return renderAdmin();
+  if(!D || !D.ok){ $('#app').innerHTML = '<div class="empty">잠깐 연결이 안 돼요. 새로고침 해주세요.</div>'; return; }
+  const me = mine(), s = D.study;
+  let h = '';
+  h += me ? `<div class="me"><span><b>${esc(me)}</b>로 들어와 있어요</span><button onclick="logout()">나가기</button></div>` : '';
+  if(!s){ h += `<div class="sec"><div class="empty">다음 스터디 일정이 곧 올라와요.</div></div>`; }
+  else {
+    const rs = D.rsvp || [], myR = rs.find(r => r.h === me) || {votes:[], attend:''};
+    const open = s.status === 'vote' || s.status === 'set';
+    // ① 일정
+    h += `<div class="sec"><h2>${s.status === 'done' ? '지난 스터디' : '이번 스터디'}</h2><div class="card">`;
+    h += s.status === 'vote' ? `<div class="when vote">날짜 투표 중이에요</div>` : `<div class="when">${esc(when(s.startsAt))}</div>`;
+    h += `<div class="ttl">${esc(s.title)}</div>${s.topic ? `<div class="topic">${esc(s.topic)}</div>` : ''}`;
+    if(s.status === 'set'){
+      if(me && s.zoom) h += `<div class="zoom">줌 입장 <a href="${esc(s.zoom)}" target="_blank" rel="noopener">여기를 누르세요 ›</a></div>`;
+      else if(s.hasZoom) h += `<div class="hint">줌 링크는 들어오면 보여요. 시작 1시간 전에 문자로도 보내드려요.</div>`;
+    }
+    if(s.notes) h += `<div class="hint">${esc(s.notes)}</div>`;
+    h += `</div></div>`;
+    // ② 날짜 투표 / 참석
+    if(s.status === 'vote'){
+      const cnt = o => rs.filter(r => (r.votes || []).includes(o)).length;
+      h += `<div class="sec"><h2>되는 날 고르기 <span class="n">여러 개 골라도 돼요</span></h2><div class="chips">`;
+      (s.options || []).forEach(o => { const on = (myR.votes || []).includes(o); h += `<button class="chip ${on ? 'on' : ''}" ${me ? `onclick="vote('${esc(o)}')"` : 'onclick="needLogin()"'}><span>${on ? '✓ ' : ''}${esc(when(o))}</span><span class="c">${cnt(o)}팀</span></button>`; });
+      h += `</div><div class="hint">가장 많이 고른 날로 정해서 다시 알려드릴게요.</div></div>`;
+    } else if(s.status === 'set'){
+      const yes = rs.filter(r => r.attend === 'yes').map(r => r.h), no = rs.filter(r => r.attend === 'no').map(r => r.h);
+      h += `<div class="sec"><h2>참석할 수 있나요? <span class="n">${yes.length}팀 참석</span></h2><div class="row">
+        <button class="btn ${myR.attend === 'yes' ? 'on' : 'ghost'}" style="flex:1" onclick="${me ? "attend('yes')" : 'needLogin()'}">참석할게요</button>
+        <button class="btn ${myR.attend === 'no' ? 'on' : 'ghost'}" style="flex:1" onclick="${me ? "attend('no')" : 'needLogin()'}">이번엔 못 가요</button></div>
+        ${yes.length ? `<div class="who">참석 · ${yes.map(x => `<b>${esc(x)}</b>`).join(', ')}</div>` : ''}${no.length ? `<div class="who">불참 · ${no.map(esc).join(', ')}</div>` : ''}</div>`;
+    }
+    // ③ 미리 할 과제
+    if(s.homework){
+      h += `<div class="sec"><h2>미리 해올 것</h2><div class="hw" id="hw">${esc(s.homework)}</div>
+        <div class="row"><button class="btn ghost" onclick="copyHw()">글 전체 복사</button></div>
+        ${s.homeworkDue ? `<div class="due">${esc(when(s.homeworkDue))}까지 아래에 올려주세요</div>` : ''}</div>`;
+    }
+    // ④ 우리 팀 과제
+    const posts = D.posts || [], myP = posts.find(p => p.h === me);
+    if(open){
+      h += `<div class="sec"><h2>우리 팀 과제 올리기</h2>`;
+      if(!me) h += `<div class="hint" style="margin-top:0">들어오면 올릴 수 있어요.</div><div class="row"><button class="btn wide" onclick="needLogin()">들어가기</button></div>`;
+      else {
+        if(!DRAFT) DRAFT = {body: myP ? myP.body : '', images: myP ? [...myP.images] : [], link: myP ? myP.link : ''};
+        h += `<div class="edit"><label>글 (컨셉 한 줄, 하고 싶은 말)</label><textarea id="pbody" oninput="DRAFT.body=this.value" placeholder="예) 짠돌이 남편이 아내 가계부 검사하다가 자기 배달 영수증이 걸린다">${esc(DRAFT.body)}</textarea>
+          <label>사진 (캐릭터 그림 등, 6장까지)</label>
+          <div class="thumbs">${DRAFT.images.map((u, i) => `<div><img src="${esc(u)}" alt=""><button onclick="rmImg(${i})" aria-label="사진 빼기">×</button></div>`).join('')}</div>
+          ${DRAFT.images.length < 6 ? `<label class="pick">＋ 사진 고르기<input type="file" accept="image/*" multiple onchange="addImgs(this.files)"></label>` : ''}
+          <label>링크 (있으면)</label><input id="plink" value="${esc(DRAFT.link)}" oninput="DRAFT.link=this.value" placeholder="인스타 게시물 주소 등">
+          <div class="row"><button class="btn wide pink" id="psave" onclick="savePost()" ${BUSY ? 'disabled' : ''}>${BUSY ? '올리는 중…' : myP ? '고친 내용 올리기' : '올리기'}</button></div>
+          ${myP ? `<div class="hint" style="text-align:center"><a href="javascript:delPost()">우리 팀 글 지우기</a></div>` : ''}</div>`;
+      }
+      h += `</div>`;
+    }
+    // ⑤ 모두의 과제
+    h += `<div class="sec"><h2>모두의 과제 <span class="n">${posts.length}팀</span></h2>`;
+    h += posts.length ? `<div class="posts">${posts.map(p => `<div class="post"><div class="h">${esc(p.h)}<small>${esc(when(p.at))}</small></div>
+      ${p.body ? `<pre>${esc(p.body)}</pre>` : ''}${p.images.length ? `<div class="imgs ${p.images.length === 1 ? 'one' : ''}">${p.images.map(u => `<img src="${esc(u)}" alt="${esc(p.h)} 과제 사진" loading="lazy" onclick="big('${esc(u)}')">`).join('')}</div>` : ''}
+      ${p.link ? `<div class="hint"><a href="${esc(p.link)}" target="_blank" rel="noopener">링크 열기 ›</a></div>` : ''}</div>`).join('')}</div>` : `<div class="empty">아직 올린 팀이 없어요. 첫 번째로 올려주세요!</div>`;
+    h += `</div>`;
+  }
+  // ⑥ 들어가기
+  if(!me) h += loginBox();
+  // ⑦ 지난 스터디
+  if((D.past || []).length > 1){
+    h += `<div class="sec past"><h2>지난 스터디</h2>${D.past.map(x => `<button class="${s && x.id === s.id ? 'on' : ''}" onclick="openStudy(${x.id})">${esc(x.title)}<small>${esc(when(x.startsAt))}</small></button>`).join('')}</div>`;
+  }
+  $('#app').innerHTML = h;
+}
+
+function loginBox(){
+  const roster = D.roster || [];
+  return `<div class="sec login" id="login"><h2>들어가기</h2>
+    <div class="tabs"><button class="${MODE === 'login' ? 'on' : ''}" onclick="MODE='login';render();focusLogin()">우리 팀 이름 있어요</button><button class="${MODE === 'join' ? 'on' : ''}" onclick="MODE='join';render();focusLogin()">처음 왔어요</button></div>
+    ${MODE === 'login' ? `
+      <label>부부 이름</label><select id="lh"><option value="">골라주세요</option>${roster.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+      <label>휴대폰 번호 뒷자리 4개</label><input id="lc" inputmode="numeric" maxlength="4" placeholder="0000">
+      <div class="row"><button class="btn wide" onclick="doLogin()">들어가기</button></div>
+      ${roster.length ? '' : '<div class="hint">아직 등록한 팀이 없어요. "처음 왔어요"로 시작해 주세요.</div>'}` : `
+      <label>부부 이름 (기수 이름 그대로, 예: 결영이네)</label><input id="jh" maxlength="20" placeholder="결영이네">
+      <label>알림 받을 휴대폰 번호</label><input id="jp" inputmode="tel" placeholder="010-0000-0000">
+      <label class="agree"><input type="checkbox" id="ja"> 스터디 일정·참석·과제 안내 문자를 이 번호로 받을게요. 번호는 운영진만 봐요.</label>
+      <div class="row"><button class="btn wide" onclick="doJoin()">시작하기</button></div>
+      <div class="hint">다음부터는 이름을 고르고 뒷자리 4개만 넣으면 돼요.</div>`}
+    <div class="err" id="lerr"></div></div>`;
+}
+function focusLogin(){ const e = $('#login'); if(e) e.scrollIntoView({behavior:'smooth', block:'start'}); }
+function needLogin(){ focusLogin(); toast('먼저 들어와 주세요'); }
+function logout(){ saveMe(null); DRAFT = null; load(); }
+const ERR = {code:'번호가 맞지 않아요', nocode:'번호가 등록되지 않았어요', locked:'5번 틀려서 1시간 동안 잠겼어요', name:'이름을 넣어주세요', phone:'휴대폰 번호를 확인해주세요', agree:'문자 받기에 체크해 주세요', exists:'이미 있는 이름이에요. "우리 팀 이름 있어요"로 들어가세요'};
+async function doLogin(){
+  const h = $('#lh').value, code = $('#lc').value.trim();
+  if(!h || code.length !== 4){ $('#lerr').textContent = '이름과 뒷자리 4개를 넣어주세요'; return; }
+  const r = await api({h, code});
+  if(r.login !== 'ok'){ $('#lerr').textContent = ERR[r.login] || '다시 해주세요'; return; }
+  saveMe({h, code}); D = r; DRAFT = null; render(); toast(h + ' 반가워요!');
+}
+async function doJoin(){
+  const h = $('#jh').value.trim(), phone = $('#jp').value, agree = $('#ja').checked;
+  const r = await api({op:'join', h, phone, agree});
+  if(!r.ok){ $('#lerr').textContent = ERR[r.error] || '다시 해주세요'; return; }
+  const code = phone.replace(/\D/g, '').slice(-4);
+  saveMe({h, code}); DRAFT = null; await load(); toast(h + ' 반가워요!');
+}
+async function vote(o){
+  const myR = (D.rsvp || []).find(r => r.h === ME.h) || {votes:[], attend:''};
+  const v = myR.votes.includes(o) ? myR.votes.filter(x => x !== o) : [...myR.votes, o];
+  const r = await api({op:'rsvp', h:ME.h, code:ME.code, study:D.study.id, votes:v, attend:myR.attend});
+  if(!r.ok) return toast('다시 눌러주세요'); load();
+}
+async function attend(a){
+  const myR = (D.rsvp || []).find(r => r.h === ME.h) || {votes:[]};
+  const r = await api({op:'rsvp', h:ME.h, code:ME.code, study:D.study.id, votes:myR.votes || [], attend:a});
+  if(!r.ok) return toast('다시 눌러주세요'); toast(a === 'yes' ? '참석으로 표시했어요' : '불참으로 표시했어요'); load();
+}
+function copyHw(){
+  const t = D.study.homework;
+  navigator.clipboard.writeText(t).then(() => toast('복사했어요'), () => { const r = document.createRange(); r.selectNodeContents($('#hw')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('선택했어요. 복사를 눌러주세요'); });
+}
+// 사진은 긴 쪽 1600px JPEG로 줄여서 올린다
+async function shrink(file){
+  const bmp = await createImageBitmap(file).catch(() => null);
+  if(!bmp) return file;
+  const sc = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return await new Promise(r => c.toBlob(r, 'image/jpeg', 0.86));
+}
+async function addImgs(files){
+  BUSY = true; render();
+  try{
+    for(const f of [...files].slice(0, 6 - DRAFT.images.length)){
+      const b = await shrink(f);
+      const name = 'g/' + D.study.id + '/' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + '.jpg';
+      const r = await fetch(U + '/storage/v1/object/study/' + name, {method:'POST', headers:{apikey:KEY, 'Content-Type':'image/jpeg'}, body:b});
+      if(r.ok) DRAFT.images.push(IMG_PREFIX + name); else toast('사진 한 장이 안 올라갔어요');
+    }
+  } finally { BUSY = false; render(); }
+}
+function rmImg(i){ DRAFT.images.splice(i, 1); render(); }
+async function savePost(){
+  if(!DRAFT.body.trim() && !DRAFT.images.length) return toast('글이나 사진을 넣어주세요');
+  BUSY = true; render();
+  const r = await api({op:'post', h:ME.h, code:ME.code, study:D.study.id, body:DRAFT.body, images:DRAFT.images, link:DRAFT.link});
+  BUSY = false;
+  if(!r.ok){ render(); return toast('다시 눌러주세요'); }
+  DRAFT = null; toast('올렸어요!'); load();
+}
+async function delPost(){
+  if(!window.confirmDel){ window.confirmDel = true; toast('한 번 더 누르면 지워져요'); setTimeout(() => window.confirmDel = false, 3000); return; }
+  await api({op:'unpost', h:ME.h, code:ME.code, study:D.study.id}); DRAFT = null; load();
+}
+function openStudy(id){ VIEW_ID = id; DRAFT = null; load().then(() => scrollTo({top:0, behavior:'smooth'})); }
+function big(u){ const d = document.createElement('div'); d.className = 'big'; d.innerHTML = `<img src="${esc(u)}" alt="">`; d.onclick = () => d.remove(); document.body.appendChild(d); }
+
+// ── 운영진 (#admin) ──
+let AK = ''; try { AK = sessionStorage.getItem('ot_study_ak') || ''; } catch(e) {}
+let A = null, EDIT = null;
+const local = iso => { if(!iso) return ''; const d = new Date(new Date(iso).toLocaleString('en-US', {timeZone:'Asia/Seoul'})); const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+const toIso = s => { s = (s || '').trim(); if(!s) return ''; const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})$/); if(!m) return null; const p = n => String(n).padStart(2, '0'); return `${m[1]}-${p(m[2])}-${p(m[3])}T${p(m[4])}:${m[5]}:00+09:00`; };
+const STATUS = {draft:'준비 중 (멤버에게 안 보임)', vote:'날짜 투표 중', set:'확정', done:'끝남'};
+async function loadAdmin(){ A = await api({action:'admin', key:AK}); if(!A.ok){ AK = ''; try { sessionStorage.removeItem('ot_study_ak'); } catch(e) {} } renderAdmin(); }
+function renderAdmin(){
+  let h = '<div class="sec adm">';
+  if(!AK || !A){ h += `<h2>운영진</h2><label>운영진 비밀번호</label><input id="ak" type="password"><div class="row"><button class="btn wide" onclick="AK=$('#ak').value;try{sessionStorage.setItem('ot_study_ak',AK)}catch(e){};loadAdmin()">열기</button></div>${A && !A.ok ? '<div class="err">비밀번호가 맞지 않아요</div>' : ''}</div>`; $('#app').innerHTML = h; if(AK && !A) loadAdmin(); return; }
+  if(!EDIT){
+    h += `<h2>스터디 <span class="n">${A.studies.length}</span></h2><div class="row" style="margin:0 0 12px"><button class="btn pink wide" onclick="EDIT={};renderAdmin()">＋ 새 스터디</button></div>`;
+    A.studies.forEach(s => { const b = A.boards[s.id] || {}; const yes = (b.rsvp || []).filter(r => r.attend === 'yes').length;
+      h += `<div class="st" onclick="EDIT=A.studies.find(x=>x.id===${s.id});renderAdmin()"><b>${esc(s.title || '(제목 없음)')}</b><span class="tag ${s.status}">${esc(STATUS[s.status].split(' ')[0])}</span><br>${esc(when(s.startsAt) || '날짜 미정')} · 참석 ${yes}팀 · 과제 ${(b.posts || []).length}팀<br><small style="color:var(--mute)">보낸 문자: ${Object.keys(s.sent || {}).map(k => ({announce_set:'일정 안내', announce_vote:'투표 안내', due:'과제 알림', remind:'1시간 전'}[k] || k)).join(', ') || '없음'}</small></div>`; });
+    h += `<h2 style="margin-top:20px">명단 <span class="n">${A.members.length}팀</span></h2>${A.members.map(m => `<div class="m"><span>${esc(m.h)} · ${esc(m.to)}</span><button onclick="delMember('${esc(m.h)}')">빼기</button></div>`).join('') || '<div class="hint">아직 없어요</div>'}`;
+    h += `<div class="row"><button class="btn ghost wide" onclick="location.hash='';load()">멤버 화면 보기</button></div></div>`;
+  } else {
+    const s = EDIT;
+    h += `<h2>${s.id ? '스터디 고치기' : '새 스터디'}</h2>
+      <label>상태</label><select id="es">${Object.keys(STATUS).map(k => `<option value="${k}" ${(s.status || 'draft') === k ? 'selected' : ''}>${STATUS[k]}</option>`).join('')}</select>
+      <div class="hint">'확정'으로 저장하면 1시간 안에 전원에게 안내 문자가 나가요. 투표 중이면 투표 안내가 나가요.</div>
+      <label>제목</label><input id="et" value="${esc(s.title || '')}" placeholder="12월 SNS 스터디 · 릴스">
+      <label>주제 한 줄</label><input id="eto" value="${esc(s.topic || '')}">
+      <label>날짜·시간 (확정일 때) — 예: 2026-12-19 21:00</label><input id="ew" value="${esc(local(s.startsAt))}">
+      <label>투표 후보 (투표 중일 때, 한 줄에 하나)</label><textarea id="eo" placeholder="2026-12-18 21:00&#10;2026-12-19 21:00">${esc((s.options || []).map(local).join('\n'))}</textarea>
+      <label>줌 링크</label><input id="ez" value="${esc(s.zoom || '')}">
+      <label>미리 해올 것</label><textarea id="eh" style="min-height:160px">${esc(s.homework || '')}</textarea>
+      <label>과제 올리는 마감 — 예: 2026-12-18 23:59</label><input id="ed" value="${esc(local(s.homeworkDue))}">
+      <label>한 줄 메모 (멤버에게 보임)</label><input id="en" value="${esc(s.notes || '')}">
+      <div class="err" id="eerr"></div>
+      <div class="row"><button class="btn wide" onclick="saveStudy()">저장</button><button class="btn ghost wide" onclick="EDIT=null;renderAdmin()">목록으로</button></div></div>`;
+  }
+  $('#app').innerHTML = h;
+}
+async function saveStudy(){
+  const opts = $('#eo').value.split('\n').map(x => x.trim()).filter(Boolean).map(toIso);
+  const w = toIso($('#ew').value), d = toIso($('#ed').value);
+  if(opts.includes(null) || w === null || d === null) return $('#eerr').textContent = '날짜는 2026-12-19 21:00 모양으로 넣어주세요';
+  const st = $('#es').value;
+  if(st === 'set' && !w) return $('#eerr').textContent = '확정이면 날짜·시간을 넣어주세요';
+  if(st === 'vote' && opts.length < 2) return $('#eerr').textContent = '투표 후보를 두 개 이상 넣어주세요';
+  const r = await api({op:'save', key:AK, study:{id: EDIT.id || '', status: st, title: $('#et').value, topic: $('#eto').value, startsAt: w, options: opts, zoom: $('#ez').value.trim(), homework: $('#eh').value, homeworkDue: d, notes: $('#en').value}});
+  if(!r.ok) return $('#eerr').textContent = '저장이 안 됐어요';
+  EDIT = null; toast('저장했어요'); loadAdmin();
+}
+async function delMember(n){ if(window.delArm !== n){ window.delArm = n; toast('한 번 더 누르면 ' + n + ' 빠져요'); setTimeout(() => window.delArm = null, 3000); return; } await api({op:'delmember', key:AK, nick:n}); loadAdmin(); }
+window.addEventListener('hashchange', () => { if(location.hash === '#admin') renderAdmin(); else load(); });
+load();
+</script>
+</body>
+</html>
