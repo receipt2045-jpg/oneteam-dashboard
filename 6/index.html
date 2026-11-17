@@ -509,7 +509,7 @@ function rpc(p, signal){
 function qs(url){ const o={}; new URLSearchParams(String(url).split('?')[1]||'').forEach((v,k)=>{ if(k!=='t') o[k]=v; }); return o; }
 let FORM = 'https://tally.so/r/RG70yv';   // 6기 폼이 정해지면 서버 설정(form)으로 바뀐다
 // OT 라이브 (10/6 화, 결영) — 과제는 없고 다시보기만
-const SNS_FORM = 'https://tally.so/r/aQXK9B';  // SNS 1주차 방향성 체크 폼 (결영님 레포트용)
+let SNS_FORM = 'https://tally.so/r/6DKd85';   // 6기 방향성 체크 폼 (11/17) — 서버 설정 sns_form 이 있으면 그걸로  // SNS 1주차 방향성 체크 폼 (결영님 레포트용)
 let BOOK = {title:'부의 인문학 (20만부 기념 개정증보판)', sub:'슈퍼리치의 서재에서 찾아낸 부자의 길', url:'https://link.yes24.com/a/LdR52SPkT8'};
 let OT = {time:'11/19(목) 밤 9시', date:'11/19', title:'OT · 통장은 따로, 돈관리는 함께'};
 
@@ -598,7 +598,7 @@ const TASKS = {
     1:{name:'인스타 계정 방향성 체크',
       submit:{url:SNS_FORM, label:'방향성 체크 폼 열기'}, noBest:true,
       how:['목요일 SNS 라이브(또는 다시보기)를 보면서 같이 채우기','방향성 체크 폼에 강의에서 고른 답 그대로 옮겨 적기','닉네임은 과제방 부부 이름 그대로 (예: 라부부) — 그래야 진행판에 ✓가 떠요','결영님이 1:1 레포트로 답해드려요'],
-      form:'과제방 제출 페이지가 아니라 방향성 체크 폼(tally.so/r/aQXK9B)으로 내요. 이 폼 하나만 내면 SNS 과제 완료예요.'},
+      form:'과제방 제출 페이지가 아니라 방향성 체크 폼으로 내요. 이 폼 하나만 내면 SNS 과제 완료예요.'},
     2:{name:'대본 쓰기',
       how:['우리 집 후킹 문구 3개 쓰기','그중 하나로 대본 1개 쓰기 — 후킹 → 공감 → 방법 → 마무리','영상 만들어 올리기'],
       form:'(우리집 후킹 문구 3개)\n1.\n2.\n3.\n\n(대본)\n(1) 후킹 :\n(2) 공감 :\n(3) 방법 :\n(4) 마무리 :',
@@ -1986,6 +1986,7 @@ async function loadCfg(){
     if(Array.isArray(c.real)) REAL = c.real;
     const g = c.config || {};
     if(g.form) FORM = g.form.startsWith('http') ? g.form : 'https://tally.so/r/' + g.form;
+    if(g.sns_form){ SNS_FORM = g.sns_form.startsWith('http') ? g.sns_form : 'https://tally.so/r/' + g.sns_form; if(TASKS.sns && TASKS.sns[1] && TASKS.sns[1].submit) TASKS.sns[1].submit.url = SNS_FORM; }
     if(g.book) BOOK = g.book;
     if(g.ot) OT = g.ot;
     if(Array.isArray(g.weeks) && g.weeks.length) WEEKS = g.weeks;
