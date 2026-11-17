@@ -252,6 +252,7 @@ async function load(){
   CARDS = D.study ? ((await bapi({study: D.study.id}).catch(() => null)) || {}).cards || [] : [];
   if(ME && D.login && D.login !== 'ok'){ saveMe(null); }
   render();
+  if(location.hash === '#apply' && !window.applyDone){ window.applyDone = true; setTimeout(() => { const e = $('#apply'); if(e) e.scrollIntoView({behavior:'smooth', block:'start'}); }, 80); }
   if(CH_FOCUS){ CH_FOCUS = false; setTimeout(() => { const e = $('#chal'); if(e) e.scrollIntoView({behavior:'smooth', block:'start'}); }, 80); }
 }
 // ── 챌린지: 날짜는 한국 시간 기준 'YYYY-MM-DD' 글자로 비교 ──
@@ -326,6 +327,13 @@ function render(){
   else {
     const rs = D.rsvp || [], myR = rs.find(r => r.h === me) || {votes:[], attend:''};
     const open = s.status === 'vote' || s.status === 'set';
+    // 스터디 당일: 시작 2시간 전 ~ 끝나고 3시간까지 맨 위에 '사진 올리기' 바로가기
+    const st0 = s.startsAt ? +new Date(s.startsAt) : 0, nowt = Date.now();
+    if(s.status === 'set' && st0 && nowt > st0 - 2 * 3600e3 && nowt < st0 + 3 * 3600e3){
+      side += `<div class="sec" style="background:var(--ok-bg)"><h2 style="color:var(--ok)">지금 스터디 시간이에요</h2>
+        <div class="hint" style="margin-top:0">${me ? '우리 팀 열에 카드를 만들고 사진을 올려주세요. 폰 사진첩에서 바로 고르면 돼요.' : '처음이면 이름과 번호만 넣고 신청하면 바로 사진을 올릴 수 있어요.'}</div>
+        <div class="row"><button class="btn wide" onclick="${me ? "newCard('');setTimeout(()=>{const e=document.querySelector('.colm.me');if(e)e.scrollIntoView({behavior:'smooth',block:'center'})},80)" : "MODE='join';render();focusLogin()"}">${me ? '우리 팀 카드에 사진 올리기' : '신청하고 사진 올리기'}</button></div></div>`;
+    }
     // ① 일정
     side += `<div class="sec"><h2>${s.status === 'done' ? '지난 스터디' : '이번 스터디'}</h2><div class="card">`;
     side += s.status === 'vote' ? `<div class="when vote">날짜 투표 중이에요</div>` : `<div class="when">${esc(when(s.startsAt))}</div>`;
@@ -347,10 +355,11 @@ function render(){
       side += `</div><div class="hint">가장 많이 고른 날로 정해서 다시 알려드릴게요.</div></div>`;
     } else if(s.status === 'set'){
       const yes = rs.filter(r => r.attend === 'yes').map(r => r.h), no = rs.filter(r => r.attend === 'no').map(r => r.h);
-      side += `<div class="sec"><h2>참석할 수 있나요? <span class="n">${yes.length}팀 참석</span></h2><div class="row">
-        <button class="btn ${myR.attend === 'yes' ? 'on' : 'ghost'}" style="flex:1" onclick="${me ? "attend('yes')" : 'needLogin()'}">참석할게요</button>
-        <button class="btn ${myR.attend === 'no' ? 'on' : 'ghost'}" style="flex:1" onclick="${me ? "attend('no')" : 'needLogin()'}">이번엔 못 가요</button></div>
-        ${yes.length ? `<div class="who">참석 · ${yes.map(x => `<b>${esc(x)}</b>`).join(', ')}</div>` : ''}${no.length ? `<div class="who">불참 · ${no.map(esc).join(', ')}</div>` : ''}</div>`;
+      side += `<div class="sec" id="apply"><h2>스터디 신청 <span class="n">${yes.length}팀 신청</span></h2>`
+        + (!me ? `<div class="hint" style="margin-top:0">이름과 번호만 넣으면 바로 신청돼요. 신청하면 스터디 판에 우리 팀 열이 생겨요.</div><div class="row"><button class="btn pink wide" onclick="MODE='join';render();focusLogin()">스터디 신청하기</button></div>`
+          : myR.attend === 'yes' ? `<div class="hint" style="margin-top:0;color:var(--ok);font-weight:700">신청했어요! 스터디 판에 우리 팀 열이 생겼어요.</div><div class="row"><button class="btn ghost" style="flex:1" onclick="attend('no')">이번엔 못 가요</button></div>`
+          : `<div class="row"><button class="btn pink" style="flex:1" onclick="attend('yes')">신청할게요</button><button class="btn ${myR.attend === 'no' ? 'on' : 'ghost'}" style="flex:1" onclick="attend('no')">이번엔 못 가요</button></div>`)
+        + `${yes.length ? `<div class="who">신청 · ${yes.map(x => `<b>${esc(x)}</b>`).join(', ')}</div>` : ''}${no.length ? `<div class="who">못 와요 · ${no.map(esc).join(', ')}</div>` : ''}</div>`;
     }
     // ③ 미리 할 과제
     if(s.homework){
@@ -397,8 +406,9 @@ function loginBox(){
       ${roster.length ? '' : '<div class="hint">아직 등록한 팀이 없어요. "처음 왔어요"로 시작해 주세요.</div>'}` : `
       <label for="jh">부부 이름 (기수 이름 그대로, 예: 결영이네)</label><input id="jh" maxlength="20" placeholder="결영이네">
       <label for="jp">알림 받을 휴대폰 번호</label><input id="jp" inputmode="tel" placeholder="010-0000-0000">
-      <label class="agree"><input type="checkbox" id="ja"> 스터디 일정·참석·과제 안내 문자를 이 번호로 받을게요. 번호는 운영진만 봐요.</label>
-      <div class="row"><button class="btn wide" onclick="doJoin()">시작하기</button></div>
+      <label class="agree"><input type="checkbox" id="ja"> 스터디 일정·신청·과제 안내 문자를 이 번호로 받을게요. 번호는 운영진만 봐요.</label>
+      ${D.study && D.study.status === 'set' ? `<label class="agree"><input type="checkbox" id="jr" checked> 「${esc(D.study.title)}」 신청할게요</label>` : ''}
+      <div class="row"><button class="btn wide pink" onclick="doJoin()">${D.study && D.study.status === 'set' ? '신청하기' : '시작하기'}</button></div>
       <div class="hint">SNS·부동산 스터디 모두 이 이름 하나로 들어와요.</div>`}
     <div class="err" id="lerr"></div></div>`;
 }
@@ -411,13 +421,17 @@ async function doLogin(){
   if(!h || code.length !== 4){ $('#lerr').textContent = '이름과 뒷자리 4개를 넣어주세요'; return; }
   const r = await api({h, code, track: TRACK, study: VIEW_ID || undefined});
   if(r.login !== 'ok'){ $('#lerr').textContent = ERR[r.login] || '다시 해주세요'; return; }
-  saveMe({h, code}); D = r; DRAFT = null; render(); toast(h + ' 반가워요!');
+  saveMe({h, code}); DRAFT = null; await load(); toast(h + ' 반가워요!');
 }
 async function doJoin(){
-  const h = $('#jh').value.trim(), phone = $('#jp').value, agree = $('#ja').checked;
+  const h = $('#jh').value.trim(), phone = $('#jp').value, agree = $('#ja').checked, apply = $('#jr') && $('#jr').checked;
   const r = await api({op:'join', h, phone, agree});
   if(!r.ok){ $('#lerr').textContent = ERR[r.error] || '다시 해주세요'; return; }
-  saveMe({h, code: phone.replace(/\D/g, '').slice(-4)}); DRAFT = null; await load(); toast(h + ' 반가워요!');
+  const code = phone.replace(/\D/g, '').slice(-4);
+  saveMe({h, code}); DRAFT = null;
+  if(apply && D.study) await api({op:'rsvp', h, code, study:D.study.id, votes:[], attend:'yes'});
+  await load(); toast(apply ? h + ' 신청 완료! 스터디 판에 우리 팀 열이 생겼어요' : h + ' 반가워요!');
+  if(apply) setTimeout(() => { const e = document.querySelector('.colm.me'); if(e) e.scrollIntoView({behavior:'smooth', block:'center', inline:'start'}); }, 150);
 }
 async function vote(o){
   const myR = (D.rsvp || []).find(r => r.h === ME.h) || {votes:[], attend:''};
@@ -428,7 +442,7 @@ async function vote(o){
 async function attend(a){
   const myR = (D.rsvp || []).find(r => r.h === ME.h) || {votes:[]};
   const r = await api({op:'rsvp', h:ME.h, code:ME.code, study:D.study.id, votes:myR.votes || [], attend:a});
-  if(!r.ok) return toast('다시 눌러주세요'); toast(a === 'yes' ? '참석으로 표시했어요' : '불참으로 표시했어요'); load();
+  if(!r.ok) return toast('다시 눌러주세요'); toast(a === 'yes' ? '신청했어요! 스터디 판에 우리 팀 열이 생겼어요' : '못 오는 걸로 표시했어요'); load();
 }
 function copyHw(){
   navigator.clipboard.writeText(D.study.homework).then(() => toast('복사했어요'), () => { const r = document.createRange(); r.selectNodeContents($('#hw')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('선택했어요. 복사를 눌러주세요'); });
@@ -522,7 +536,9 @@ function editCard(id){ const k = CARDS.find(x => x.id === id); KF = {id, col:k.c
 function copyForm(id){ const k = CARDS.find(x => x.id === id); KF = {col:'', title:k.title.replace(/^카드\s*[①-⑩0-9]*\s*/, '').replace(/\s*·\s*양식$/, ''), body:k.body.replace(/^우리 팀 열.*\n+/, ''), images:[], link:''}; render(); setTimeout(() => { const e = $('#kfb'); if(e){ e.scrollIntoView({behavior:'smooth', block:'center'}); e.focus(); } }, 50); }
 async function kfImgs(files){
   BUSY = true; render();
-  try{ for(const f of [...files].slice(0, 8 - KF.images.length)){ const b = await shrink(f); const name = 'g/' + D.study.id + '/' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + '.jpg';
+  try{ for(const f of [...files].slice(0, 8 - KF.images.length)){ const b = await shrink(f);
+    if(b === f && !/image\/(jpeg|png|webp)/.test(f.type)){ toast('이 사진 형식은 못 올려요. 화면 캡처로 올려주세요'); continue; }
+    const name = 'g/' + D.study.id + '/' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + '.jpg';
     const r = await fetch(U + '/storage/v1/object/study/' + name, {method:'POST', headers:{apikey:KEY, 'Content-Type':'image/jpeg'}, body:b}); if(r.ok) KF.images.push(IMG_PREFIX + name); else toast('사진 한 장이 안 올라갔어요'); } }
   finally { BUSY = false; render(); }
 }
