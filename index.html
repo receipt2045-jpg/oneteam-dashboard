@@ -10,6 +10,7 @@
   var q = location.search, h = location.hash;
   // 졸업반 스터디방 (11/17~): #study · ?go=study
   if (/^#study/.test(h) || /[?&]go=study/.test(q)) { location.replace('study/'); return; }
+  if (/^#challenge/.test(h) || /[?&]go=challenge/.test(q)) { location.replace('study/#challenge'); return; }
   var to5 = /[?&](go|term)=/.test(q) || /^#grad/.test(h);
   location.replace((to5 ? '5/' : NOW_COHORT + '/') + q + h);
 })();

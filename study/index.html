@@ -143,6 +143,22 @@ a{color:var(--acc)}
 .pres .nav button:disabled{opacity:.35}
 @media (max-width: 760px){ .pres .stage{flex-direction:column;overflow:auto} }
 
+/* 챌린지 */
+.chal{background:var(--pink-soft)}
+.chal .rule{font-size:13.5px;color:var(--text-md);line-height:1.7}
+.chal .today{margin-top:10px;background:#fff;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:700;color:var(--pink)}
+.chal .today small{display:block;font-size:12px;color:var(--text-lt);font-weight:600}
+.chal .edit input{background:#fff}
+.stamps{overflow-x:auto}
+.stamps table{border-collapse:collapse;font-size:13px;min-width:100%}
+.stamps th,.stamps td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
+.stamps th:first-child,.stamps td:first-child{text-align:left;font-weight:700;color:var(--acc)}
+.stamps .s{display:inline-block;width:22px;height:22px;border-radius:50%;border:1.5px dashed var(--acc-lt);margin:0 2px;vertical-align:middle;font-size:12px;line-height:19px;color:#fff}
+.stamps .s.on{background:var(--pink);border:1.5px solid var(--pink)}
+.ups a{display:block;text-decoration:none;color:var(--text);font-size:13.5px;border-bottom:1px solid var(--border);padding:8px 0}
+.ups a b{color:var(--acc);margin-right:6px}
+.ups a small{color:var(--mute);margin-left:6px}
+
 /* PC: 왼쪽은 일정·참석·올리기, 오른쪽은 패들릿처럼 넓은 과제 판 */
 @media (min-width: 960px){
   body{background:#EEF0F4}
@@ -194,13 +210,68 @@ let D = null, VIEW_ID = null, MODE = 'login', DRAFT = null, BUSY = false;
 const hashTrack = () => { const h = location.hash.slice(1); return TRACKS.some(t => t.id === h) ? h : null; };
 let TRACK = hashTrack() || 'sns';
 
+function capi(p){ return fetch(U + '/rest/v1/rpc/challenge_api', {method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'}, body: JSON.stringify({p})}).then(r => r.json()); }
+let CH = null, CH_FOCUS = location.hash === '#challenge';
 async function load(){
   const p = {track: TRACK}; if(VIEW_ID) p.study = VIEW_ID;
   if(ME){ p.h = ME.h; p.code = ME.code; }
-  D = await api(p);
+  const [d, c] = await Promise.all([api(p), capi({track: TRACK}).catch(() => null)]);
+  D = d; CH = c && c.ok ? c.challenge : null;
   if(ME && D.login && D.login !== 'ok'){ saveMe(null); }
   render();
+  if(CH_FOCUS){ CH_FOCUS = false; setTimeout(() => { const e = $('#chal'); if(e) e.scrollIntoView({behavior:'smooth', block:'start'}); }, 80); }
 }
+// ── 챌린지: 날짜는 한국 시간 기준 'YYYY-MM-DD' 글자로 비교 ──
+const kday = t => new Date(new Date(t).getTime() + 9 * 3600e3).toISOString().slice(0, 10);
+const addDay = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 86400e3).toISOString().slice(0, 10);
+const md = d => { const x = new Date(d + 'T00:00:00Z'); return `${x.getUTCMonth()+1}/${x.getUTCDate()}`; };
+function chWeeks(ch){ const out = []; for(let s = ch.start; s <= ch.end; s = addDay(s, 7)) out.push(s); return out; }
+// 주마다 칸 두 개: 월~수(수요일 업로드) / 목~일(일요일 업로드)
+function chSlots(ch, h){
+  const ups = (ch.uploads || []).filter(u => u.h === h).map(u => kday(u.at));
+  return chWeeks(ch).map(w => [[w, addDay(w, 3)], [addDay(w, 3), addDay(w, 7)]].map(([a, b]) => ups.some(d => d >= a && d < b)));
+}
+function chSection(me){
+  const ch = CH; if(!ch) return '';
+  const today = kday(Date.now()), on = today >= ch.start && today <= ch.end;
+  const mem = (ch.members || []).find(m => m.h === me);
+  const todo = (ch.config && ch.config.todo) || {};
+  const wd = new Date(today + 'T00:00:00Z').getUTCDay();
+  let h = `<div class="sec chal" id="chal"><h2>${esc(ch.title)} <span class="n">${(ch.members || []).length}팀 참여</span></h2>
+    <div class="rule">${md(ch.start)} ~ ${md(ch.end)} · 주 2편 · <b>수요일·일요일</b>에 올리고 링크 인증<br>신청한 팀에게 매일 아침 8시 '오늘 할 일' 문자, 수·일 밤 9시엔 아직 안 올린 팀에게만 알림</div>`;
+  h += on ? `<div class="today"><small>오늘 할 일 (${md(today)} ${W[wd]})</small>${esc(todo[wd] || '')}</div>` : today < ch.start ? `<div class="today"><small>시작 전</small>${md(ch.start)}(월)부터 시작해요</div>` : '';
+  if(!me) h += `<div class="row"><button class="btn pink wide" onclick="needLogin()">들어가서 신청하기</button></div>`;
+  else if(!mem) h += `<div class="login"><label class="agree"><input type="checkbox" id="cja"> 챌린지 기간 동안 매일 아침 8시 '오늘 할 일' 문자와 수·일 밤 9시 업로드 알림을 받을게요. 스터디방에서 언제든 끌 수 있어요.</label></div>
+      <div class="row"><button class="btn pink wide" onclick="cjoin()">챌린지 신청하기</button></div>`;
+  else {
+    h += `<div class="edit"><label for="ulink">올린 릴스·툰 링크</label><input id="ulink" placeholder="https://www.instagram.com/…">
+      <label for="unote">한 줄 (선택)</label><input id="unote" maxlength="300" placeholder="예) 인스타툰 1편, 혼수 편">
+      <div class="row"><button class="btn pink wide" onclick="upload()">업로드 인증하기</button></div></div>
+      <div class="hint" style="text-align:center">신청함 · <a href="javascript:cmute()">${mem.muted ? '문자 다시 받기' : '문자 그만 받기'}</a> · <a href="javascript:cleave()">신청 취소</a></div>`;
+  }
+  return h + `</div>`;
+}
+function chBoard(me){
+  const ch = CH; if(!ch || !(ch.members || []).length) return '';
+  const ws = chWeeks(ch);
+  let h = `<div class="sec"><h2>챌린지 도장판</h2><div class="stamps"><table><tr><th>팀</th>${ws.map((w, i) => `<th>${i + 1}주 <small style="color:var(--mute);font-weight:500">${md(w)}~</small></th>`).join('')}<th>합계</th></tr>`;
+  ch.members.forEach(m => { const sl = chSlots(ch, m.h), n = sl.flat().filter(Boolean).length;
+    h += `<tr><td>${esc(m.h)}${m.h === me ? ' (우리)' : ''}</td>${sl.map(w => `<td>${w.map(x => `<span class="s ${x ? 'on' : ''}">${x ? '✓' : ''}</span>`).join('')}</td>`).join('')}<td><b>${n}</b> / ${ws.length * 2}</td></tr>`; });
+  h += `</table></div>`;
+  const ups = (ch.uploads || []).slice(0, 12);
+  if(ups.length) h += `<div class="ups" style="margin-top:12px">${ups.map(u => `<a href="${esc(u.link)}" target="_blank" rel="noopener"><b>${esc(u.h)}</b>${esc(u.note || '링크 열기')}<small>${esc(md(kday(u.at)))}</small>${u.h === me ? ` <small onclick="event.preventDefault();unupload(${u.id})" style="color:var(--pink)">지우기</small>` : ''}</a>`).join('')}</div>`;
+  return h + `</div>`;
+}
+async function cjoin(){ if(!$('#cja').checked) return toast('문자 받기에 체크해 주세요'); const r = await capi({op:'cjoin', h:ME.h, code:ME.code, challenge:CH.id, agree:true}); if(!r.ok) return toast('다시 눌러주세요'); toast('신청했어요!'); load(); }
+async function cmute(){ await capi({op:'cmute', h:ME.h, code:ME.code, challenge:CH.id}); load(); }
+async function cleave(){ if(!window.leaveArm){ window.leaveArm = true; toast('한 번 더 누르면 신청이 취소돼요'); setTimeout(() => window.leaveArm = false, 3000); return; } await capi({op:'cleave', h:ME.h, code:ME.code, challenge:CH.id}); load(); }
+async function upload(){
+  const link = ($('#ulink').value || '').trim(), note = $('#unote').value;
+  if(!/^https?:\/\//.test(link)) return toast('링크를 붙여넣어 주세요');
+  const r = await capi({op:'upload', h:ME.h, code:ME.code, challenge:CH.id, link, note});
+  if(!r.ok) return toast('다시 눌러주세요'); toast('도장 찍었어요!'); load();
+}
+async function unupload(id){ await capi({op:'unupload', h:ME.h, code:ME.code, challenge:CH.id, id}); load(); }
 function mine(){ return ME && D && D.login === 'ok' ? ME.h : null; }
 
 function renderTracks(){
@@ -218,7 +289,7 @@ function render(){
   if(!D || !D.ok){ $('#app').innerHTML = '<div class="empty">잠깐 연결이 안 돼요. 새로고침 해주세요.</div>'; return; }
   const me = mine(), s = D.study;
   let side = '', main = '';
-  if(!s){ side += `<div class="sec"><div class="empty">다음 ${esc(TNAME(TRACK))} 일정이 곧 올라와요.</div></div>`; }
+  if(!s){ side += `<div class="sec"><div class="empty">다음 ${esc(TNAME(TRACK))} 일정이 곧 올라와요.</div></div>` + chSection(me); }
   else {
     const rs = D.rsvp || [], myR = rs.find(r => r.h === me) || {votes:[], attend:''};
     const open = s.status === 'vote' || s.status === 'set';
@@ -231,7 +302,7 @@ function render(){
       else if(s.hasZoom) side += `<div class="hint">구글 미트 링크는 들어오면 보여요. 시작 1시간 전에 문자로도 보내드려요.</div>`;
     }
     if(s.notes) side += `<div class="hint">${esc(s.notes)}</div>`;
-    side += `</div></div>`;
+    side += `</div></div>` + chSection(me);
     // 자료·다시보기 (들어온 팀만)
     if((s.links || []).length) side += `<div class="sec links"><h2>자료 · 다시보기</h2>${s.links.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener"><span>${esc(l.label || '링크')}</span><span>›</span></a>`).join('')}</div>`;
     else if(s.hasLinks && !me) side += `<div class="sec links"><h2>자료 · 다시보기</h2><div class="hint" style="margin-top:0">들어오면 PPT·다시보기 링크가 보여요.</div></div>`;
@@ -303,6 +374,7 @@ function render(){
     side += `<div class="sec past"><h2>지난 ${esc(TNAME(TRACK))}</h2>${D.past.map(x => `<button class="${s && x.id === s.id ? 'on' : ''}" onclick="openStudy(${x.id})">${esc(x.title)}<small>${esc(when(x.startsAt))}</small></button>`).join('')}</div>`;
   }
   if(LEDIT) return renderLeaderForm();
+  main = chBoard(me) + main;
   const mi = D.mine || null;
   $('#app').innerHTML = (me ? `<div class="me"><span><b>${esc(me)}</b>로 들어와 있어요${mi ? ` · 지금까지 참석 ${mi.attend}번 · 과제 ${mi.posts}번 · 댓글 ${mi.comments}개` : ''}</span><button onclick="logout()">나가기</button></div>` : '')
     + `<div class="wrap"><div class="side">${side}</div><div class="main">${main}</div></div>`;
@@ -496,6 +568,7 @@ async function saveStudy(mode){
 async function delMember(n){ if(window.delArm !== n){ window.delArm = n; toast('한 번 더 누르면 ' + n + ' 빠져요'); setTimeout(() => window.delArm = null, 3000); return; } await api({op:'delmember', key:AK, nick:n}); loadAdmin(); }
 window.addEventListener('hashchange', () => {
   if(location.hash === '#admin') return renderAdmin();
+  if(location.hash === '#challenge'){ CH_FOCUS = true; if(TRACK !== 'sns'){ TRACK = 'sns'; VIEW_ID = null; DRAFT = null; } }
   const t = hashTrack(); if(t && t !== TRACK){ TRACK = t; VIEW_ID = null; DRAFT = null; }
   load();
 });
