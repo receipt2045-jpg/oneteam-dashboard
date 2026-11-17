@@ -485,7 +485,7 @@ body[data-v=write] #banner,body[data-v=coach] #banner{display:none!important}
     <nav class="menu" id="menu">
       <a href="#ops" data-v="ops" id="opsTab" hidden>운영진</a>
       <a href="#home" data-v="home">6기</a>
-      <a href="#mine" data-v="mine">피드백</a>
+      <a href="#mine" data-v="mine">내 과제</a>
       <a href="#vod" data-v="vod">다시보기</a>
       <a href="#coach" data-v="coach">1:1 내집마련</a>
       <a href="#read" data-v="tasks">과제</a>
@@ -728,7 +728,7 @@ function warm(){ if(API && !DEMO) rpc({action:'warm'}).catch(()=>{}); }
 // 지난번 받은 공개 데이터를 먼저 보여주고, 새 데이터가 오면 바꿔 그린다 (이 기기에만 저장)
 function cached(){ try{ return JSON.parse(localStorage.getItem('ot6pub')||'null'); }catch(e){ return null; } }
 function keep(d){ try{ localStorage.setItem('ot6pub', JSON.stringify({subs:d.subs,mvp:d.mvp,qa:d.qa,files:d.files})); }catch(e){} }
-// 강의 다시보기 링크 — 공개 데이터엔 없다. 로그인한 부부(피드백 탭 비밀번호)와 결영님 화면에서만 받는다 (10/18, 결제 안 한 사람이 못 보게)
+// 강의 다시보기 링크 — 공개 데이터엔 없다. 로그인한 부부(내 과제 탭 비밀번호)와 결영님 화면에서만 받는다 (10/18, 결제 안 한 사람이 못 보게)
 function liveLinks(){
   if(DATA && DATA.links && Object.keys(DATA.links).length) return DATA.links;
   try{ return JSON.parse(localStorage.getItem('ot6links')||sessionStorage.getItem('ot6links')||'null')||{}; }catch(e){ return {}; }
@@ -835,7 +835,7 @@ function render(){
   let tab=exm?(exm[1]==='live'?'home':exm[1]):wrm?wrm[1]:view;
   if(['read','money','house','sns'].includes(tab)) tab='tasks';   // 11/17 결영: 과정 넷은 '과제' 아래 하위 메뉴로
   document.querySelectorAll('#menu a').forEach(a=>a.classList.toggle('on',a.dataset.v===tab));
-  const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='피드백';
+  const mm=document.querySelector('#menu a[data-v=mine]'); if(mm) mm.textContent='내 과제';
   document.body.dataset.v=view; document.body.dataset.admin=ADMIN?'1':'';
   const ot=document.getElementById('opsTab'); if(ot){ ot.hidden=!ADMIN; ot.innerHTML='운영진'+(ADMIN&&opsWait()?`<i>${opsWait()}</i>`:''); }
   const bn=document.getElementById('banner'), el=document.getElementById('view');
@@ -925,7 +925,7 @@ function replays(){
     });
   });
   if(!hasLinks()) return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div>
-    <div class="body1" style="margin-top:10px">다시보기는 6기 부부만 볼 수 있어요. 피드백 탭에서 한 번 로그인하면 여기에 강의 목록이 떠요.</div>
+    <div class="body1" style="margin-top:10px">다시보기는 6기 부부만 볼 수 있어요. 내 과제 탭에서 한 번 로그인하면 여기에 강의 목록이 떠요.</div>
     <a class="btn" href="#mine" style="margin-top:14px">로그인하고 다시보기 보기</a>
     <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',curWeek(NOW()),'ex-live')}</div></section>`;
   return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
@@ -952,7 +952,7 @@ function vodView(){
   let h=`<section class="sec"><span class="eyebrow">라이브 다시보기</span><div class="h1">녹화본 모음</div>
     <div class="body1">강의가 끝나면 녹화본이 여기에 올라와요. 못 오신 날은 다시보기로 보고 출석하면 돼요.</div>
     <div class="note" style="text-align:left;margin-top:8px">올라온 녹화본 ${nRec}/${rows.length} · 내가 본 것 ${nSeen} · 녹화본은 한 달간 볼 수 있어요</div></section>`;
-  if(!hasLinks()) return h+`<section class="sec-alt"><div class="body1">다시보기는 6기 부부만 볼 수 있어요. 피드백 탭에서 한 번 로그인하면 목록이 열려요.</div><a class="btn" href="#mine" style="margin-top:14px">로그인하기</a></section>`;
+  if(!hasLinks()) return h+`<section class="sec-alt"><div class="body1">다시보기는 6기 부부만 볼 수 있어요. 내 과제 탭에서 한 번 로그인하면 목록이 열려요.</div><a class="btn" href="#mine" style="margin-top:14px">로그인하기</a></section>`;
   let lastWk='';
   h+=`<section class="sec-alt">`;
   rows.forEach(r=>{
@@ -1010,7 +1010,7 @@ function banner(){
 function todoChecks(){ try{ return JSON.parse(localStorage.getItem('ot6todo')||'{}'); }catch(e){ return {}; } }
 function setChecks(c){ try{ localStorage.setItem('ot6todo',JSON.stringify(c)); }catch(e){} }
 function toggleTodo(key){ const c=todoChecks(); c[key]=!c[key]; if(!c[key]) delete c[key]; setChecks(c); render(); pushChecks(); }
-// 피드백 탭에 로그인한 부부는 체크를 과제방 시트에 저장해 다른 기기와 맞춘다 (서버가 기준)
+// 내 과제 탭에 로그인한 부부는 체크를 과제방 시트에 저장해 다른 기기와 맞춘다 (서버가 기준)
 let pushT;
 function pushChecks(){
   const m=getMine(); if(!m || !API || DEMO) return;
@@ -1027,7 +1027,7 @@ async function pullChecks(){
     else if(Object.keys(todoChecks()).length) pushChecks();   // 처음이면 이 기기 체크를 올린다
   }catch(e){}
 }
-const todoNote = me => me ? `동그라미를 눌러 체크해요 · ${esc(me)} 체크는 다른 기기에서도 똑같이 보여요 · 낸 과제는 자동 ✓` : '동그라미를 눌러 체크해요 · 피드백 탭에서 로그인하면 다른 기기에서도 보이고, 낸 과제는 자동으로 ✓';
+const todoNote = me => me ? `동그라미를 눌러 체크해요 · ${esc(me)} 체크는 다른 기기에서도 똑같이 보여요 · 낸 과제는 자동 ✓` : '동그라미를 눌러 체크해요 · 내 과제 탭에서 로그인하면 다른 기기에서도 보이고, 낸 과제는 자동으로 ✓';
 function taskCard(k,n,label){ return `<div class="card"><span class="lb">${label}</span>${taskInner(k,n)}</div>`; }
 function taskInner(k,n){
   const t=TASKS[k][n], tr=TRACKS[k], id=`ex-${k}-${n}`;
@@ -1116,7 +1116,7 @@ function attSet(n, k, v){ const o = attGet(n); o[k] = v; try{ localStorage.setIt
 function attendBox(n){
   const m = getMine();
   if(!m) return `<section class="sec att"><div class="exh"><span>✓</span>여기서 바로 출석하기</div>
-    <div class="exsub">피드백 탭에서 부부 닉네임으로 로그인하면, 이 자리에서 칸 세 개만 채우고 바로 출석할 수 있어요</div>
+    <div class="exsub">내 과제 탭에서 부부 닉네임으로 로그인하면, 이 자리에서 칸 세 개만 채우고 바로 출석할 수 있어요</div>
     <div class="btns" style="max-width:320px"><a class="b fill" href="#mine">로그인하러 가기 ›</a></div></section>`;
   const v = attGet(n), task = attTask(n);
   const done = DATA && Array.isArray(DATA.rows) && DATA.rows.some(r => r.task === task);
@@ -1146,7 +1146,7 @@ async function attSubmit(n){
     if(!r.ok) throw r.error;
     try{ localStorage.removeItem(attKey(n)); }catch(e){}
     attBusy = false; toast((n ? n + '주차' : 'OT') + ' 출석했어요'); openMine(m.h, m.code, true); location.hash = '#mine'; window.scrollTo(0, 0);
-  }catch(e){ attBusy = false; attMsg(e === 'code' || e === 'locked' ? '로그인 정보가 맞지 않아요. 피드백 탭에서 다시 로그인해 주세요' : '내지 못했어요. 쓴 내용은 그대로 있으니 잠시 뒤 다시 눌러 주세요'); }
+  }catch(e){ attBusy = false; attMsg(e === 'code' || e === 'locked' ? '로그인 정보가 맞지 않아요. 내 과제 탭에서 다시 로그인해 주세요' : '내지 못했어요. 쓴 내용은 그대로 있으니 잠시 뒤 다시 눌러 주세요'); }
 }
 // ─────────────────────────────────────────────────────────────
 // 내집마련 쓰기 (#write/house/3 입지 분석 · #write/house/4 후보 단지 분석) — 제출 페이지 대신 과제방에서 바로 낸다 (10/27·11/3 결영)
@@ -1243,7 +1243,7 @@ const WR = {
       ['비고', 0, '', [], { sh: 'scoreSum' }]]]
   ] }
 };
-// 1:1 내집 코칭 — 4기 '[신혼집] 1:1 상담 신청서' 칸에서 상담 날짜만 빼고 글로 받는다. 답변은 머니그랩이 피드백 탭으로 (11/3 결영)
+// 1:1 내집 코칭 — 4기 '[신혼집] 1:1 상담 신청서' 칸에서 상담 날짜만 빼고 글로 받는다. 답변은 머니그랩이 내 과제 탭으로 (11/3 결영)
 const COACH_TASK = '코칭 - 내집마련 (1:1 내집 코칭)', COACH_DUE = '2026-12-28T23:59:59+09:00';
 // 마감 글자는 COACH_DUE 하나에서 만든다 (11/17 결영: 5기 날짜 11/12가 그대로 보였음)
 const coachDueTxt = () => { const d = new Date(new Date(COACH_DUE).getTime() + 9 * 3600e3); return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일(${'일월화수목금토'[d.getUTCDay()]}) 23:59`; };
@@ -1358,7 +1358,7 @@ function writeView(k, n){
   let h = `<section class="sec" style="padding-bottom:18px"><a class="back" href="#ex/${k}/${n}">‹ 과제 예시</a>
     <span class="eyebrow">${wkName(n)} · ${esc(TRACKS[k].name)}</span><div class="h1">${esc(t.name)} 쓰기</div>
     <div class="body1">칸을 다 채우고 맨 아래 '제출하기'를 누르면 끝이에요. 쓰는 동안 이 기기에 저장돼서 나중에 이어 써도 돼요.</div>
-    ${!m ? `<div class="ipnote">피드백 탭에서 로그인한 부부만 낼 수 있어요. <a href="#mine">로그인하러 가기 ›</a></div>` : ''}
+    ${!m ? `<div class="ipnote">내 과제 탭에서 로그인한 부부만 낼 수 있어요. <a href="#mine">로그인하러 가기 ›</a></div>` : ''}
     ${done ? `<div class="ipnote">${fmtD(done.at)}에 이미 냈어요. 다시 내면 마지막에 낸 것으로 바뀌어요.</div>` : ''}</section>`;
   h += `<div class="ipup"><b>엑셀로 쓰셨나요?</b> 쓴 엑셀을 올리면 아래 칸이 채워져요.<br>
     ${tpl}빈 양식 받기</a><label class="b">쓴 엑셀 올리기<input type="file" accept=".xlsx" hidden onchange="ipUpload(this)"></label></div>`;
@@ -1406,10 +1406,10 @@ function coachView(){
   ipLoad('coach');
   const done = (MINE && MINE.rows || []).find(isCoach);
   let h = `<section class="sec" style="padding-bottom:18px"><span class="eyebrow">내집마련 · 머니그랩</span><div class="h1">1:1 내집마련 피드백</div>
-    <div class="body1">우리 집 고민을 글로 남기면 머니그랩님이 글로 답해 드려요. 답변은 피드백 탭에 와요.</div>
+    <div class="body1">우리 집 고민을 글로 남기면 머니그랩님이 글로 답해 드려요. 답변은 내 과제 탭에 와요.</div>
     <div class="ipnote">${coachDueTxt()}까지 신청받아요.<br>피드백 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div>
-    ${!m ? `<div class="ipnote">피드백 탭에서 로그인한 부부만 신청할 수 있어요. <a href="#mine">로그인하러 가기 ›</a></div>` : ''}
-    ${done ? `<div class="ipnote">${fmtD(done.at)}에 신청했어요. 다시 내면 마지막에 낸 것으로 바뀌어요.${done.feedback ? ' 답변은 피드백 탭에서 볼 수 있어요.' : ''}</div>` : ''}
+    ${!m ? `<div class="ipnote">내 과제 탭에서 로그인한 부부만 신청할 수 있어요. <a href="#mine">로그인하러 가기 ›</a></div>` : ''}
+    ${done ? `<div class="ipnote">${fmtD(done.at)}에 신청했어요. 다시 내면 마지막에 낸 것으로 바뀌어요.${done.feedback ? ' 답변은 내 과제 탭에서 볼 수 있어요.' : ''}</div>` : ''}
     ${closed ? `<div class="ipnote">신청이 마감됐어요.</div>` : ''}</section>`;
   h += `<div class="ipwrap"><div class="ipw">`;
   W.groups.forEach(([g]) => { h += `<div class="grp"><div class="gk">${esc(g)}</div><div class="gb">`; F.filter(f => f.g === g).forEach(f => { h += ipFieldHtml(f); }); h += `</div></div>`; });
@@ -1500,7 +1500,7 @@ async function ipDownload(){
 }
 async function ipSubmit(){
   const m = getMine(), F = ipF(ipN);
-  if(!m){ ipMsg('피드백 탭에서 먼저 로그인해 주세요'); return; }
+  if(!m){ ipMsg('내 과제 탭에서 먼저 로그인해 주세요'); return; }
   if(ipN === 'coach' && NOW() > new Date(COACH_DUE).getTime()){ ipMsg('신청이 마감됐어요'); return; }
   const miss = ipCount();
   if(F.some(f => f.max) && ipWTotal() > 100){ ipMsg(`배점 합계가 100을 넘어요 (지금 ${ipWTotal()}점). 배점을 줄여 주세요`); return; }
@@ -1514,7 +1514,7 @@ async function ipSubmit(){
     if(!r.ok) throw r.error;
     try{ localStorage.removeItem(ipKey(ipN)); }catch(e){}
     ipBusy = false; toast(ipN === 'coach' ? '1:1 내집마련 피드백을 신청했어요' : `${WR[ipN].title}을 냈어요`); openMine(m.h, m.code, true); location.hash = '#mine'; window.scrollTo(0, 0);
-  }catch(e){ ipBusy = false; ipMsg(e === 'code' || e === 'locked' ? '로그인 정보가 맞지 않아요. 피드백 탭에서 다시 로그인해 주세요' : '내지 못했어요. 쓴 내용은 그대로 있으니 잠시 뒤 다시 눌러 주세요'); }
+  }catch(e){ ipBusy = false; ipMsg(e === 'code' || e === 'locked' ? '로그인 정보가 맞지 않아요. 내 과제 탭에서 다시 로그인해 주세요' : '내지 못했어요. 쓴 내용은 그대로 있으니 잠시 뒤 다시 눌러 주세요'); }
 }
 function copyTxt(txt){
   const done=()=>toast('양식을 복사했어요. 제출 페이지 "과제 내용"에 붙여넣으세요');
@@ -1595,7 +1595,7 @@ function qaView(){
   const list=all.filter(q=>qaTab==='all'||trk(q)===qaTab), byNew=(a,b)=>new Date(b.at)-new Date(a.at);
   const done=list.filter(q=>q.a).sort(byNew), wait=list.filter(q=>!q.a).sort(byNew);
   let h=`<section class="sec-alt"><span class="eyebrow">Q&amp;A</span><div class="h1">물어봐 주신 것들</div>
-    <div class="body1">과제를 낼 때 제출 페이지 맨 아래 칸에 질문을 남겨주세요. 공유 동의를 O로 한 질문만 답과 함께 닉네임 없이 여기 올라와요. X로 하면 답은 내 피드백 탭에서만 볼 수 있어요.</div>`;
+    <div class="body1">과제를 낼 때 제출 페이지 맨 아래 칸에 질문을 남겨주세요. 공유 동의를 O로 한 질문만 답과 함께 닉네임 없이 여기 올라와요. X로 하면 답은 내 내 과제 탭에서만 볼 수 있어요.</div>`;
   if(all.length) h+=`<div class="qnav">${tabs.map(([k,n,c])=>`<button class="${k===qaTab?'on':''}" onclick="setQa('${k}')">${n}<i>${c}</i></button>`).join('')}</div>`;
   if(!all.length) h+=`<div class="empty">${DATA._loading?'불러오는 중이에요…':'아직 올라온 질문이 없어요'}</div>`;
   const card=q=>{ const t=parseTask(q.task), tag=t?`${wkName(t.week)} ${TRACKS[t.track].name}`:'', op=qaOpen.has(q.id), k=JSON.stringify(String(q.id)).replace(/"/g,'&quot;');
@@ -1616,7 +1616,7 @@ function setMine(v){ try{ localStorage.removeItem('ot6mine'); sessionStorage.rem
 function keepMineData(r){ try{ if(mineKeep && getMine()) localStorage.setItem('ot6mineData',JSON.stringify(r)); }catch(e){} }
 function cachedMine(h){ try{ const c=JSON.parse(localStorage.getItem('ot6mineData')||'null'); return c&&c.h===h?c:null; }catch(e){ return null; } }
 const MINE_ERR={code:'비밀번호가 맞지 않아요. 부부 중 한 분의 휴대폰 번호 뒷자리 4개예요.',nocode:'아직 비밀번호가 등록되지 않았어요. 결영이네에 알려주세요.',locked:'여러 번 틀려서 잠깐 막혔어요. 1시간 뒤에 다시 해 주세요.'};
-// 입구에서 로그인 — 과제방 데이터 하나만 받는다 (비밀번호 확인도 이 요청이 한다). 피드백은 피드백 탭을 열 때 받는다 (10/18, 로그인 느림)
+// 입구에서 로그인 — 과제방 데이터 하나만 받는다 (비밀번호 확인도 이 요청이 한다). 피드백은 내 과제 탭을 열 때 받는다 (10/18, 로그인 느림)
 async function enterHub(h,code){
   mineBusy=true; mineErr=''; render();
   try{
@@ -1654,7 +1654,7 @@ let mineKeep=true, mineIdDraft='';
 // 입구 — 5기 부부만 (부부 이름 + 휴대폰 번호 뒷자리 4개)
 function isLocked(){ return !DEMO && !!API && !ADMIN && !getKey() && !getMine(); }
 function gateView(){
-  return mineView().replace(/<span class="eyebrow">피드백<\/span><div class="h1">[\s\S]*?<\/div>/,
+  return mineView().replace(/<span class="eyebrow">내 과제<\/span><div class="h1">[\s\S]*?<\/div>/,
     `<span class="eyebrow">원팀 프로젝트 6기</span><div class="h1">6기 부부만<br><span class="hl">들어올 수 있어요</span></div><div class="body1" style="margin-top:8px">아이디는 과제 낼 때 고르는 부부 이름, 비밀번호는 휴대폰 번호 뒷자리 4개예요. 한 번 로그인하면 이 기기에선 계속 열려요.</div>`)
     + `<div style="text-align:center;margin:-6px 0 30px"><a href="#admin" style="font-size:12px;color:var(--text-lt)">운영진</a></div>`;
 }
@@ -1669,8 +1669,8 @@ function mineView(){
     if(saved && !mineBusy && !mineErr) setTimeout(()=>openMine(saved.h,saved.code),0);
     const busy=mineBusy||(saved&&!mineErr);
     // 이미 로그인한 기기면 다시 묻지 않는다 — 피드백을 받는 동안 로그인 칸 대신 '불러오는 중' (10/22, 두 번 로그인하는 줄 알았다는 제보)
-    if(saved && !mineErr && !isLocked()) return `<section class="sec"><span class="eyebrow">피드백</span><div class="h2">${esc(saved.h)}님 피드백을 불러오는 중이에요…</div><div class="body1" style="margin-top:8px">처음엔 몇 초 걸릴 수 있어요.</div></section>`;
-    return `<section class="sec login"><span class="eyebrow">피드백</span><div class="h1">로그인하고<br><span class="hl">받은 피드백</span> 보기</div>
+    if(saved && !mineErr && !isLocked()) return `<section class="sec"><span class="eyebrow">내 과제</span><div class="h2">${esc(saved.h)}님 피드백을 불러오는 중이에요…</div><div class="body1" style="margin-top:8px">처음엔 몇 초 걸릴 수 있어요.</div></section>`;
+    return `<section class="sec login"><span class="eyebrow">내 과제</span><div class="h1">로그인하고<br><span class="hl">받은 피드백</span> 보기</div>
       <div class="box">
         <label for="mH">아이디</label>
         <select id="mH" class="${(saved?saved.h:mineIdDraft)?'':'empty'}" onchange="this.classList.toggle('empty',!this.value)"><option value="">부부 이름 고르기</option>${LOGIN_NAMES.map(r=>`<option${(saved?saved.h:mineIdDraft)===r?' selected':''}>${esc(r)}</option>`).join('')}</select>
@@ -1740,23 +1740,23 @@ function opsProg(rows,cw,wk){
     <div class="sub">${wk}주차 덜 낸 부부 · ${part.length}</div>${part.map(r=>`<span class="chip" style="background:#FAEEDA;color:#633806">${esc(r)} ${progress(r,wk).done}/${PER}</span>`).join('')||'<span class="chip ok">없어요</span>'}`}
     ${(DATA.snsUnmatched||[]).length?`<div class="sub">SNS 방향성 체크 · 이름 확인 필요 ${DATA.snsUnmatched.length}</div><div style="font-size:12px;color:var(--text-lt)">과제방 부부 이름과 안 맞아서 진행판에 안 잡혔어요. 시트 '방향성체크' 탭 닉네임을 부부 이름으로 고치면 잡혀요.</div>${DATA.snsUnmatched.map(x=>`<span class="chip">${esc(x.h)} · ${fmtD(x.at)}</span>`).join('')}`:''}
     ${(()=>{ const sent=rows.filter(r=>r.feedback), un=sent.filter(r=>!r.readAt); if(!sent.length) return ''; const by={}; un.forEach(r=>{by[r.h]=(by[r.h]||0)+1;});
-      return `<div class="sub">보낸 피드백 · 읽음 ${sent.length-un.length} / ${sent.length}</div>${Object.keys(by).length?`<div style="font-size:12px;color:var(--text-lt)">아직 안 읽은 부부 — 피드백 탭에 로그인하면 읽음으로 바뀌어요</div>`+Object.keys(by).map(h=>`<span class="chip">${esc(h)}${by[h]>1?' '+by[h]:''}</span>`).join(''):'<span class="chip ok">모두 읽었어요</span>'}`; })()}`;
+      return `<div class="sub">보낸 피드백 · 읽음 ${sent.length-un.length} / ${sent.length}</div>${Object.keys(by).length?`<div style="font-size:12px;color:var(--text-lt)">아직 안 읽은 부부 — 내 과제 탭에 로그인하면 읽음으로 바뀌어요</div>`+Object.keys(by).map(h=>`<span class="chip">${esc(h)}${by[h]>1?' '+by[h]:''}</span>`).join(''):'<span class="chip ok">모두 읽었어요</span>'}`; })()}`;
   h+=`<div class="sub">부부별 낸 과제 · 이름을 누르면 펼쳐져요</div>`;
   REAL.forEach(x=>{ const n=rows.filter(r=>r.h===x).length, k=JSON.stringify(x).replace(/"/g,'&quot;');
     h+=`<div class="opsp" onclick="openDetail=openDetail===${k}?null:${k};render()"><b>${esc(x)}</b><span>${wk}주차 ${progress(x,wk).done}/${PER} · 전체 ${n}개</span>${chev(openDetail===x)}</div>${openDetail===x?detailOf(x):''}`; });
   return h;
 }
-// 1:1 내집 코칭 — 피드백과 같은 보내기(초안·보내기·보낸 것 줄 긋기), 보내면 그 부부 피드백 탭에 '코칭 답변'으로
+// 1:1 내집 코칭 — 피드백과 같은 보내기(초안·보내기·보낸 것 줄 긋기), 보내면 그 부부 내 과제 탭에 '코칭 답변'으로
 function opsCoach(rows){
   if(!rows.length) return `<div class="sub">1:1 내집마련 피드백 신청</div><span class="chip ok">아직 신청이 없어요</span>`;
-  return opsFb(rows).replace('피드백 기다리는 과제','답변 기다리는 1:1 내집마련 피드백 신청').replace(/새로 들어온 과제는[^<]*/,'신청서를 보고 답변을 써서 보내면 그 부부 피드백 탭에 "1:1 내집마련 피드백"으로 떠요. 금액·가족 이야기는 운영진만 봐요.').replace(/보낸 피드백 · /,'보낸 1:1 피드백 · ').replace(/코칭 - 내집마련 \(1:1 내집 코칭\)/g,'1:1 내집마련 피드백').replace(/>과제 내용</g,'>신청서<').replace(/초안 준비 중 · 오전 10시에 채워져요/g,'초안 없음 · 직접 써서 보내거나 Claude에게 “1:1 피드백 초안 써줘”라고 하세요');
+  return opsFb(rows).replace('피드백 기다리는 과제','답변 기다리는 1:1 내집마련 피드백 신청').replace(/새로 들어온 과제는[^<]*/,'신청서를 보고 답변을 써서 보내면 그 부부 내 과제 탭에 "1:1 내집마련 피드백"으로 떠요. 금액·가족 이야기는 운영진만 봐요.').replace(/보낸 피드백 · /,'보낸 1:1 피드백 · ').replace(/코칭 - 내집마련 \(1:1 내집 코칭\)/g,'1:1 내집마련 피드백').replace(/>과제 내용</g,'>신청서<').replace(/초안 준비 중 · 오전 10시에 채워져요/g,'초안 없음 · 직접 써서 보내거나 Claude에게 “1:1 피드백 초안 써줘”라고 하세요');
 }
 function opsQa(rows,unans){
   let h=`<div class="sub">답 안 단 질문 · ${unans.length}</div>`;
   if(!unans.length) h+=`<span class="chip ok">없어요</span>`;
   unans.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)} · ${fmtD(r.at)}</div><div style="margin-top:4px">${esc(r.q)}</div>
-    ${r.answerDraft?`<div style="font-size:11.5px;color:var(--warn);margin-top:6px">AI 답변 초안이에요. ${r.shareOk?'Q&A에 닉네임 없이 공개되니':'이 부부 피드백 탭에만 보이니'} 고쳐서 저장해주세요</div>`:''}
-    <textarea id="ans-${esc(r.id)}" placeholder="${r.shareOk?'답변을 쓰면 Q&A에 닉네임 없이 올라가요':'공유 동의 X — 답변은 Q&A에 안 올라가고 이 부부 피드백 탭에만 보여요'}">${esc(r.answerDraft||'')}</textarea>
+    ${r.answerDraft?`<div style="font-size:11.5px;color:var(--warn);margin-top:6px">AI 답변 초안이에요. ${r.shareOk?'Q&A에 닉네임 없이 공개되니':'이 부부 내 과제 탭에만 보이니'} 고쳐서 저장해주세요</div>`:''}
+    <textarea id="ans-${esc(r.id)}" placeholder="${r.shareOk?'답변을 쓰면 Q&A에 닉네임 없이 올라가요':'공유 동의 X — 답변은 Q&A에 안 올라가고 이 부부 내 과제 탭에만 보여요'}">${esc(r.answerDraft||'')}</textarea>
     <div class="row2"><select id="by-${esc(r.id)}">${['머니그랩','결영'].map(w=>`<option ${ownerOf(r)===w?'selected':''}>${w}</option>`).join('')}</select><button class="sbtn" onclick="saveAnswer('${esc(r.id)}',this)">저장</button></div></div>`; });
   return h;
 }
