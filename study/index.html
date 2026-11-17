@@ -104,6 +104,45 @@ a{color:var(--acc)}
 .tag.draft{background:#EEE;color:#555}.tag.vote{background:var(--pink-soft);color:var(--pink)}.tag.set{background:var(--ok-bg);color:var(--ok)}.tag.done{background:var(--acc-soft);color:var(--acc)}
 .tag.tr{background:var(--acc-soft);color:var(--acc)}
 
+/* 댓글·하트 */
+.post .act{display:flex;gap:6px;align-items:center;margin-top:10px;border-top:1px solid var(--border);padding-top:8px}
+.post .act button{border:0;background:var(--bg);border-radius:99px;padding:5px 11px;font-size:13px;font-weight:700;color:var(--text-md);cursor:pointer}
+.post .act button.on{background:var(--pink-soft);color:var(--pink)}
+.cmts{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.cmt{font-size:13px;line-height:1.55;background:var(--bg);border-radius:10px;padding:7px 10px}
+.cmt b{color:var(--acc);margin-right:6px}
+.cmt button{border:0;background:none;color:var(--mute);font-size:11.5px;margin-left:6px;cursor:pointer}
+.cin{display:flex;gap:6px;margin-top:6px}
+.cin input{flex:1;min-width:0;font-size:14px;border:1px solid var(--border);border-radius:99px;padding:8px 12px;background:#fff;outline:none}
+.cin button{border:0;border-radius:99px;background:var(--acc);color:#fff;font-size:13px;font-weight:700;padding:0 14px;cursor:pointer}
+/* 자료·주제·스터디장 */
+.links a{display:flex;justify-content:space-between;gap:8px;text-decoration:none;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:14.5px;font-weight:700;color:var(--acc);margin-bottom:8px}
+.idea{display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--border);padding:10px 0;font-size:14px}
+.idea .t{flex:1;min-width:0}
+.idea .t small{display:block;color:var(--mute);font-size:12px}
+.idea button.v{border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:4px 10px;font-size:13px;font-weight:700;color:var(--text-md);cursor:pointer;white-space:nowrap}
+.idea button.v.on{border-color:var(--pink);color:var(--pink);background:var(--pink-soft)}
+.idea button.x{border:0;background:none;color:var(--mute);font-size:12px;cursor:pointer}
+.lead{background:var(--warn-bg)}
+.lead h2{color:var(--warn)}
+.stat{display:grid;grid-template-columns:1fr repeat(3,52px);font-size:13px;border-bottom:1px solid var(--border);padding:6px 0;color:var(--text-md)}
+.stat.hd2{font-weight:700;color:var(--text)}
+.stat span:not(:first-child){text-align:center}
+/* 발표 모드 */
+.pres{position:fixed;inset:0;background:#0F1626;color:#fff;z-index:70;display:flex;flex-direction:column}
+.pres .top2{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;font-size:14px;color:var(--acc-lt)}
+.pres .top2 button{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:99px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer}
+.pres .stage{flex:1;min-height:0;display:flex;gap:28px;padding:0 28px 18px;align-items:stretch}
+.pres .pimgs{flex:1.4;min-width:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-content:center}
+.pres .pimgs img{width:100%;max-height:72vh;object-fit:contain;border-radius:12px;background:#1B2438}
+.pres .ptxt{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:14px;overflow:auto}
+.pres .ptxt h3{font-size:clamp(28px,4vw,48px);font-weight:800}
+.pres .ptxt pre{white-space:pre-wrap;font-family:inherit;font-size:clamp(17px,1.8vw,22px);line-height:1.7;color:#E6EAF2}
+.pres .nav{display:flex;justify-content:center;gap:12px;padding:0 0 22px}
+.pres .nav button{border:0;background:var(--pink);color:#fff;border-radius:12px;padding:14px 26px;font-size:17px;font-weight:800;cursor:pointer}
+.pres .nav button:disabled{opacity:.35}
+@media (max-width: 760px){ .pres .stage{flex-direction:column;overflow:auto} }
+
 /* PC: 왼쪽은 일정·참석·올리기, 오른쪽은 패들릿처럼 넓은 과제 판 */
 @media (min-width: 960px){
   body{background:#EEF0F4}
@@ -193,6 +232,9 @@ function render(){
     }
     if(s.notes) side += `<div class="hint">${esc(s.notes)}</div>`;
     side += `</div></div>`;
+    // 자료·다시보기 (들어온 팀만)
+    if((s.links || []).length) side += `<div class="sec links"><h2>자료 · 다시보기</h2>${s.links.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener"><span>${esc(l.label || '링크')}</span><span>›</span></a>`).join('')}</div>`;
+    else if(s.hasLinks && !me) side += `<div class="sec links"><h2>자료 · 다시보기</h2><div class="hint" style="margin-top:0">들어오면 PPT·다시보기 링크가 보여요.</div></div>`;
     // ② 날짜 투표 / 참석
     if(s.status === 'vote'){
       const cnt = o => rs.filter(r => (r.votes || []).includes(o)).length;
@@ -230,18 +272,39 @@ function render(){
       side += `</div>`;
     }
     // ⑤ 모두의 과제 (오른쪽 넓은 판)
-    main += `<div class="sec"><h2>모두의 과제 <span class="n">${posts.length}팀</span></h2>`;
-    main += posts.length ? `<div class="board">${posts.map(p => `<div class="post ${p.h === me ? 'mine' : ''}"><div class="h">${esc(p.h)}<small>${esc(when(p.at))}</small></div><div class="b">
+    const hearts = D.hearts || [], cmts = D.comments || [];
+    main += `<div class="sec"><h2>모두의 과제 <span class="n">${posts.length}팀</span>${posts.length ? `<button class="btn ghost" style="margin-left:auto;padding:7px 14px;font-size:13.5px" onclick="present(0)">▶ 발표 모드</button>` : ''}</h2>`;
+    main += posts.length ? `<div class="board">${posts.map((p, pi) => { const hs = hearts.filter(x => x.to === p.h), myH = hs.some(x => x.h === me), cs = cmts.filter(x => x.to === p.h);
+      return `<div class="post ${p.h === me ? 'mine' : ''}"><div class="h">${esc(p.h)}<small>${esc(when(p.at))}</small></div><div class="b">
       ${p.images.length ? `<div class="imgs ${p.images.length === 1 ? 'one' : ''}">${p.images.map(u => `<img src="${esc(u)}" alt="${esc(p.h)} 과제 사진" loading="lazy" onclick="big('${esc(u)}')">`).join('')}</div>` : ''}
       ${p.body ? `<pre ${p.images.length ? 'style="margin-top:10px"' : ''}>${esc(p.body)}</pre>` : ''}
-      ${p.link ? `<div class="hint"><a href="${esc(p.link)}" target="_blank" rel="noopener">링크 열기 ›</a></div>` : ''}</div></div>`).join('')}</div>` : `<div class="empty">아직 올린 팀이 없어요. 첫 번째로 올려주세요!</div>`;
+      ${p.link ? `<div class="hint"><a href="${esc(p.link)}" target="_blank" rel="noopener">링크 열기 ›</a></div>` : ''}
+      <div class="act"><button class="${myH ? 'on' : ''}" onclick="${me ? `heart(${pi})` : 'needLogin()'}" aria-label="좋아요">♥ ${hs.length || ''}</button><span class="hint" style="margin:0">${hs.length ? esc(hs.map(x => x.h).slice(0, 3).join(', ')) + (hs.length > 3 ? ' 외' : '') : ''}</span></div>
+      ${cs.length ? `<div class="cmts">${cs.map(c => `<div class="cmt"><b>${esc(c.h)}</b>${esc(c.body)}${c.h === me ? `<button onclick="uncomment(${c.id})">지우기</button>` : ''}</div>`).join('')}</div>` : ''}
+      ${me ? `<div class="cin"><input id="ci${pi}" placeholder="한마디 남기기" maxlength="500" onkeydown="if(event.key==='Enter'&&!event.isComposing)comment(${pi})"><button onclick="comment(${pi})">남기기</button></div>` : ''}</div></div>`; }).join('')}</div>` : `<div class="empty">아직 올린 팀이 없어요. 첫 번째로 올려주세요!</div>`;
     main += `</div>`;
   }
   if(!me) side += loginBox();
+  // 스터디장 메뉴
+  const isLeader = me && (D.leaders || []).includes(me);
+  if(isLeader){
+    side += `<div class="sec lead"><h2>스터디장 메뉴</h2><div class="hint" style="margin-top:0">${esc(TNAME(TRACK))} 일정·과제·자료 링크를 고칠 수 있어요. '확정'으로 저장하면 1시간 안에 안내 문자가 나가요.</div><div class="row">
+      ${s && s.status !== 'done' ? `<button class="btn" onclick="leaderEdit(${s.id})">이번 스터디 고치기</button>` : ''}
+      ${(D.drafts || []).map(d => `<button class="btn ghost" onclick="leaderEdit(${d.id})">준비 중: ${esc(d.title || '제목 없음')}</button>`).join('')}
+      <button class="btn ghost" onclick="leaderEdit(0)">＋ 새 스터디</button>
+      ${s && s.status === 'done' ? `<button class="btn ghost" onclick="leaderEdit(${s.id})">자료·다시보기 넣기</button>` : ''}</div></div>`;
+  }
+  // 다음에 하고 싶은 주제
+  const ideas = D.ideas || [];
+  side += `<div class="sec"><h2>다음에 하고 싶은 주제 <span class="n">${ideas.length}</span></h2>
+    ${ideas.map(i => { const on = me && i.votes.includes(me); return `<div class="idea"><div class="t">${esc(i.body)}<small>${esc(i.h)}${i.h === me ? ` · <button class="x" onclick="unidea(${i.id})">지우기</button>` : ''}</small></div><button class="v ${on ? 'on' : ''}" onclick="${me ? `ideavote(${i.id})` : 'needLogin()'}">👍 ${i.votes.length}</button></div>`; }).join('') || '<div class="hint" style="margin-top:0">아직 없어요. 하고 싶은 주제를 남겨주세요.</div>'}
+    ${me ? `<div class="cin" style="margin-top:10px"><input id="idea" placeholder="예) 릴스 썸네일 만들기" maxlength="200" onkeydown="if(event.key==='Enter'&&!event.isComposing)addIdea()"><button onclick="addIdea()">남기기</button></div>` : ''}</div>`;
   if((D.past || []).length > 1){
     side += `<div class="sec past"><h2>지난 ${esc(TNAME(TRACK))}</h2>${D.past.map(x => `<button class="${s && x.id === s.id ? 'on' : ''}" onclick="openStudy(${x.id})">${esc(x.title)}<small>${esc(when(x.startsAt))}</small></button>`).join('')}</div>`;
   }
-  $('#app').innerHTML = (me ? `<div class="me"><span><b>${esc(me)}</b>로 들어와 있어요</span><button onclick="logout()">나가기</button></div>` : '')
+  if(LEDIT) return renderLeaderForm();
+  const mi = D.mine || null;
+  $('#app').innerHTML = (me ? `<div class="me"><span><b>${esc(me)}</b>로 들어와 있어요${mi ? ` · 지금까지 참석 ${mi.attend}번 · 과제 ${mi.posts}번 · 댓글 ${mi.comments}개` : ''}</span><button onclick="logout()">나가기</button></div>` : '')
     + `<div class="wrap"><div class="side">${side}</div><div class="main">${main}</div></div>`;
 }
 
@@ -327,6 +390,60 @@ async function delPost(){
 function openStudy(id){ VIEW_ID = id; DRAFT = null; load().then(() => scrollTo({top:0, behavior:'smooth'})); }
 function big(u){ const d = document.createElement('div'); d.className = 'big'; d.innerHTML = `<img src="${esc(u)}" alt="">`; d.onclick = () => d.remove(); document.body.appendChild(d); }
 
+// ── 댓글·하트·주제 ──
+async function heart(pi){ const p = D.posts[pi]; const r = await api({op:'heart', h:ME.h, code:ME.code, study:D.study.id, to:p.h}); if(!r.ok) return toast('다시 눌러주세요'); load(); }
+async function comment(pi){
+  const el = $('#ci' + pi), body = (el.value || '').trim(); if(!body) return;
+  const r = await api({op:'comment', h:ME.h, code:ME.code, study:D.study.id, to:D.posts[pi].h, body});
+  if(!r.ok) return toast('다시 눌러주세요'); load();
+}
+async function uncomment(id){ await api({op:'uncomment', h:ME.h, code:ME.code, id}); load(); }
+async function addIdea(){ const body = ($('#idea').value || '').trim(); if(!body) return; const r = await api({op:'idea', h:ME.h, code:ME.code, track:TRACK, body}); if(!r.ok) return toast('다시 눌러주세요'); toast('남겼어요'); load(); }
+async function ideavote(id){ await api({op:'ideavote', h:ME.h, code:ME.code, id}); load(); }
+async function unidea(id){ await api({op:'unidea', h:ME.h, code:ME.code, id}); load(); }
+
+// ── 발표 모드: 과제 올린 팀을 한 장씩 크게 (불참 팀은 뺀다) ──
+let PI = 0;
+function presList(){ const no = (D.rsvp || []).filter(r => r.attend === 'no').map(r => r.h); return (D.posts || []).filter(p => !no.includes(p.h)); }
+function present(i){
+  const L = presList(); if(!L.length) return toast('올린 과제가 없어요');
+  PI = Math.max(0, Math.min(i, L.length - 1)); const p = L[PI];
+  let el = $('#pres'); if(!el){ el = document.createElement('div'); el.id = 'pres'; el.className = 'pres'; document.body.appendChild(el); document.addEventListener('keydown', presKey); }
+  el.innerHTML = `<div class="top2"><span>${esc(D.study.title)} · ${PI + 1} / ${L.length}</span><button onclick="presClose()">닫기 (Esc)</button></div>
+    <div class="stage">${p.images.length ? `<div class="pimgs">${p.images.map(u => `<img src="${esc(u)}" alt="${esc(p.h)} 과제 사진">`).join('')}</div>` : ''}
+    <div class="ptxt"><h3>${esc(p.h)}</h3>${p.body ? `<pre>${esc(p.body)}</pre>` : ''}${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener" style="color:#F4C0D1;font-size:18px">링크 열기 ›</a>` : ''}</div></div>
+    <div class="nav"><button onclick="present(PI-1)" ${PI === 0 ? 'disabled' : ''}>← 이전 팀</button><button onclick="present(PI+1)" ${PI === L.length - 1 ? 'disabled' : ''}>다음 팀 →</button></div>`;
+}
+function presKey(e){ if(!$('#pres')) return; if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); present(PI + 1); } else if(e.key === 'ArrowLeft') present(PI - 1); else if(e.key === 'Escape') presClose(); }
+function presClose(){ const el = $('#pres'); if(el) el.remove(); document.removeEventListener('keydown', presKey); }
+
+// ── 스터디 입력 칸 (운영진·스터디장 같이) ──
+let FORM_MODE = 'admin', LEDIT = null;
+function studyForm(s, leader){
+  return `<label for="ek">종류</label><select id="ek" ${leader ? 'disabled' : ''}>${TRACKS.map(t => `<option value="${t.id}" ${(s.track || TRACK) === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
+    <label for="es">상태</label><select id="es">${Object.keys(STATUS).map(k => `<option value="${k}" ${(s.status || 'draft') === k ? 'selected' : ''}>${STATUS[k]}</option>`).join('')}</select>
+    <div class="hint">'확정'으로 저장하면 1시간 안에 전원에게 안내 문자가 나가요. 투표 중이면 투표 안내가 나가요.</div>
+    <label for="et">제목</label><input id="et" value="${esc(s.title || '')}" placeholder="12월 부동산 스터디 · 단지 비교">
+    <label for="eto">주제 한 줄</label><input id="eto" value="${esc(s.topic || '')}">
+    <label for="ew">날짜·시간 (확정일 때) — 예: 2026-12-19 21:00</label><input id="ew" value="${esc(local(s.startsAt))}">
+    <label for="eo">투표 후보 (투표 중일 때, 한 줄에 하나)</label><textarea id="eo" placeholder="2026-12-18 21:00&#10;2026-12-19 21:00">${esc((s.options || []).map(local).join('\n'))}</textarea>
+    <label for="ez">구글 미트 링크</label><input id="ez" value="${esc(s.zoom || '')}" placeholder="https://meet.google.com/…">
+    <label for="eh">미리 해올 것</label><textarea id="eh" style="min-height:160px">${esc(s.homework || '')}</textarea>
+    <label for="ed">과제 올리는 마감 — 예: 2026-12-18 23:59</label><input id="ed" value="${esc(local(s.homeworkDue))}">
+    <label for="el">자료·다시보기 (한 줄에 하나, 이름 | 주소)</label><textarea id="el" placeholder="다시보기 | https://…&#10;PPT | https://…">${esc((s.links || []).map(l => (l.label || '') + ' | ' + l.url).join('\n'))}</textarea>
+    <label for="en">한 줄 메모 (멤버에게 보임)</label><input id="en" value="${esc(s.notes || '')}">
+    <div class="err" id="eerr"></div>`;
+}
+function leaderEdit(id){
+  const pool = [D.study, ...(D.drafts || [])].filter(Boolean);
+  LEDIT = id ? (pool.find(x => x.id === id) || {id}) : {track: TRACK, status: 'draft'};
+  render(); scrollTo({top:0});
+}
+function renderLeaderForm(){
+  $('#app').innerHTML = `<div class="sec adm" style="max-width:640px;margin:0 auto"><h2>${LEDIT.id ? '스터디 고치기' : '새 ' + esc(TNAME(TRACK))}</h2>${studyForm(LEDIT, true)}
+    <div class="row"><button class="btn wide" onclick="saveStudy('leader')">저장</button><button class="btn ghost wide" onclick="LEDIT=null;render()">돌아가기</button></div></div>`;
+}
+
 // ── 운영진 (#admin) ──
 let AK = ''; try { AK = sessionStorage.getItem('ot_study_ak') || ''; } catch(e) {}
 let A = null, EDIT = null;
@@ -343,37 +460,38 @@ function renderAdmin(){
     h += `<h2>스터디 <span class="n">${A.studies.length}</span></h2><div class="row" style="margin:0 0 12px"><button class="btn pink wide" onclick="EDIT={track:'sns'};renderAdmin()">＋ 새 스터디</button></div>`;
     A.studies.forEach(s => { const b = A.boards[s.id] || {}; const yes = (b.rsvp || []).filter(r => r.attend === 'yes').length;
       h += `<div class="st" onclick="EDIT=A.studies.find(x=>x.id===${s.id});renderAdmin()"><b>${esc(s.title || '(제목 없음)')}</b><span class="tag tr">${esc(TNAME(s.track))}</span><span class="tag ${s.status}">${esc(STATUS[s.status].split(' ')[0])}</span><br>${esc(when(s.startsAt) || '날짜 미정')} · 참석 ${yes}팀 · 과제 ${(b.posts || []).length}팀<br><small style="color:var(--mute)">보낸 문자: ${Object.keys(s.sent || {}).map(k => SENT[k] || k).join(', ') || '없음'}</small></div>`; });
+    h += `<h2 style="margin-top:20px">스터디장</h2><div class="hint" style="margin-top:0">스터디방에 등록한 이름 그대로, 쉼표로 나눠서. 그 스터디만 일정·과제·자료를 고칠 수 있어요.</div>
+      ${TRACKS.map(t => `<label for="ld-${t.id}">${esc(t.name)}</label><div class="cin" style="margin-top:0"><input id="ld-${t.id}" value="${esc(((A.leaders || {})[t.id] || []).join(', '))}"><button onclick="saveLeaders('${t.id}')">저장</button></div>`).join('')}
+      <div class="hint">등록된 이름: ${A.members.map(m => esc(m.h)).join(', ') || '없음'}</div>`;
+    const st = A.stats || [];
+    h += `<h2 style="margin-top:20px">참여 기록 <span class="n">${st.length}팀</span></h2>${st.length ? `<div class="stat hd2"><span>팀</span><span>참석</span><span>과제</span><span>댓글</span></div>` + [...st].sort((a, b) => (b.attend + b.posts) - (a.attend + a.posts)).map(x => `<div class="stat"><span>${esc(x.h)}</span><span>${x.attend}</span><span>${x.posts}</span><span>${x.comments}</span></div>`).join('') : '<div class="hint">아직 없어요</div>'}`;
     h += `<h2 style="margin-top:20px">명단 <span class="n">${A.members.length}팀</span></h2>${A.members.map(m => `<div class="m"><span>${esc(m.h)} · ${esc(m.to)}</span><button onclick="delMember('${esc(m.h)}')">빼기</button></div>`).join('') || '<div class="hint">아직 없어요</div>'}`;
     h += `<div class="row"><button class="btn ghost wide" onclick="location.hash='';load()">멤버 화면 보기</button></div></div>`;
   } else {
-    const s = EDIT;
-    h += `<h2>${s.id ? '스터디 고치기' : '새 스터디'}</h2>
-      <label for="ek">종류</label><select id="ek">${TRACKS.map(t => `<option value="${t.id}" ${(s.track || 'sns') === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>
-      <label for="es">상태</label><select id="es">${Object.keys(STATUS).map(k => `<option value="${k}" ${(s.status || 'draft') === k ? 'selected' : ''}>${STATUS[k]}</option>`).join('')}</select>
-      <div class="hint">'확정'으로 저장하면 1시간 안에 전원에게 안내 문자가 나가요. 투표 중이면 투표 안내가 나가요.</div>
-      <label for="et">제목</label><input id="et" value="${esc(s.title || '')}" placeholder="12월 부동산 스터디 · 단지 비교">
-      <label for="eto">주제 한 줄</label><input id="eto" value="${esc(s.topic || '')}">
-      <label for="ew">날짜·시간 (확정일 때) — 예: 2026-12-19 21:00</label><input id="ew" value="${esc(local(s.startsAt))}">
-      <label for="eo">투표 후보 (투표 중일 때, 한 줄에 하나)</label><textarea id="eo" placeholder="2026-12-18 21:00&#10;2026-12-19 21:00">${esc((s.options || []).map(local).join('\n'))}</textarea>
-      <label for="ez">구글 미트 링크</label><input id="ez" value="${esc(s.zoom || '')}" placeholder="https://meet.google.com/…">
-      <label for="eh">미리 해올 것</label><textarea id="eh" style="min-height:160px">${esc(s.homework || '')}</textarea>
-      <label for="ed">과제 올리는 마감 — 예: 2026-12-18 23:59</label><input id="ed" value="${esc(local(s.homeworkDue))}">
-      <label for="en">한 줄 메모 (멤버에게 보임)</label><input id="en" value="${esc(s.notes || '')}">
-      <div class="err" id="eerr"></div>
-      <div class="row"><button class="btn wide" onclick="saveStudy()">저장</button><button class="btn ghost wide" onclick="EDIT=null;renderAdmin()">목록으로</button></div></div>`;
+    h += `<h2>${EDIT.id ? '스터디 고치기' : '새 스터디'}</h2>${studyForm(EDIT, false)}
+      <div class="row"><button class="btn wide" onclick="saveStudy('admin')">저장</button><button class="btn ghost wide" onclick="EDIT=null;renderAdmin()">목록으로</button></div></div>`;
   }
   $('#app').innerHTML = h;
 }
-async function saveStudy(){
+async function saveLeaders(tr){
+  const nicks = $('#ld-' + tr).value.split(',').map(x => x.trim()).filter(Boolean);
+  const r = await api({op:'leaders', key:AK, track:tr, nicks}); toast(r.ok ? '저장했어요' : '저장이 안 됐어요'); loadAdmin();
+}
+async function saveStudy(mode){
   const opts = $('#eo').value.split('\n').map(x => x.trim()).filter(Boolean).map(toIso);
   const w = toIso($('#ew').value), d = toIso($('#ed').value);
   if(opts.includes(null) || w === null || d === null) return $('#eerr').textContent = '날짜는 2026-12-19 21:00 모양으로 넣어주세요';
+  const links = $('#el').value.split('\n').map(x => x.trim()).filter(Boolean).map(x => { const i = x.lastIndexOf('|'); const url = (i >= 0 ? x.slice(i + 1) : x).trim(); return {label: i >= 0 ? x.slice(0, i).trim() : '링크', url}; });
+  if(links.some(l => !/^https?:\/\//.test(l.url))) return $('#eerr').textContent = '자료 주소는 https:// 로 시작해야 해요';
   const st = $('#es').value;
   if(st === 'set' && !w) return $('#eerr').textContent = '확정이면 날짜·시간을 넣어주세요';
   if(st === 'vote' && opts.length < 2) return $('#eerr').textContent = '투표 후보를 두 개 이상 넣어주세요';
-  const r = await api({op:'save', key:AK, study:{id: EDIT.id || '', track: $('#ek').value, status: st, title: $('#et').value, topic: $('#eto').value, startsAt: w, options: opts, zoom: $('#ez').value.trim(), homework: $('#eh').value, homeworkDue: d, notes: $('#en').value}});
-  if(!r.ok) return $('#eerr').textContent = '저장이 안 됐어요';
-  EDIT = null; toast('저장했어요'); loadAdmin();
+  const src = mode === 'leader' ? LEDIT : EDIT;
+  const study = {id: src.id || '', track: $('#ek').value, status: st, title: $('#et').value, topic: $('#eto').value, startsAt: w, options: opts, zoom: $('#ez').value.trim(), homework: $('#eh').value, homeworkDue: d, notes: $('#en').value, links};
+  const r = mode === 'leader' ? await api({op:'lsave', h:ME.h, code:ME.code, track:TRACK, study}) : await api({op:'save', key:AK, study});
+  if(!r.ok) return $('#eerr').textContent = r.error === 'leader' ? '이 스터디의 스터디장만 고칠 수 있어요' : '저장이 안 됐어요';
+  toast('저장했어요');
+  if(mode === 'leader'){ LEDIT = null; load(); } else { EDIT = null; loadAdmin(); }
 }
 async function delMember(n){ if(window.delArm !== n){ window.delArm = n; toast('한 번 더 누르면 ' + n + ' 빠져요'); setTimeout(() => window.delArm = null, 3000); return; } await api({op:'delmember', key:AK, nick:n}); loadAdmin(); }
 window.addEventListener('hashchange', () => {
