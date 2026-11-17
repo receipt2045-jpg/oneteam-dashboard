@@ -209,6 +209,12 @@ a{color:var(--acc)}
 .hero .hw{max-height:200px;overflow:auto}
 .pvbar{margin:12px 16px 0;background:#FFF4D6;color:#7A5200;border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:700;line-height:1.5}
 .pvbar a{color:inherit}
+.vmode{display:flex;gap:4px;margin:12px 16px 0;background:#E6E9EF;border-radius:12px;padding:4px;width:fit-content}
+.vmode button{border:0;background:none;font:inherit;font-size:13.5px;font-weight:700;color:var(--mute,#777);padding:8px 16px;border-radius:9px;cursor:pointer}
+.vmode button.on{background:#fff;color:var(--ink,#222);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.dayside{margin:12px 16px 0;background:#fff;border-radius:16px;overflow:hidden}
+
+@media (min-width: 960px){ .vmode{margin:16px 32px 0} .dayside{margin:16px 32px 0;max-width:460px} .dayboard .sec{padding:24px 32px} .dayboard .colm{flex:0 0 320px} }
 .hero .day{background:var(--ok-bg);color:var(--ok);font-weight:800;font-size:13px;border-radius:8px;padding:4px 9px;display:inline-block;margin-bottom:6px}
 .picks{display:flex;gap:6px;flex-wrap:wrap}.picks .pick{flex:1 1 130px;margin-top:0;background:#fff;font-family:inherit;border:1.5px dashed var(--acc-lt);border-radius:12px;padding:14px 10px;font-size:14px;font-weight:700;color:var(--acc)}
 .drophint{font-size:12.5px;color:var(--muted,#888);text-align:center;line-height:1.5}
@@ -351,7 +357,7 @@ function renderTracks(){
 }
 
 function dayOf(s){ const t = s && s.startsAt ? +new Date(s.startsAt) : 0, n = Date.now(); return s && s.status === 'set' && t && n > t - 2 * 3600e3 && n < t + 3 * 3600e3; }
-function heroHtml(me){
+function heroHtml(me, slim){
   const s = D && D.study; if(!s || s.status === 'done') return '';
   const rs = D.rsvp || [], yes = rs.filter(r => r.attend === 'yes').map(r => r.h), mineR = rs.find(r => r.h === me) || {};
   const today = dayOf(s);
@@ -374,7 +380,7 @@ function heroHtml(me){
   if(me && mineR.attend === 'yes') h += `<div class="ok">신청 완료 · 아래 스터디 판에 우리 팀 열이 있어요</div>`;
   if(yes.length) h += `<div class="note">신청 ${yes.length}팀 · ${yes.map(x => `<b>${esc(x)}</b>`).join(', ')}</div>`;
   h += `</div>`;
-  if(s.homework){
+  if(s.homework && !slim){
     const first = s.homework.split('\n').map(x => x.trim()).find(Boolean) || '미리 해올 것';
     h += `<details${innerWidth >= 960 ? ' open' : ''}><summary>과제 · ${esc(first.replace(/^(과제|미리 해올 것)\s*[:·]?\s*/, ''))}${s.homeworkDue ? `<small>${esc(when(s.homeworkDue))}까지 우리 팀 열에 올려주세요</small>` : ''}<span class="more">하는 법 펼치기 ›</span></summary>
       <div class="hw" id="hw">${esc(s.homework)}</div><div class="row"><button class="btn ghost" onclick="copyHw()">글 전체 복사</button></div></details>`;
@@ -446,7 +452,18 @@ function render(){
   main = chBoard(me) + main;
   const mi = D.mine || null;
   $('#app').innerHTML = (me ? `<div class="me"><span><b>${esc(me)}</b>로 들어와 있어요${mi ? ` · 지금까지 참석 ${mi.attend}번 · 과제 ${mi.posts}번 · 댓글 ${mi.comments}개` : ''}</span><button onclick="logout()">나가기</button></div>` : '')
-    + heroHtml(me) + upcomingHtml() + `<div class="wrap${me ? ' mf' : ''}"><div class="side">${side}</div><div class="main">${main}</div></div>`;
+    + viewToggle() + (boardOnly()
+      ? heroHtml(me, true) + (me ? '' : `<div class="dayside">${loginBox()}</div>`) + `<div class="dayboard">${main}</div>`
+      : heroHtml(me) + upcomingHtml() + `<div class="wrap${me ? ' mf' : ''}"><div class="side">${side}</div><div class="main">${main}</div></div>`);
+}
+// 보기 방식: '전체 보기' / '스터디 판만' — 고르지 않으면 스터디 당일엔 판만, 평소엔 전체
+let VIEWM = ''; try { VIEWM = localStorage.getItem('ot_study_view') || ''; } catch(e) {}
+function boardOnly(){ const s = D && D.study; if(!s || s.status === 'done') return false; return VIEWM ? VIEWM === 'board' : dayOf(s); }
+function setView(v){ VIEWM = v; try { localStorage.setItem('ot_study_view', v); } catch(e) {} render(); scrollTo(0, 0); }
+function viewToggle(){
+  const s = D && D.study; if(!s || s.status === 'done') return '';
+  const b = boardOnly();
+  return `<div class="vmode"><button class="${b ? '' : 'on'}" onclick="setView('full')">전체 보기</button><button class="${b ? 'on' : ''}" onclick="setView('board')">스터디 판만</button></div>`;
 }
 
 function loginBox(){
