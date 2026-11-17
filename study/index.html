@@ -188,6 +188,28 @@ a{color:var(--acc)}
 .kform{background:#fff;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
 .kform input,.kform textarea{width:100%;font-size:15px;border:1px solid var(--border);border-radius:10px;padding:10px 11px;background:var(--bg);outline:none}
 .kform textarea{min-height:150px;resize:vertical;line-height:1.6}
+/* 로그인하면 폰에서도 스터디 판이 맨 위 */
+.wrap.mf{display:flex;flex-direction:column}.wrap.mf .main{order:-1}
+/* 맨 위 이번 스터디 미리보기: 일시·구글 미트·과제·신청 */
+.hero{margin:12px 16px 4px;background:#fff;border-radius:16px;padding:16px 16px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.hero .k{font-size:12.5px;font-weight:800;color:var(--acc);letter-spacing:.02em}
+.hero .tt{font-size:19px;font-weight:800;margin:4px 0 2px;line-height:1.35}
+.hero .wh{font-size:15px;font-weight:700;color:var(--ink,#222)}
+.hero .go{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.hero .go .btn{flex:1 1 160px;text-align:center;text-decoration:none}
+.hero .meetbtn{background:#1a73e8;color:#fff;border:0}
+.hero .note{font-size:13px;color:var(--mute,#888);margin-top:8px;line-height:1.5}
+.hero .ok{font-size:13.5px;color:var(--ok);font-weight:700;margin-top:8px}
+.hero .ok b{color:var(--ink,#222);font-weight:700}
+.hero details{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+.hero summary{cursor:pointer;font-size:15px;font-weight:800;list-style:none;display:flex;flex-direction:column;gap:2px}
+.hero summary::-webkit-details-marker{display:none}
+.hero summary small{font-size:12.5px;font-weight:600;color:var(--pink)}
+.hero summary .more{font-size:13px;font-weight:700;color:var(--acc)}
+.hero details[open] summary .more{display:none}
+.hero .hw{max-height:200px;overflow:auto}
+.hero .day{background:var(--ok-bg);color:var(--ok);font-weight:800;font-size:13px;border-radius:8px;padding:4px 9px;display:inline-block;margin-bottom:6px}
+.picks{display:flex;gap:6px;flex-wrap:wrap}.picks .pick{flex:1 1 130px;margin-top:0;background:#fff;font-family:inherit;border:1.5px dashed var(--acc-lt);border-radius:12px;padding:14px 10px;font-size:14px;font-weight:700;color:var(--acc)}
+.drophint{font-size:12.5px;color:var(--muted,#888);text-align:center;line-height:1.5}
 
 /* PC: 왼쪽은 일정·참석·올리기, 오른쪽은 패들릿처럼 넓은 과제 판 */
 @media (min-width: 960px){
@@ -198,6 +220,9 @@ a{color:var(--acc)}
   .tracks{margin-top:0;width:420px}
   .me{padding:10px 32px}
   .wrap{display:grid;grid-template-columns:400px 1fr;align-items:start;min-height:calc(100vh - 120px)}
+  .wrap.mf{display:grid}.wrap.mf .main{order:0}
+  .hero{margin:16px 32px 4px;padding:20px 24px;display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,1.3fr);column-gap:28px}
+  .hero details{grid-column:2;grid-row:1 / span 4;margin-top:0;border-top:0;border-left:1px solid var(--border);padding:0 0 0 24px}
   .side{border-right:1px solid var(--border);position:sticky;top:0;max-height:100vh;overflow-y:auto}
   .side .sec{padding:22px 24px}
   .main{background:var(--bg);min-height:calc(100vh - 120px)}
@@ -317,6 +342,37 @@ function renderTracks(){
   }).join('');
 }
 
+function dayOf(s){ const t = s && s.startsAt ? +new Date(s.startsAt) : 0, n = Date.now(); return s && s.status === 'set' && t && n > t - 2 * 3600e3 && n < t + 3 * 3600e3; }
+function heroHtml(me){
+  const s = D && D.study; if(!s || s.status === 'done') return '';
+  const rs = D.rsvp || [], yes = rs.filter(r => r.attend === 'yes').map(r => r.h), mineR = rs.find(r => r.h === me) || {};
+  const today = dayOf(s);
+  let h = `<div class="hero" id="apply"><div>${today ? '<span class="day">오늘 스터디 날이에요</span>' : ''}<div class="k">이번 ${esc(TNAME(s.track || TRACK))}</div>
+    <div class="tt">${esc(s.title)}</div><div class="wh">${s.status === 'vote' ? '날짜 투표 중이에요' : esc(when(s.startsAt))} · 구글 미트</div>${s.topic ? `<div class="note" style="margin-top:4px">${esc(s.topic)}</div>` : ''}${s.notes ? `<div class="note">${esc(s.notes)}</div>` : ''}</div>`;
+  // 구글 미트: 당일엔 큰 버튼, 그 전엔 안내
+  let go = '';
+  if(s.status === 'set'){
+    if(me && s.zoom && today) go += `<a class="btn meetbtn" href="${esc(s.zoom)}" target="_blank" rel="noopener">구글 미트 입장하기</a>`;
+    if(today) go += `<button class="btn" onclick="${me ? "newCard('');setTimeout(()=>{const e=document.querySelector('.colm.me');if(e)e.scrollIntoView({behavior:'smooth',block:'center'})},80)" : "MODE='join';render();focusLogin()"}">${me ? '우리 팀 카드에 사진 올리기' : '신청하고 사진 올리기'}</button>`;
+    else if(!me) go += `<button class="btn pink" onclick="MODE='join';render();focusLogin()">스터디 신청하기</button>`;
+    else if(mineR.attend !== 'yes') go += `<button class="btn pink" onclick="attend('yes')">스터디 신청하기</button>`;
+  }
+  h += `<div>${go ? `<div class="go">${go}</div>` : ''}`;
+  if(s.status === 'set'){
+    if(me && s.zoom && !today) h += `<div class="note">구글 미트 입장 버튼은 스터디 당일에 여기 생겨요. <a href="${esc(s.zoom)}" target="_blank" rel="noopener">링크 미리 보기</a></div>`;
+    else if(!me) h += `<div class="note">이름과 번호만 넣으면 신청돼요. 신청하면 구글 미트 링크가 보이고, 시작 1시간 전에 문자로도 보내드려요.</div>`;
+    else if(!s.zoom) h += `<div class="note">구글 미트 링크는 곧 올라와요. 시작 1시간 전에 문자로도 보내드려요.</div>`;
+  }
+  if(me && mineR.attend === 'yes') h += `<div class="ok">신청 완료 · 아래 스터디 판에 우리 팀 열이 있어요</div>`;
+  if(yes.length) h += `<div class="note">신청 ${yes.length}팀 · ${yes.map(x => `<b>${esc(x)}</b>`).join(', ')}</div>`;
+  h += `</div>`;
+  if(s.homework){
+    const first = s.homework.split('\n').map(x => x.trim()).find(Boolean) || '미리 해올 것';
+    h += `<details${innerWidth >= 960 ? ' open' : ''}><summary>과제 · ${esc(first.replace(/^(과제|미리 해올 것)\s*[:·]?\s*/, ''))}${s.homeworkDue ? `<small>${esc(when(s.homeworkDue))}까지 우리 팀 열에 올려주세요</small>` : ''}<span class="more">하는 법 펼치기 ›</span></summary>
+      <div class="hw" id="hw">${esc(s.homework)}</div><div class="row"><button class="btn ghost" onclick="copyHw()">글 전체 복사</button></div></details>`;
+  }
+  return h + `</div>`;
+}
 function render(){
   if(location.hash === '#admin') return renderAdmin();
   renderTracks();
@@ -327,14 +383,8 @@ function render(){
   else {
     const rs = D.rsvp || [], myR = rs.find(r => r.h === me) || {votes:[], attend:''};
     const open = s.status === 'vote' || s.status === 'set';
-    // 스터디 당일: 시작 2시간 전 ~ 끝나고 3시간까지 맨 위에 '사진 올리기' 바로가기
-    const st0 = s.startsAt ? +new Date(s.startsAt) : 0, nowt = Date.now();
-    if(s.status === 'set' && st0 && nowt > st0 - 2 * 3600e3 && nowt < st0 + 3 * 3600e3){
-      side += `<div class="sec" style="background:var(--ok-bg)"><h2 style="color:var(--ok)">지금 스터디 시간이에요</h2>
-        <div class="hint" style="margin-top:0">${me ? '우리 팀 열에 카드를 만들고 사진을 올려주세요. 폰 사진첩에서 바로 고르면 돼요.' : '처음이면 이름과 번호만 넣고 신청하면 바로 사진을 올릴 수 있어요.'}</div>
-        <div class="row"><button class="btn wide" onclick="${me ? "newCard('');setTimeout(()=>{const e=document.querySelector('.colm.me');if(e)e.scrollIntoView({behavior:'smooth',block:'center'})},80)" : "MODE='join';render();focusLogin()"}">${me ? '우리 팀 카드에 사진 올리기' : '신청하고 사진 올리기'}</button></div></div>`;
-    }
-    // ① 일정
+    // ① 일정 (지난 스터디만 — 이번 스터디는 맨 위 미리보기에)
+    if(s.status === 'done'){
     side += `<div class="sec"><h2>${s.status === 'done' ? '지난 스터디' : '이번 스터디'}</h2><div class="card">`;
     side += s.status === 'vote' ? `<div class="when vote">날짜 투표 중이에요</div>` : `<div class="when">${esc(when(s.startsAt))}</div>`;
     side += `<div class="ttl">${esc(s.title)}</div>${s.topic ? `<div class="topic">${esc(s.topic)}</div>` : ''}`;
@@ -343,7 +393,9 @@ function render(){
       else if(s.hasZoom) side += `<div class="hint">구글 미트 링크는 들어오면 보여요. 시작 1시간 전에 문자로도 보내드려요.</div>`;
     }
     if(s.notes) side += `<div class="hint">${esc(s.notes)}</div>`;
-    side += `</div></div>` + chSection(me);
+    side += `</div></div>`;
+    }
+    side += chSection(me);
     // 자료·다시보기 (들어온 팀만)
     if((s.links || []).length) side += `<div class="sec links"><h2>자료 · 다시보기</h2>${s.links.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener"><span>${esc(l.label || '링크')}</span><span>›</span></a>`).join('')}</div>`;
     else if(s.hasLinks && !me) side += `<div class="sec links"><h2>자료 · 다시보기</h2><div class="hint" style="margin-top:0">들어오면 PPT·다시보기 링크가 보여요.</div></div>`;
@@ -353,19 +405,13 @@ function render(){
       side += `<div class="sec"><h2>되는 날 고르기 <span class="n">여러 개 골라도 돼요</span></h2><div class="chips">`;
       (s.options || []).forEach(o => { const on = (myR.votes || []).includes(o); side += `<button class="chip ${on ? 'on' : ''}" onclick="${me ? `vote('${esc(o)}')` : 'needLogin()'}"><span>${on ? '✓ ' : ''}${esc(when(o))}</span><span class="c">${cnt(o)}팀</span></button>`; });
       side += `</div><div class="hint">가장 많이 고른 날로 정해서 다시 알려드릴게요.</div></div>`;
-    } else if(s.status === 'set'){
+    } else if(s.status === 'set' && me){
       const yes = rs.filter(r => r.attend === 'yes').map(r => r.h), no = rs.filter(r => r.attend === 'no').map(r => r.h);
-      side += `<div class="sec" id="apply"><h2>스터디 신청 <span class="n">${yes.length}팀 신청</span></h2>`
+      side += `<div class="sec"><h2>스터디 신청 <span class="n">${yes.length}팀 신청</span></h2>`
         + (!me ? `<div class="hint" style="margin-top:0">이름과 번호만 넣으면 바로 신청돼요. 신청하면 스터디 판에 우리 팀 열이 생겨요.</div><div class="row"><button class="btn pink wide" onclick="MODE='join';render();focusLogin()">스터디 신청하기</button></div>`
           : myR.attend === 'yes' ? `<div class="hint" style="margin-top:0;color:var(--ok);font-weight:700">신청했어요! 스터디 판에 우리 팀 열이 생겼어요.</div><div class="row"><button class="btn ghost" style="flex:1" onclick="attend('no')">이번엔 못 가요</button></div>`
           : `<div class="row"><button class="btn pink" style="flex:1" onclick="attend('yes')">신청할게요</button><button class="btn ${myR.attend === 'no' ? 'on' : 'ghost'}" style="flex:1" onclick="attend('no')">이번엔 못 가요</button></div>`)
         + `${yes.length ? `<div class="who">신청 · ${yes.map(x => `<b>${esc(x)}</b>`).join(', ')}</div>` : ''}${no.length ? `<div class="who">못 와요 · ${no.map(esc).join(', ')}</div>` : ''}</div>`;
-    }
-    // ③ 미리 할 과제
-    if(s.homework){
-      side += `<div class="sec"><h2>미리 해올 것</h2><div class="hw" id="hw">${esc(s.homework)}</div>
-        <div class="row"><button class="btn ghost" onclick="copyHw()">글 전체 복사</button></div>
-        ${s.homeworkDue ? `<div class="due">${esc(when(s.homeworkDue))}까지 올려주세요</div>` : ''}</div>`;
     }
     // ④ 스터디 판 (패들릿처럼: 📌 열 + 팀마다 열)
     main += boardHtml(me, s, open);
@@ -392,7 +438,7 @@ function render(){
   main = chBoard(me) + main;
   const mi = D.mine || null;
   $('#app').innerHTML = (me ? `<div class="me"><span><b>${esc(me)}</b>로 들어와 있어요${mi ? ` · 지금까지 참석 ${mi.attend}번 · 과제 ${mi.posts}번 · 댓글 ${mi.comments}개` : ''}</span><button onclick="logout()">나가기</button></div>` : '')
-    + upcomingHtml() + `<div class="wrap"><div class="side">${side}</div><div class="main">${main}</div></div>`;
+    + heroHtml(me) + upcomingHtml() + `<div class="wrap${me ? ' mf' : ''}"><div class="side">${side}</div><div class="main">${main}</div></div>`;
 }
 
 function loginBox(){
@@ -421,8 +467,9 @@ async function doLogin(){
   if(!h || code.length !== 4){ $('#lerr').textContent = '이름과 뒷자리 4개를 넣어주세요'; return; }
   const r = await api({h, code, track: TRACK, study: VIEW_ID || undefined});
   if(r.login !== 'ok'){ $('#lerr').textContent = ERR[r.login] || '다시 해주세요'; return; }
-  saveMe({h, code}); DRAFT = null; await load(); toast(h + ' 반가워요!');
+  saveMe({h, code}); DRAFT = null; await load(); toast(h + ' 반가워요!'); toBoard();
 }
+function toBoard(){ setTimeout(() => { const e = $('#board'); if(e) e.scrollIntoView({behavior:'smooth', block:'start'}); }, 150); }
 async function doJoin(){
   const h = $('#jh').value.trim(), phone = $('#jp').value, agree = $('#ja').checked, apply = $('#jr') && $('#jr').checked;
   const r = await api({op:'join', h, phone, agree});
@@ -431,6 +478,7 @@ async function doJoin(){
   saveMe({h, code}); DRAFT = null;
   if(apply && D.study) await api({op:'rsvp', h, code, study:D.study.id, votes:[], attend:'yes'});
   await load(); toast(apply ? h + ' 신청 완료! 스터디 판에 우리 팀 열이 생겼어요' : h + ' 반가워요!');
+  if(!apply) toBoard();
   if(apply) setTimeout(() => { const e = document.querySelector('.colm.me'); if(e) e.scrollIntoView({behavior:'smooth', block:'center', inline:'start'}); }, 150);
 }
 async function vote(o){
@@ -510,7 +558,7 @@ function cardForm(){
   return `<div class="kform"><input id="kft" value="${esc(KF.title)}" oninput="KF.title=this.value" placeholder="제목 (예: 캐릭터, 기획표)" maxlength="80">
     <textarea id="kfb" oninput="KF.body=this.value" placeholder="내용">${esc(KF.body)}</textarea>
     <div class="thumbs">${KF.images.map((u, i) => `<div><img src="${esc(u)}" alt=""><button onclick="KF.images.splice(${i},1);render()" aria-label="사진 빼기">×</button></div>`).join('')}</div>
-    ${KF.images.length < 8 ? `<label class="pick">＋ 사진 고르기<input type="file" accept="image/*" multiple onchange="kfImgs(this.files)"></label>` : ''}
+    ${KF.images.length < 8 ? `<div class="picks">${PC_PICK ? `<button type="button" class="pick" onclick="pickFrom('downloads')">📥 다운로드 폴더에서</button><button type="button" class="pick" onclick="pickFrom('pictures')">🖼 스크린샷 폴더에서</button>` : ''}<label class="pick">＋ ${PC_PICK ? '다른 곳에서' : '사진 고르기'}<input type="file" accept="image/*" multiple onchange="kfImgs(this.files)"></label></div>${PC_PICK ? `<div class="drophint">사진을 여기로 끌어다 놓거나, 캡처(Win+Shift+S) 후 Ctrl+V 해도 올라가요</div>` : ''}` : ''}
     <input id="kfl" value="${esc(KF.link)}" oninput="KF.link=this.value" placeholder="링크 (있으면)">
     <div class="row" style="margin-top:2px"><button class="btn pink" style="flex:1" onclick="saveCard()" ${BUSY ? 'disabled' : ''}>${BUSY ? '올리는 중…' : '올리기'}</button><button class="btn ghost" onclick="KF=null;render()">취소</button></div></div>`;
 }
@@ -518,7 +566,7 @@ function boardHtml(me, s, open){
   const lead = me && (D.leaders || []).includes(me);
   const pins = CARDS.filter(k => k.col === 'pin');
   const teams = boardCols(me);
-  let h = `<div class="sec"><h2>스터디 판 <span class="n">${teams.length}팀</span>${teams.some(t => CARDS.some(k => k.col === t)) ? `<button class="btn ghost" style="margin-left:auto;padding:7px 14px;font-size:13.5px" onclick="present(0)">▶ 발표 모드</button>` : ''}</h2>`;
+  let h = `<div class="sec" id="board"><h2>스터디 판 <span class="n">${teams.length}팀</span>${teams.some(t => CARDS.some(k => k.col === t)) ? `<button class="btn ghost" style="margin-left:auto;padding:7px 14px;font-size:13.5px" onclick="present(0)">▶ 발표 모드</button>` : ''}</h2>`;
   if(!me && open) h += `<div class="hint" style="margin:-4px 0 10px">들어오면 우리 팀 열에 카드를 올릴 수 있어요.</div>`;
   h += `<div class="shelf">`;
   h += `<div class="colm pin"><div class="ch">📌 오늘 이렇게<small>${pins.length}</small></div>${pins.map(k => cardHtml(k, me, lead)).join('')}
@@ -534,6 +582,27 @@ function boardHtml(me, s, open){
 function newCard(col){ KF = {col, title:'', body:'', images:[], link:''}; render(); setTimeout(() => { const e = $('#kft'); if(e) e.focus(); }, 30); }
 function editCard(id){ const k = CARDS.find(x => x.id === id); KF = {id, col:k.col, title:k.title, body:k.body, images:[...k.images], link:k.link}; render(); }
 function copyForm(id){ const k = CARDS.find(x => x.id === id); KF = {col:'', title:k.title.replace(/^카드\s*[①-⑩0-9]*\s*/, '').replace(/\s*·\s*양식$/, ''), body:k.body.replace(/^우리 팀 열.*\n+/, ''), images:[], link:''}; render(); setTimeout(() => { const e = $('#kfb'); if(e){ e.scrollIntoView({behavior:'smooth', block:'center'}); e.focus(); } }, 50); }
+// PC(크롬·엣지): 폴더 바로 열기. 처음엔 다운로드/사진 폴더에서 열리고, 그다음부턴 마지막에 고른 폴더(스크린샷 등)에서 열림
+const PC_PICK = 'showOpenFilePicker' in window && matchMedia('(pointer:fine)').matches;
+async function pickFrom(where){
+  if(BUSY) return;
+  try{
+    const hs = await window.showOpenFilePicker({id: where === 'downloads' ? 'study-dl' : 'study-shot', startIn: where, multiple: true,
+      types: [{description: '사진', accept: {'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.gif']}}]});
+    const fs = await Promise.all(hs.map(h => h.getFile()));
+    if(fs.length) kfImgs(fs);
+  }catch(e){ if(e.name !== 'AbortError') toast('폴더를 못 열었어요. "다른 곳에서"를 눌러주세요'); }
+}
+function imgFiles(list){ return [...(list || [])].filter(f => /^image\//.test(f.type)); }
+document.addEventListener('paste', e => {
+  const fs = imgFiles(e.clipboardData && e.clipboardData.files); if(!fs.length || !KF || BUSY) return;
+  e.preventDefault(); kfImgs(fs);
+});
+document.addEventListener('dragover', e => { if(KF) e.preventDefault(); });
+document.addEventListener('drop', e => {
+  if(!KF) return; e.preventDefault();
+  const fs = imgFiles(e.dataTransfer && e.dataTransfer.files); if(fs.length && !BUSY) kfImgs(fs);
+});
 async function kfImgs(files){
   BUSY = true; render();
   try{ for(const f of [...files].slice(0, 8 - KF.images.length)){ const b = await shrink(f);
