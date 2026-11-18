@@ -270,7 +270,11 @@ body[data-locked="1"] #menu,body[data-locked="1"] footer{display:none}
 .dt .c{display:inline-block;min-width:34px;padding:2px 6px;border-radius:8px;font-size:12px}
 .dt .c4{background:#E3F4EA;color:#1E7A46}.dt .cp{background:#FAEEDA;color:#633806}.dt .c0{background:var(--miss-bg);color:var(--miss)}.dt .cx{color:#C3C7CE}
 .dt .pc{font-weight:700;color:var(--warn)}
-.dt tr.op td{background:#FFF8FA}.dt tr.dd td{padding:0;text-align:left;white-space:normal}
+.dt tr.op td{background:#FFF8FA}
+.dgrp.mine .lk{display:flex;align-items:center;gap:6px;border-top:1px dashed var(--warn-line)}.dgrp.mine .lk:first-of-type{border-top:0}
+.dgrp.mine .lk a{flex:1;border:0}.dgrp.mine .lk button{border:0;background:none;color:var(--text-lt);font-size:15px;cursor:pointer;padding:2px 6px}
+.dgrp.mine .lk button:hover{color:var(--miss)}
+.dadd{display:flex;flex-direction:column;gap:6px;margin-top:8px}.dadd input{font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--warn-line);border-radius:8px;width:100%;box-sizing:border-box}.dt tr.dd td{padding:0;text-align:left;white-space:normal}
 .opsp{display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid var(--warn-line);font-size:13px;cursor:pointer}
 .opsp b{flex:1;font-weight:600}.opsp span{font-size:12px;color:var(--text-lt)}
 .admin{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:14px;padding:16px;margin-top:4px}
@@ -1764,6 +1768,33 @@ function nextLive(now){
   return L.sort((a,b)=>a.t-b.t).find(x=>now<x.t+2*3600e3)||null;
 }
 let dashOpen=null;
+// 운영진이 직접 넣는 링크 (11/18) — 서버 hub_admin_links, 운영진 키가 있어야 읽고 쓴다. 멤버 화면엔 안 내려간다
+let ADMIN_LINKS=null, adminLinksBusy=false;
+function adminLinksCall(p){
+  return fetch(SUPA.replace(/hub_api$/,'hub_admin_links'),{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({p:Object.assign({cohort:COHORT,key:getKey()},p)})}).then(r=>r.json());
+}
+async function loadAdminLinks(){
+  if(adminLinksBusy) return; adminLinksBusy=true;
+  try{ const r=await adminLinksCall({op:'list'}); ADMIN_LINKS=r&&r.ok?r.links:[]; }catch(e){ ADMIN_LINKS=[]; }
+  adminLinksBusy=false; render();
+}
+async function addAdminLink(btn){
+  const n=document.getElementById('alName'), u=document.getElementById('alUrl');
+  const name=n.value.trim(), url=u.value.trim();
+  if(!name) return toast('이름을 넣어 주세요');
+  if(!/^https?:\/\//.test(url)) return toast('https:// 로 시작하는 주소를 넣어 주세요');
+  btn.disabled=true;
+  let r; try{ r=await adminLinksCall({op:'add',name,url}); }catch(e){ r=null; }
+  btn.disabled=false;
+  if(r&&r.ok){ ADMIN_LINKS=r.links; toast('링크를 추가했어요'); render(); } else toast('저장하지 못했어요. 다시 해 주세요');
+}
+async function delAdminLink(id,btn){
+  if(!confirm('이 링크를 지울까요?')) return;
+  btn.disabled=true;
+  let r; try{ r=await adminLinksCall({op:'del',id}); }catch(e){ r=null; }
+  if(r&&r.ok){ ADMIN_LINKS=r.links; toast('지웠어요'); render(); } else { btn.disabled=false; toast('지우지 못했어요'); }
+}
 function opsDash(rows,cw,unans){
   const L=liveLinks(), meet=Object.values(L).find(u=>/meet\.google\.com/.test(u||''))||MEET_URL;
   const nx=nextLive(NOW()), live=nx&&NOW()>nx.t-3600e3;
@@ -1779,7 +1810,10 @@ function opsDash(rows,cw,unans){
     ['모집·문의', a('https://oneteamm.netlify.app','6기 상세페이지')+a('https://latpeed.com/spaces/0/products/B-Md1/manage','래피드 판매 내역')+a('https://open.kakao.com/me/weddingreceipt','카카오톡 문의')+a('https://console.solapi.com','솔라피 문자·알림톡')],
     ['다른 방', a('../5/','5기 과제방')+a('../study/','졸업반 스터디방')]
   ];
-  h+=`<div class="dgrid">${G.map(([t,x])=>`<div class="dgrp"><h4>${t}</h4>${x}</div>`).join('')}</div>`;
+  if(ADMIN_LINKS===null) loadAdminLinks();
+  const mine=(ADMIN_LINKS||[]).map(l=>`<div class="lk">${a(l.url,esc(l.name))}<button title="지우기" onclick="delAdminLink(${+l.id},this)">✕</button></div>`).join('');
+  const add=`<div class="dadd"><input id="alName" placeholder="이름 (예: 1주차 PPT)" maxlength="40"><input id="alUrl" placeholder="https:// 주소"><button class="sbtn" onclick="addAdminLink(this)">링크 추가</button></div>`;
+  h+=`<div class="dgrid">${G.map(([t,x])=>`<div class="dgrp"><h4>${t}</h4>${x}</div>`).join('')}<div class="dgrp mine"><h4>내가 넣은 링크</h4>${ADMIN_LINKS===null?'<div style="font-size:12px;color:var(--text-lt)">불러오는 중…</div>':mine||'<div style="font-size:12px;color:var(--text-lt)">아직 없어요. 아래에 이름과 주소를 넣어 보세요</div>'}${add}</div></div>`;
 
   // 성과
   const wk=cw||0, ppl=REAL.length?REAL:ROSTER;
@@ -1874,7 +1908,7 @@ function opsMvp(rows){
 }
 function opsLink(wk){
   let h='';
-  h+=`<div class="sub">라이브 다시보기 링크</div><div class="row2"><select id="lkW">${WEEKS.map(w=>`<option value="${w.n}" ${w.n===wk?'selected':''}>${w.n}주차</option>`).join('')}</select><select id="lkT"><option>내집마련</option><option>SNS</option></select></div>
+  h+=`<div class="sub">라이브 다시보기 링크</div><div class="row2"><select id="lkW" onchange="document.getElementById('lkT').disabled=this.value==='0'"><option value="0">OT</option>${WEEKS.map(w=>`<option value="${w.n}" ${w.n===wk?'selected':''}>${w.n}주차</option>`).join('')}</select><select id="lkT"><option>내집마련</option><option>SNS</option></select></div>
     <input id="lkU" placeholder="https://youtu.be/..."><div class="row2"><button class="sbtn" onclick="saveLink(this)">링크 저장</button></div>`;
   return h;
 }
@@ -1922,7 +1956,8 @@ async function setMvp(id,btn){ btn.disabled=true; const r=await post({op:'mvp',i
 async function unMvp(id,btn){ btn.disabled=true; const r=await post({op:'unmvp',id}); r.ok?(toast('MVP에서 내렸어요'),load()):(btn.disabled=false,toast('저장하지 못했어요')); }
 async function saveLink(btn){
   const url=document.getElementById('lkU').value.trim(); if(!/^https?:\/\//.test(url)) return toast('https:// 로 시작하는 주소를 넣어 주세요');
-  btn.disabled=true; const r=await post({op:'link',week:+document.getElementById('lkW').value,track:document.getElementById('lkT').value,url}); btn.disabled=false;
+  const wk=+document.getElementById('lkW').value;
+  btn.disabled=true; const r=await post({op:'link',week:wk,track:wk===0?'OT':document.getElementById('lkT').value,url}); btn.disabled=false;
   r.ok?(toast('링크를 저장했어요'),load()):toast('저장하지 못했어요');
 }
 function logout(){ setKey(''); try{ sessionStorage.removeItem('ot6adminData'); }catch(e){} ADMIN=null; openDetail=null; load(); }
