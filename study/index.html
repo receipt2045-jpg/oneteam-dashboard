@@ -132,6 +132,10 @@ a{color:var(--acc)}
 .pres{position:fixed;inset:0;background:#0F1626;color:#fff;z-index:70;display:flex;flex-direction:column}
 .pres .top2{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;font-size:14px;color:var(--acc-lt)}
 .pres .top2 button{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:99px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer}
+.pres .tlist{display:flex;gap:6px;overflow-x:auto;padding:0 22px 12px;flex:0 0 auto}
+.pres .tlist button{flex:0 0 auto;border:1px solid rgba(255,255,255,.18);background:none;color:#C9D1E0;border-radius:99px;padding:7px 14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.pres .tlist button.on{background:var(--pink);border-color:var(--pink);color:#fff}
+.colm > .ch .pbtn{border:0;background:#fff;color:var(--acc);border-radius:99px;padding:3px 10px;font-size:12px;font-weight:800;cursor:pointer;margin-left:auto;margin-right:6px;font-family:inherit}
 .pres .stage{flex:1;min-height:0;display:flex;gap:28px;padding:0 28px 18px;align-items:stretch}
 .pres .pimgs{flex:1.4;min-width:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-content:center}
 .pres .pimgs img{width:100%;max-height:72vh;object-fit:contain;border-radius:12px;background:#1B2438}
@@ -628,7 +632,7 @@ function boardHtml(me, s, open){
     ${lead ? (KF && KF.col === 'pin' && !KF.id ? cardForm() : `<button class="addc" onclick="newCard('pin')">＋ 안내 카드</button>`) : ''}</div>`;
   teams.forEach(t => {
     const ks = CARDS.filter(k => k.col === t);
-    h += `<div class="colm ${t === me ? 'me' : ''}"><div class="ch">${esc(t)}${t === me ? ' (우리)' : ''}<small>${ks.length}</small></div>${ks.map(k => cardHtml(k, me, lead)).join('')}
+    h += `<div class="colm ${t === me ? 'me' : ''}"><div class="ch">${esc(t)}${t === me ? ' (우리)' : ''}${ks.length ? `<button class="pbtn" onclick="presentTeam(${esc(JSON.stringify(t))})">▶ 발표</button>` : ''}<small>${ks.length}</small></div>${ks.map(k => cardHtml(k, me, lead)).join('')}
       ${t === me && open ? (KF && KF.col !== 'pin' && !KF.id ? cardForm() : `<button class="addc" onclick="newCard('')">＋ 카드 올리기</button>`) : ''}</div>`;
   });
   if(!teams.length) h += `<div class="colm"><div class="ch">팀</div><div class="hint" style="padding:4px">참석하거나 카드를 올린 팀이 여기 열로 생겨요.</div></div>`;
@@ -722,11 +726,13 @@ function presList(){
   return teams.map(t => { const ks = CARDS.filter(k => k.col === t);
     return {h:t, images: ks.flatMap(k => k.images), body: ks.map(k => (k.title ? '■ ' + k.title + '\n' : '') + (k.body || '')).join('\n\n'), link: (ks.find(k => k.link) || {}).link || ''}; });
 }
+function presentTeam(t){ const i = presList().findIndex(x => x.h === t); present(i < 0 ? 0 : i); }
 function present(i){
   const L = presList(); if(!L.length) return toast('올린 과제가 없어요');
   PI = Math.max(0, Math.min(i, L.length - 1)); const p = L[PI];
   let el = $('#pres'); if(!el){ el = document.createElement('div'); el.id = 'pres'; el.className = 'pres'; document.body.appendChild(el); document.addEventListener('keydown', presKey); }
   el.innerHTML = `<div class="top2"><span>${esc(D.study.title)} · ${PI + 1} / ${L.length}</span><button onclick="presClose()">닫기 (Esc)</button></div>
+    <div class="tlist">${L.map((x, j) => `<button class="${j === PI ? 'on' : ''}" onclick="present(${j})">${esc(x.h)}</button>`).join('')}</div>
     <div class="stage">${p.images.length ? `<div class="pimgs">${p.images.map(u => `<img src="${esc(u)}" alt="${esc(p.h)} 과제 사진">`).join('')}</div>` : ''}
     <div class="ptxt"><h3>${esc(p.h)}</h3>${p.body ? `<pre>${esc(p.body)}</pre>` : ''}${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener" style="color:#F4C0D1;font-size:18px">링크 열기 ›</a>` : ''}</div></div>
     <div class="nav"><button onclick="present(PI-1)" ${PI === 0 ? 'disabled' : ''}>← 이전 팀</button><button onclick="present(PI+1)" ${PI === L.length - 1 ? 'disabled' : ''}>다음 팀 →</button></div>`;
