@@ -547,7 +547,8 @@ body[data-v=write] #banner,body[data-v=coach] #banner{display:none!important}
 // ─────────────────────────────────────────────────────────────
 // 시트 → 과제방 통로 (Apps Script 웹앱 주소). 비어 있으면 '준비 중'으로 뜬다.
 // 6기부터 Supabase 새 서버 (11/16) — 기수는 COHORT 값으로 나눈다. 표는 바깥에서 못 읽고 hub_api 함수만 연다
-const COHORT = 6;
+// 기수 = 주소 폴더 번호(/6/ → 6). 다음 기수는 이 폴더를 /7/ 로 복사하고 서버 hub.cohorts 에 7번 줄만 넣으면 된다 (다음기수_여는법.md)
+const COHORT = +((location.pathname.match(/\/(\d+)\/(?:index\.html)?$/)||[])[1]) || 6;
 const SUPA = 'https://vfgfvwqejfuqaxvtordh.supabase.co/rest/v1/rpc/hub_api';
 const SUPA_KEY = 'sb_publishable_W_XKLh1kA5hZ-zFatXOhLQ_icQ-j1aW';
 const API = 'hub';   // 비어 있지 않으면 서버를 쓴다 (예전 코드와 맞춤)
@@ -709,7 +710,7 @@ const hiddenWeek = n => n>SHOW_UPTO && !ADMIN;
 function tick(){
   const now=NOW(), w=nextDue(now), tl=document.getElementById('tl'), tc=document.getElementById('tc');
   const box=document.getElementById('timer');
-  if(!w){ tl.innerHTML='<b>6기 과제가 모두 끝났어요</b>수고 많으셨어요'; tc.textContent=''; return; }
+  if(!w){ tl.innerHTML='<b>'+COHORT+'기 과제가 모두 끝났어요</b>수고 많으셨어요'; tc.textContent=''; return; }
   const [,m,d]=w.due.split('-').map(Number);
   tl.innerHTML=`${w.n}주차 과제 마감까지<b>${m}/${d}(월) 23:59</b>`;
   let s=Math.max(0,Math.floor((kst(w.due,true)-now)/1000));
@@ -734,8 +735,8 @@ function parseTask(t){
   const m=String(t||'').match(/^(\d)\s*주차\s*-\s*(\S+)/); return m?{week:+m[1], track:TRACK_OF[m[2]]}:null; }
 const wkName = w => w ? w+'주차' : 'OT';
 function fmtD(v){ const d=new Date(v); return isNaN(d)?'':`${d.getMonth()+1}/${d.getDate()}`; }
-function getKey(){ try{return sessionStorage.getItem('ot6key')||'';}catch(e){return '';} }
-function setKey(k){ try{ k?sessionStorage.setItem('ot6key',k):sessionStorage.removeItem('ot6key'); }catch(e){} }
+function getKey(){ try{return sessionStorage.getItem('ot'+COHORT+'key')||'';}catch(e){return '';} }
+function setKey(k){ try{ k?sessionStorage.setItem('ot'+COHORT+'key',k):sessionStorage.removeItem('ot'+COHORT+'key'); }catch(e){} }
 
 // Apps Script는 쉬다 깨어날 때 15~40초 걸리고 가끔 404(HTML)를 준다.
 //   → 6초 안에 답이 없으면 같은 요청을 하나 더 보내고(최대 3개), 먼저 온 JSON을 쓴다.
@@ -746,7 +747,7 @@ async function loadMineData(m){
   setMine(null); keepLinks(null); clearPub(); mineErr=MINE_ERR[r.error]||'다시 로그인해 주세요.';
   return null;
 }
-function clearPub(){ try{ localStorage.removeItem('ot6pub'); }catch(e){} }
+function clearPub(){ try{ localStorage.removeItem('ot'+COHORT+'pub'); }catch(e){} }
 function getJSON(url){
   return new Promise((resolve,reject)=>{
     let done=false, running=0, sent=0;
@@ -764,14 +765,14 @@ function getJSON(url){
 // 미리 깨우기 — 응답은 안 기다린다
 function warm(){ if(API && !DEMO) rpc({action:'warm'}).catch(()=>{}); }
 // 지난번 받은 공개 데이터를 먼저 보여주고, 새 데이터가 오면 바꿔 그린다 (이 기기에만 저장)
-function cached(){ try{ return JSON.parse(localStorage.getItem('ot6pub')||'null'); }catch(e){ return null; } }
-function keep(d){ try{ localStorage.setItem('ot6pub', JSON.stringify({subs:d.subs,mvp:d.mvp,qa:d.qa,files:d.files})); }catch(e){} }
+function cached(){ try{ return JSON.parse(localStorage.getItem('ot'+COHORT+'pub')||'null'); }catch(e){ return null; } }
+function keep(d){ try{ localStorage.setItem('ot'+COHORT+'pub', JSON.stringify({subs:d.subs,mvp:d.mvp,qa:d.qa,files:d.files})); }catch(e){} }
 // 강의 다시보기 링크 — 공개 데이터엔 없다. 로그인한 부부(내 과제 탭 비밀번호)와 결영님 화면에서만 받는다 (10/18, 결제 안 한 사람이 못 보게)
 function liveLinks(){
   if(DATA && DATA.links && Object.keys(DATA.links).length) return DATA.links;
-  try{ return JSON.parse(localStorage.getItem('ot6links')||sessionStorage.getItem('ot6links')||'null')||{}; }catch(e){ return {}; }
+  try{ return JSON.parse(localStorage.getItem('ot'+COHORT+'links')||sessionStorage.getItem('ot'+COHORT+'links')||'null')||{}; }catch(e){ return {}; }
 }
-function keepLinks(l){ try{ localStorage.removeItem('ot6links'); sessionStorage.removeItem('ot6links'); if(l && getMine()) (mineKeep?localStorage:sessionStorage).setItem('ot6links',JSON.stringify(l)); }catch(e){} }
+function keepLinks(l){ try{ localStorage.removeItem('ot'+COHORT+'links'); sessionStorage.removeItem('ot'+COHORT+'links'); if(l && getMine()) (mineKeep?localStorage:sessionStorage).setItem('ot'+COHORT+'links',JSON.stringify(l)); }catch(e){} }
 const hasLinks = () => !!liveLinks()['0|OT'];
 const lockedLive = '<a class="b off" href="#mine" style="text-decoration:none">🔒 로그인하면 다시보기가 보여요</a>';
 
@@ -791,8 +792,8 @@ function withSns(d){
   });
   return d;
 }
-function adminCached(){ try{ const c=JSON.parse(sessionStorage.getItem('ot6adminData')||'null'); return c?withSns(c):null; }catch(e){ return null; } }
-function keepAdmin(a){ try{ sessionStorage.setItem('ot6adminData', JSON.stringify(a)); }catch(e){} }
+function adminCached(){ try{ const c=JSON.parse(sessionStorage.getItem('ot'+COHORT+'adminData')||'null'); return c?withSns(c):null; }catch(e){ return null; } }
+function keepAdmin(a){ try{ sessionStorage.setItem('ot'+COHORT+'adminData', JSON.stringify(a)); }catch(e){} }
 async function load(){
   if(DEMO){ DATA=demoData(); ADMIN=(getKey()||new URLSearchParams(location.search).has('admin'))?demoAdmin():null; return render(); }
   if(!API){ DATA={subs:[],mvp:[],qa:[],links:{}}; return render(); }
@@ -923,7 +924,7 @@ function board(cw){
   if(!cw){
     const ot=ROSTER.map(r=>({h:r,ok:progress(r,0).live})).sort((a,b)=>b.ok-a.ok||ROSTER.indexOf(a.h)-ROSTER.indexOf(b.h));
     const nOk=ot.filter(x=>x.ok).length;
-    return `<span class="eyebrow">6기 ${n}부부${DATA._loading?' · 불러오는 중…':''}</span><div class="h2">OT 출석 <span class="hl">${nOk}/${n}</span> 부부</div>
+    return `<span class="eyebrow">${COHORT}기 ${n}부부${DATA._loading?' · 불러오는 중…':''}</span><div class="h2">OT 출석 <span class="hl">${nOk}/${n}</span> 부부</div>
       <div class="body1">OT 주 과제는 강의 출석 하나예요. 1주차(11/24)부터는 한 주에 4개 — 강의 출석·독서·돈관리·내집마련/SNS 중 하나.</div>
       <div style="margin-top:14px">${ot.map(x=>`<div class="cp${x.ok?' done':''}${ADMIN?' click':''}" ${ADMIN?`onclick="openDetail=openDetail===${JSON.stringify(x.h).replace(/"/g,'&quot;')}?null:${JSON.stringify(x.h).replace(/"/g,'&quot;')};render()"`:''}><span class="n"><span class="nn">${esc(x.h)}</span></span><span class="bar"><i style="width:${x.ok?100:0}%"></i></span><span class="v">${x.ok?1:0}/1</span></div>${ADMIN&&openDetail===x.h?detailOf(x.h):''}`).join('')}</div>`;
   }
@@ -937,7 +938,7 @@ function board(cw){
   const sum=wk.reduce((a,p)=>a+p.done,0), full=wk.filter(p=>p.done===PER).length;
   const hs=wk.filter(p=>p.house).length, sn=wk.filter(p=>p.sns).length;
   const shown=boardAll?rows:rows.slice(0,8);
-  let h=`<span class="eyebrow">6기 ${n}부부${DATA._loading?' · 불러오는 중…':''}</span><div class="h2">${cw}주차, <span class="hl">다들 여기까지</span> 왔어요</div>
+  let h=`<span class="eyebrow">${COHORT}기 ${n}부부${DATA._loading?' · 불러오는 중…':''}</span><div class="h2">${cw}주차, <span class="hl">다들 여기까지</span> 왔어요</div>
     <div class="stats"><div><b>${Math.round(sum/(n*PER)*100)}%</b><span>이번 주 달성</span></div><div><b>${full}</b><span>다 한 부부</span></div><div><b>${hs} · ${sn}</b><span>내집 · SNS</span></div></div>
     <div class="seg"><button class="${boardMode==='week'?'on':''}" onclick="boardMode='week';render()">이번 주</button><button class="${boardMode==='all'?'on':''}" onclick="boardMode='all';render()">${cw>1?'OT~'+cw+'주 전체':'OT 포함 전체'}</button></div>
     <div style="margin-top:12px">`;
@@ -963,7 +964,7 @@ function replays(){
     });
   });
   if(!hasLinks()) return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div>
-    <div class="body1" style="margin-top:10px">다시보기는 6기 부부만 볼 수 있어요. 내 과제 탭에서 한 번 로그인하면 여기에 강의 목록이 떠요.</div>
+    <div class="body1" style="margin-top:10px">다시보기는 ${COHORT}기 부부만 볼 수 있어요. 내 과제 탭에서 한 번 로그인하면 여기에 강의 목록이 떠요.</div>
     <a class="btn" href="#mine" style="margin-top:14px">로그인하고 다시보기 보기</a>
     <div style="margin-top:14px"><span class="lb">강의 출석 · 매주</span><div class="nm">고른 과정 라이브 보고 한 줄</div>${buttons('live',curWeek(NOW()),'ex-live')}</div></section>`;
   return `<section class="sec-alt" id="replays"><span class="eyebrow">라이브 다시보기</span><div class="h2">못 오신 날은 여기서</div><div style="margin-top:14px">`+
@@ -975,8 +976,8 @@ function replays(){
 // 녹화본 모음 (#vod, 11/17 결영 '녹화본 모음집 게시판') — OT + 주차별 화(내집마련)·목(SNS) 강의를 한 줄씩
 //   링크는 운영진 화면 '링크'에서 넣는 그대로(liveLinks). 미트 주소는 녹화본이 아니라 '라이브 입장'으로 본다
 //   본 강의는 이 기기에 체크(ot6vod) — 출석은 출석 칸에서 따로
-function vodSeen(){ try{ return JSON.parse(localStorage.getItem('ot6vod')||'{}'); }catch(e){ return {}; } }
-function vodToggle(k){ const o=vodSeen(); o[k]=!o[k]; if(!o[k]) delete o[k]; try{ localStorage.setItem('ot6vod',JSON.stringify(o)); }catch(e){} render(); }
+function vodSeen(){ try{ return JSON.parse(localStorage.getItem('ot'+COHORT+'vod')||'{}'); }catch(e){ return {}; } }
+function vodToggle(k){ const o=vodSeen(); o[k]=!o[k]; if(!o[k]) delete o[k]; try{ localStorage.setItem('ot'+COHORT+'vod',JSON.stringify(o)); }catch(e){} render(); }
 function vodView(){
   const L=liveLinks(), now=NOW(), seen=vodSeen(), yr=String((WEEKS[0]&&WEEKS[0].open)||'2026').slice(0,4);
   const at=md=>{ const [m,d]=String(md).split('/').map(Number); return new Date(`${yr}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T21:00:00+09:00`).getTime(); };
@@ -990,7 +991,7 @@ function vodView(){
   let h=`<section class="sec"><span class="eyebrow">라이브 다시보기</span><div class="h1">녹화본 모음</div>
     <div class="body1">강의가 끝나면 녹화본이 여기에 올라와요. 못 오신 날은 다시보기로 보고 출석하면 돼요.</div>
     <div class="note" style="text-align:left;margin-top:8px">올라온 녹화본 ${nRec}/${rows.length} · 내가 본 것 ${nSeen} · 녹화본은 한 달간 볼 수 있어요</div></section>`;
-  if(!hasLinks()) return h+`<section class="sec-alt"><div class="body1">다시보기는 6기 부부만 볼 수 있어요. 내 과제 탭에서 한 번 로그인하면 목록이 열려요.</div><a class="btn" href="#mine" style="margin-top:14px">로그인하기</a></section>`;
+  if(!hasLinks()) return h+`<section class="sec-alt"><div class="body1">다시보기는 ${COHORT}기 부부만 볼 수 있어요. 내 과제 탭에서 한 번 로그인하면 목록이 열려요.</div><a class="btn" href="#mine" style="margin-top:14px">로그인하기</a></section>`;
   let lastWk='';
   h+=`<section class="sec-alt">`;
   rows.forEach(r=>{
@@ -1008,8 +1009,8 @@ function vodView(){
 }
 
 // 이번 주 해야 할 일 — 모든 화면 맨 위. 로그인한 부부면 낸 것에 ✓
-let bannerOpen = (()=>{ try{ return localStorage.getItem('ot6banner')!=='0'; }catch(e){ return true; } })();
-function toggleBanner(){ bannerOpen=!bannerOpen; try{ localStorage.setItem('ot6banner',bannerOpen?'1':'0'); }catch(e){} render(); }
+let bannerOpen = (()=>{ try{ return localStorage.getItem('ot'+COHORT+'banner')!=='0'; }catch(e){ return true; } })();
+function toggleBanner(){ bannerOpen=!bannerOpen; try{ localStorage.setItem('ot'+COHORT+'banner',bannerOpen?'1':'0'); }catch(e){} render(); }
 function goReplays(){
   const go=()=>{ const e=document.getElementById('replays'); if(e) e.scrollIntoView({behavior:'smooth'}); };
   if(view!=='home'){ location.hash='#home'; setTimeout(go,150); } else go();
@@ -1045,8 +1046,8 @@ function banner(){
   </ul><div class="ft"><span>${todoNote(me)}</span><a class="sb" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a></div></section>`;
 }
 // 직접 체크 — 이 기기에만 저장한다 (낸 과제는 서버 기록으로 자동 ✓)
-function todoChecks(){ try{ return JSON.parse(localStorage.getItem('ot6todo')||'{}'); }catch(e){ return {}; } }
-function setChecks(c){ try{ localStorage.setItem('ot6todo',JSON.stringify(c)); }catch(e){} }
+function todoChecks(){ try{ return JSON.parse(localStorage.getItem('ot'+COHORT+'todo')||'{}'); }catch(e){ return {}; } }
+function setChecks(c){ try{ localStorage.setItem('ot'+COHORT+'todo',JSON.stringify(c)); }catch(e){} }
 function toggleTodo(key){ const c=todoChecks(); c[key]=!c[key]; if(!c[key]) delete c[key]; setChecks(c); render(); pushChecks(); }
 // 내 과제 탭에 로그인한 부부는 체크를 과제방 시트에 저장해 다른 기기와 맞춘다 (서버가 기준)
 let pushT;
@@ -1120,7 +1121,7 @@ function exView(k,n){
   let live='';
   if(tr.live && w){ const day=tr.live==='화'?w.tue:w.thu, url=liveLinks()[n+'|'+tr.name];
     live=`<div class="btns">${url?`<a class="b" href="${esc(url)}" target="_blank" rel="noopener">▶ ${tr.live} ${day} 라이브 보기</a>`:(!hasLinks() && NOW()>=kst(w.open))?lockedLive:`<span class="b off">${tr.live} ${day} 라이브 · ${NOW()<kst(w.open)?'예정':'링크 준비 중'}</span>`}</div>`; }
-  let h=`<section class="sec" style="padding-bottom:24px"><a class="back" href="#${back}">‹ ${k==='live'?'6기':esc(tr.name)}</a>
+  let h=`<section class="sec" style="padding-bottom:24px"><a class="back" href="#${back}">‹ ${k==='live'?COHORT+'기':esc(tr.name)}</a>
     <span class="eyebrow">${wkName(n)} · ${esc(tr.name)}${due?` · 마감 ${due[1]}/${due[2]}(월) 23:59`:''}</span>
     <div class="h1">${esc(t.name)}</div>${live}${n>SHOW_UPTO?'<div style="margin-top:10px;font-size:12.5px;font-weight:700;color:var(--warn)">운영진 미리보기 · 부부들에게는 아직 안 보여요</div>':''}</section>`;
   h+=`<div class="exgrid"><div class="exL">`;
@@ -1148,7 +1149,7 @@ function exView(k,n){
 //   쓰는 중인 글은 이 기기에 저장해 두었다가 내면 지운다
 // ─────────────────────────────────────────────────────────────
 const attTask = n => n ? `${n}주차 - 강의 출석` : 'OT - 강의 출석';
-const attKey = n => 'ot6att_' + ((getMine() || {}).h || '') + '_' + n;
+const attKey = n => 'ot'+COHORT+'att_' + ((getMine() || {}).h || '') + '_' + n;
 function attGet(n){ try{ return JSON.parse(localStorage.getItem(attKey(n)) || '{}'); }catch(e){ return {}; } }
 function attSet(n, k, v){ const o = attGet(n); o[k] = v; try{ localStorage.setItem(attKey(n), JSON.stringify(o)); }catch(e){} }
 function attendBox(n){
@@ -1306,7 +1307,7 @@ WR.coach = { title: '1:1 내집마련 피드백', groups: [
 ] };
 const ipF = n => WR[n].groups.flatMap(([g, fs, sh]) => fs.map(f => ({ k: f[0], r: f[1], ex: f[2], src: f[3], g, sh: (f[4] && f[4].sh) || sh || null, xl: (f[4] && f[4].xl) || f[0], max: f[4] && f[4].max, cat: f[4] && f[4].cat, choices: f[4] && f[4].choices })));
 const ipNorm = s => String(s == null ? '' : s).replace(/[\s,·・.()]/g, '');
-const ipKey = n => 'ot6ipji_' + ((getMine() || {}).h || 'admin') + '_' + n;
+const ipKey = n => 'ot'+COHORT+'ipji_' + ((getMine() || {}).h || 'admin') + '_' + n;
 let ipVals = {}, ipN = 0, ipBusy = false;
 function ipLoad(n){ ipN = n; try{ ipVals = JSON.parse(localStorage.getItem(ipKey(n)) || '{}'); }catch(e){ ipVals = {}; } }
 let ipSaveT;
@@ -1577,7 +1578,7 @@ function trackView(k){
   const tr=TRACKS[k], now=NOW(), cw=curWeek(now);
   let h=`<nav class="subtabs" aria-label="과제 과정">${[['read','독서'],['money','돈관리'],['sns','SNS'],['house','내집마련']].map(([x,n])=>`<a href="#${x}" class="${x===k?'on':''}">${n}</a>`).join('')}</nav>`;
   h+=`<section class="sec"><span class="eyebrow">과정별 바로가기</span><div class="h1">${tr.name}</div><div class="body1">${tr.desc}</div>`;
-  if(k==='read') h+=`<a class="card" href="${BOOK.url}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><span class="lb">6기 책</span><div class="nm">${esc(BOOK.title)}</div><div class="ds">${esc(BOOK.sub)}</div><div style="margin-top:8px;font-size:13px;font-weight:700;color:var(--acc)">예스24에서 사기 ›</div></a>`;
+  if(k==='read') h+=`<a class="card" href="${BOOK.url}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><span class="lb">${COHORT}기 책</span><div class="nm">${esc(BOOK.title)}</div><div class="ds">${esc(BOOK.sub)}</div><div style="margin-top:8px;font-size:13px;font-weight:700;color:var(--acc)">예스24에서 사기 ›</div></a>`;
   h+=`<div style="margin-top:18px">`;
   WEEKS.forEach(w=>{
     const t=TASKS[k][w.n], id=`exT-${k}-${w.n}`, open=now>=kst(w.open), isCur=w.n===cw, [,m,d]=w.due.split('-').map(Number);
@@ -1612,15 +1613,15 @@ function filesView(){
 // 새 자료 배너 — 모든 화면 맨 위. X를 누르면 그 기기에선 그 자료로는 다시 안 뜬다
 function filesBanner(){
   const f=FILES_OF()[0]; if(!f || !fileIsNew(f) || view==='files') return '';
-  try{ if(localStorage.getItem('ot6file_seen')===f.id) return ''; }catch(e){}
+  try{ if(localStorage.getItem('ot'+COHORT+'file_seen')===f.id) return ''; }catch(e){}
   return `<div class="newfile"><a href="#files" onclick="seenFile()"><span class="ic">🎁</span><span class="tx"><b>새 자료 · ${esc(f.title)}</b><small>${esc(f.desc)}</small></span><span class="go">받기 ›</span></a><button onclick="seenFile();render()" aria-label="닫기">✕</button></div>`;
 }
-function seenFile(){ try{ const f=FILES_OF()[0]; if(f) localStorage.setItem('ot6file_seen',f.id); }catch(e){} }
+function seenFile(){ try{ const f=FILES_OF()[0]; if(f) localStorage.setItem('ot'+COHORT+'file_seen',f.id); }catch(e){} }
 
 // 11/2 결영: 질문이 많아져서 과정별 메뉴로 나누고, 답 달린 것부터 최근 순으로. 길면 줄여두고 누르면 펼친다
-let qaTab=(()=>{ try{ return sessionStorage.getItem('ot6qa')||'all'; }catch(e){ return 'all'; } })();
+let qaTab=(()=>{ try{ return sessionStorage.getItem('ot'+COHORT+'qa')||'all'; }catch(e){ return 'all'; } })();
 const qaOpen=new Set();
-function setQa(k){ qaTab=k; try{ sessionStorage.setItem('ot6qa',k); }catch(e){} render(); }
+function setQa(k){ qaTab=k; try{ sessionStorage.setItem('ot'+COHORT+'qa',k); }catch(e){} render(); }
 // 강의 출석에 달린 질문은 내용으로 과정을 나눈다 (11/2 결영) — 애매하면 기타
 const qaTopic = q => /릴스|영상|인스타|팔로워|소개글|대본|캡컷|계정|CTA|후킹|콘텐츠|촬영|편집|자막|SNS/i.test(q) ? 'sns'
   : /대출|청약|아파트|단지|입지|매수|전세|임장|ISA|ETF|S&P|나스닥|연금|투자|발행어음|주식|금리/i.test(q) ? 'house'
@@ -1649,10 +1650,10 @@ function qaView(){
 //   번호 확인은 Apps Script가 한다. 이 기기에 닉네임·번호를 기억해 둔다(나가기로 지움).
 // ─────────────────────────────────────────────────────────────
 let MINE=null, mineErr='', mineBusy=false;
-function getMine(){ try{ return JSON.parse(localStorage.getItem('ot6mine')||sessionStorage.getItem('ot6mine')||'null'); }catch(e){ return null; } }
-function setMine(v){ try{ localStorage.removeItem('ot6mine'); sessionStorage.removeItem('ot6mine'); localStorage.removeItem('ot6mineData'); if(v) (mineKeep?localStorage:sessionStorage).setItem('ot6mine',JSON.stringify(v)); }catch(e){} }
-function keepMineData(r){ try{ if(mineKeep && getMine()) localStorage.setItem('ot6mineData',JSON.stringify(r)); }catch(e){} }
-function cachedMine(h){ try{ const c=JSON.parse(localStorage.getItem('ot6mineData')||'null'); return c&&c.h===h?c:null; }catch(e){ return null; } }
+function getMine(){ try{ return JSON.parse(localStorage.getItem('ot'+COHORT+'mine')||sessionStorage.getItem('ot'+COHORT+'mine')||'null'); }catch(e){ return null; } }
+function setMine(v){ try{ localStorage.removeItem('ot'+COHORT+'mine'); sessionStorage.removeItem('ot'+COHORT+'mine'); localStorage.removeItem('ot'+COHORT+'mineData'); if(v) (mineKeep?localStorage:sessionStorage).setItem('ot'+COHORT+'mine',JSON.stringify(v)); }catch(e){} }
+function keepMineData(r){ try{ if(mineKeep && getMine()) localStorage.setItem('ot'+COHORT+'mineData',JSON.stringify(r)); }catch(e){} }
+function cachedMine(h){ try{ const c=JSON.parse(localStorage.getItem('ot'+COHORT+'mineData')||'null'); return c&&c.h===h?c:null; }catch(e){ return null; } }
 const MINE_ERR={code:'비밀번호가 맞지 않아요. 부부 중 한 분의 휴대폰 번호 뒷자리 4개예요.',nocode:'아직 비밀번호가 등록되지 않았어요. 결영이네에 알려주세요.',locked:'여러 번 틀려서 잠깐 막혔어요. 1시간 뒤에 다시 해 주세요.'};
 // 입구에서 로그인 — 과제방 데이터 하나만 받는다 (비밀번호 확인도 이 요청이 한다). 피드백은 내 과제 탭을 열 때 받는다 (10/18, 로그인 느림)
 async function enterHub(h,code){
@@ -1693,8 +1694,8 @@ let mineKeep=true, mineIdDraft='';
 function isLocked(){ return !DEMO && !!API && !ADMIN && !getKey() && !getMine(); }
 function gateView(){
   return mineView().replace(/<span class="eyebrow">내 과제<\/span><div class="h1">[\s\S]*?<\/div>/,
-    `<span class="eyebrow">원팀 프로젝트 6기</span><div class="h1">6기 부부만<br><span class="hl">들어올 수 있어요</span></div><div class="body1" style="margin-top:8px">아이디는 과제 낼 때 고르는 부부 이름, 비밀번호는 휴대폰 번호 뒷자리 4개예요. 한 번 로그인하면 이 기기에선 계속 열려요.</div>`)
-    + `<div style="text-align:center;margin:-6px 16px 18px"><a class="btn" href="../5/" style="display:inline-block;background:#fff;color:var(--acc);border:1.5px solid var(--acc)">5기 부부이신가요? 5기 과제방으로 가기 ›</a><div style="font-size:12px;color:var(--text-lt);margin-top:6px">5기 다시보기·피드백은 5기 과제방에 그대로 있어요</div></div>`
+    `<span class="eyebrow">원팀 프로젝트 ${COHORT}기</span><div class="h1">${COHORT}기 부부만<br><span class="hl">들어올 수 있어요</span></div><div class="body1" style="margin-top:8px">아이디는 과제 낼 때 고르는 부부 이름, 비밀번호는 휴대폰 번호 뒷자리 4개예요. 한 번 로그인하면 이 기기에선 계속 열려요.</div>`)
+    + `<div style="text-align:center;margin:-6px 16px 18px"><a class="btn" href="../${COHORT-1}/" style="display:inline-block;background:#fff;color:var(--acc);border:1.5px solid var(--acc)">${COHORT-1}기 부부이신가요? ${COHORT-1}기 과제방으로 가기 ›</a><div style="font-size:12px;color:var(--text-lt);margin-top:6px">${COHORT-1}기 다시보기·피드백은 ${COHORT-1}기 과제방에 그대로 있어요</div></div>`
     + `<div style="text-align:center;margin:0 0 30px"><a href="#admin" style="font-size:12px;color:var(--text-lt)">운영진</a></div>`;
 }
 function leaveMine(){ mineGen++; MINE=null; mineErr=''; mineIdDraft=''; setMine(null); keepLinks(null); clearPub(); DATA=null; render(); }
@@ -1744,16 +1745,16 @@ function mineView(){
 // 결영님 화면 (비밀번호가 맞을 때만 서버가 상세를 내려준다)
 // ─────────────────────────────────────────────────────────────
 // 운영진 탭 — 피드백 · 질문 · 진행 현황 · MVP · 링크 (10/26 결영: 5기 홈에 쌓여 있던 걸 따로 뺐다)
-let opsSub=(()=>{ try{ return sessionStorage.getItem('ot6ops')||'dash'; }catch(e){ return 'dash'; } })();
-function setOps(k){ opsSub=k; try{ sessionStorage.setItem('ot6ops',k); }catch(e){} render(); window.scrollTo(0,0); }
+let opsSub=(()=>{ try{ return sessionStorage.getItem('ot'+COHORT+'ops')||'dash'; }catch(e){ return 'dash'; } })();
+function setOps(k){ opsSub=k; try{ sessionStorage.setItem('ot'+COHORT+'ops',k); }catch(e){} render(); window.scrollTo(0,0); }
 const opsWait = () => ADMIN ? (ADMIN.rows||[]).filter(r=>!r.feedback).length : 0;
 // 담당 (10/26 결영) — 결영: 돈관리·SNS·OT 출석·목요일 SNS 라이브 출석 / 머니그랩: 내집마련·독서·화요일 내집마련 라이브 출석
 const ownerOf = r => { const t=parseTask(r.task); if(!t) return '머니그랩';
   if(t.track==='money'||t.track==='sns') return '결영';
   if(t.track==='live') return t.week===0 || /어떤 강의를 들었나요\? :\n[^\n]*SNS/.test(r.body||'') ? '결영' : '머니그랩';
   return '머니그랩'; };
-let opsWho=(()=>{ try{ return sessionStorage.getItem('ot6who')||'all'; }catch(e){ return 'all'; } })();
-function setWho(k){ opsWho=k; try{ sessionStorage.setItem('ot6who',k); }catch(e){} render(); }
+let opsWho=(()=>{ try{ return sessionStorage.getItem('ot'+COHORT+'who')||'all'; }catch(e){ return 'all'; } })();
+function setWho(k){ opsWho=k; try{ sessionStorage.setItem('ot'+COHORT+'who',k); }catch(e){} render(); }
 const byOwner = rows => opsWho==='all' ? rows : rows.filter(r=>ownerOf(r)===opsWho);
 function opsView(){
   const rows=ADMIN.rows||[], cw=curWeek(NOW()), wk=cw||1;
@@ -1774,7 +1775,7 @@ function opsView(){
 }
 // 한눈에 (11/18 결영: 미트·PPT·과제방 링크를 한곳에 + 부부별 성과)
 //   링크는 운영진 화면에서만 보인다. 미트·녹화본 주소는 서버 링크(liveLinks)를 먼저 쓴다
-const MEET_URL='https://meet.google.com/ywq-pxwr-twj';
+let MEET_URL='https://meet.google.com/ywq-pxwr-twj';   // 서버 설정 ot_url(미트)이 있으면 그걸로 바뀐다
 function nextLive(now){
   const yr=String((WEEKS[0]&&WEEKS[0].open)||'2026').slice(0,4);
   const at=md=>{ const [m,d]=String(md).split('/').map(Number); return new Date(`${yr}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T21:00:00+09:00`).getTime(); };
@@ -1790,7 +1791,8 @@ function lectures(){
   return L;
 }
 // 강의 PPT는 운영진 링크(hub_admin_links)에 이름 'ppt:<주차>|<강의>'로 둔다 — 멤버에겐 안 내려간다
-const pptOf = k => (ADMIN_LINKS||[]).find(l=>l.name==='ppt:'+k);
+// 이 기수 것이 먼저, 없으면 공용(cohort 0)
+const pptOf = k => { const a=(ADMIN_LINKS||[]).find(l=>l.name==='ppt:'+k); if(a) return Object.assign({cohort:COHORT},a); const z=SHARED_LINKS.find(l=>l.name==='ppt:'+k); return z?Object.assign({cohort:0},z):null; };
 const isRecUrl = u => !!u && !/meet\.google\.com/.test(u);
 let lecEdit=null;
 function opsLec(){
@@ -1818,21 +1820,23 @@ async function saveLec(k,kind,btn){
       const [w,tr]=k.split('|'); const r=await post({op:'link',week:+w,track:tr,url});
       if(!r||!r.ok) throw 0; lecEdit=null; toast('녹화본을 넣었어요'); load();
     }else{
-      const old=pptOf(k); if(old){ const d=await adminLinksCall({op:'del',id:old.id}); if(!d||!d.ok) throw 0; }
-      const r=await adminLinksCall({op:'add',name:'ppt:'+k,url}); if(!r||!r.ok) throw 0;
-      ADMIN_LINKS=r.links; lecEdit=null; toast('PPT를 넣었어요'); render();
+      // OT PPT는 그 기수 것, 주차 강의 PPT는 모든 기수 공용(cohort 0)으로 저장
+      const to=k==='0|OT'?COHORT:0, old=pptOf(k);
+      if(old && old.cohort===to){ const d=await adminLinksCall({op:'del',id:old.id,cohort:to}); if(!d||!d.ok) throw 0; }
+      const r=await adminLinksCall({op:'add',name:'ppt:'+k,url,cohort:to}); if(!r||!r.ok) throw 0;
+      if(to===0) SHARED_LINKS=r.links; else ADMIN_LINKS=r.links; lecEdit=null; toast(to===0?'PPT를 넣었어요 · 다음 기수에도 그대로 떠요':'PPT를 넣었어요'); render();
     }
   }catch(e){ btn.disabled=false; toast('저장하지 못했어요. 다시 해 주세요'); }
 }
 // 운영진이 직접 넣는 링크 (11/18) — 서버 hub_admin_links, 운영진 키가 있어야 읽고 쓴다. 멤버 화면엔 안 내려간다
-let ADMIN_LINKS=null, adminLinksBusy=false;
+let ADMIN_LINKS=null, SHARED_LINKS=[], adminLinksBusy=false;
 function adminLinksCall(p){
   return fetch(SUPA.replace(/hub_api$/,'hub_admin_links'),{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
     body:JSON.stringify({p:Object.assign({cohort:COHORT,key:getKey()},p)})}).then(r=>r.json());
 }
 async function loadAdminLinks(){
   if(adminLinksBusy) return; adminLinksBusy=true;
-  try{ const r=await adminLinksCall({op:'list'}); ADMIN_LINKS=r&&r.ok?r.links:[]; }catch(e){ ADMIN_LINKS=[]; }
+  try{ const [r,z]=await Promise.all([adminLinksCall({op:'list'}),adminLinksCall({op:'list',cohort:0})]); ADMIN_LINKS=r&&r.ok?r.links:[]; SHARED_LINKS=z&&z.ok?z.links:[]; }catch(e){ ADMIN_LINKS=[]; }
   adminLinksBusy=false; render();
 }
 async function addAdminLink(btn){
@@ -1852,24 +1856,23 @@ async function delAdminLink(id,btn){
   if(r&&r.ok){ ADMIN_LINKS=r.links; toast('지웠어요'); render(); } else { btn.disabled=false; toast('지우지 못했어요'); }
 }
 function opsDash(rows,cw,unans,X){
-  const L=liveLinks(), meet=Object.values(L).find(u=>/meet\.google\.com/.test(u||''))||MEET_URL;
+  const L=liveLinks(), meet=MEET_URL;
   const nx=nextLive(NOW()), live=nx&&NOW()>nx.t-3600e3;
   const fid=String(FORM).split('/').pop(), sid=String(SNS_FORM).split('/').pop();
   const a=(u,t,sm,self)=>`<a href="${esc(u)}"${self?'':' target="_blank" rel="noopener"'}>${t}${sm?`<small>${sm}</small>`:''}</a>`;
-  let h=`<div class="dlive"><div class="t">${nx?(live?'지금 라이브 중':'다음 라이브'):'라이브 일정 끝'}<b>${nx?`${nx.d}(${nx.day}) 밤 9시 · ${esc(nx.name+" · "+nx.who)}`:'6기 강의가 모두 끝났어요'}</b></div>
+  let h=`<div class="dlive"><div class="t">${nx?(live?'지금 라이브 중':'다음 라이브'):'라이브 일정 끝'}<b>${nx?`${nx.d}(${nx.day}) 밤 9시 · ${esc(nx.name+" · "+nx.who)}`:COHORT+'기 강의가 모두 끝났어요'}</b></div>
     ${nx&&pptOf(nx.k)?`<a class="g" href="${esc(pptOf(nx.k).url)}" target="_blank" rel="noopener">PPT 열기</a>`:nx?`<a class="g" href="#" onclick="lecEdit=${JSON.stringify(nx.k).replace(/"/g,'&quot;')}+'#ppt';setOps('lec');return false">PPT 넣기</a>`:''}<a href="${esc(meet)}" target="_blank" rel="noopener">미트 들어가기</a><a class="g" href="https://studio.youtube.com" target="_blank" rel="noopener">유튜브 스튜디오</a></div>`;
   if(X){
     const OW={'결영':'돈관리 · SNS · OT · 목 라이브','머니그랩':'내집마련 · 독서 · 화 라이브'};
     h+=`<div class="owgrid">${(opsWho==='all'?['결영','머니그랩']:[opsWho]).map(o=>{
       const f=X.taskRows.filter(r=>!r.feedback&&ownerOf(r)===o).length, q=unans.filter(r=>ownerOf(r)===o).length, c=X.coachRows.filter(r=>!r.feedback&&ownerOf(r)===o).length;
-      const r=(k,t,n)=>`<div class="r" onclick="opsWho='${o}';try{sessionStorage.setItem('ot6who','${o}')}catch(e){};setOps('${k}')"><span>${t}</span><b class="${n?'hot':''}">${n}</b></div>`;
+      const r=(k,t,n)=>`<div class="r" onclick="opsWho='${o}';try{sessionStorage.setItem('ot'+COHORT+'who','${o}')}catch(e){};setOps('${k}')"><span>${t}</span><b class="${n?'hot':''}">${n}</b></div>`;
       return `<div class="owc"><div class="hd"><b>${o}</b><span>${OW[o]}</span></div><div style="margin-top:6px">${r('fb','피드백 기다림',f)}${r('qa','답 안 단 질문',q)}${r('coach','1:1 내집마련',c)}</div></div>`; }).join('')}</div>`;
   }
   const G=[
     ['라이브', a(meet,'구글 미트','화·목 밤 9시')+a('https://studio.youtube.com','유튜브 스튜디오','송출·녹화본')+a('../live/','채팅 말풍선','북마크 설치')],
-    ['PPT', a('https://claude.ai/artifact/ShnkunqhEDaoAZhDFY5B9C','6기 OT PPT')+a('https://claude.ai/artifact/VRuFZcPnA59EkwjEF311Df','11/15 홍보 라이브 PPT')],
-    ['모집·문의', a('https://oneteamm.netlify.app','6기 상세페이지')+a('https://latpeed.com/spaces/0/products/B-Md1/manage','래피드 판매 내역')+a('https://open.kakao.com/me/weddingreceipt','카카오톡 문의')+a('https://console.solapi.com','솔라피 문자·알림톡')],
-    ['다른 방', a('../5/','5기 과제방')+a('../study/','졸업반 스터디방')]
+    ['모집·문의', a('https://oneteamm.netlify.app','상세페이지')+a('https://latpeed.com/spaces/0/products/B-Md1/manage','래피드 판매 내역')+a('https://open.kakao.com/me/weddingreceipt','카카오톡 문의')+a('https://console.solapi.com','솔라피 문자·알림톡')],
+    ['다른 방', a('../'+(COHORT-1)+'/',(COHORT-1)+'기 과제방')+a('../study/','졸업반 스터디방')]
   ];
   if(ADMIN_LINKS===null) loadAdminLinks();
   const mine=(ADMIN_LINKS||[]).filter(l=>!/^ppt:/.test(l.name)).map(l=>`<div class="lk">${a(l.url,esc(l.name))}<button title="지우기" onclick="delAdminLink(${+l.id},this)">✕</button></div>`).join('');
@@ -1887,7 +1890,7 @@ function opsDash(rows,cw,unans,X){
   const thisWk=wk?ppl.map(x=>progress(x,wk).done):ppl.map(x=>progress(x,0).live?1:0), need=wk?PER:1;
   const sum=thisWk.reduce((s,v)=>s+v,0), full=thisWk.filter(v=>v===need).length, none=thisWk.filter(v=>v===0).length;
   h+=`<div class="sub" style="margin-top:20px">부부별 성과 · ${wk?wk+'주차':'OT 주'}</div>
-    <div class="dstat"><div><b>${ppl.length}</b><span>6기 부부</span></div><div><b>${ppl.length?Math.round(sum/(ppl.length*need)*100):0}%</b><span>${wk?'이번 주 달성':'OT 출석'}</span></div><div><b>${full}</b><span>${wk?'이번 주 다 낸 부부':'출석한 부부'}</span></div><div><b>${none}</b><span>아직 하나도 안 낸 부부</span></div><div><b>${opsWait()}</b><span>피드백 기다림</span></div><div><b>${unans.length}</b><span>답 안 단 질문</span></div></div>`;
+    <div class="dstat"><div><b>${ppl.length}</b><span>${COHORT}기 부부</span></div><div><b>${ppl.length?Math.round(sum/(ppl.length*need)*100):0}%</b><span>${wk?'이번 주 달성':'OT 출석'}</span></div><div><b>${full}</b><span>${wk?'이번 주 다 낸 부부':'출석한 부부'}</span></div><div><b>${none}</b><span>아직 하나도 안 낸 부부</span></div><div><b>${opsWait()}</b><span>피드백 기다림</span></div><div><b>${unans.length}</b><span>답 안 단 질문</span></div></div>`;
   const cell=(v,n)=>v==null?'<span class="c cx">–</span>':`<span class="c ${v>=n?'c4':v>0?'cp':'c0'}">${v}/${n}</span>`;
   h+=`<div class="dtw"><table class="dt"><tr><th>부부</th><th>OT</th>${WEEKS.map(w=>`<th>${w.n}주</th>`).join('')}<th>전체</th><th>과정</th><th>피드백 읽음</th><th>마지막 제출</th></tr>`;
   per.forEach(r=>{ const k=JSON.stringify(r.x).replace(/"/g,'&quot;'), op=dashOpen===r.x;
@@ -2047,7 +2050,7 @@ async function saveLink(btn){
   btn.disabled=true; const r=await post({op:'link',week:wk,track:tr,url}); btn.disabled=false;
   r.ok?(toast('링크를 저장했어요'),load()):toast('저장하지 못했어요');
 }
-function logout(){ setKey(''); try{ sessionStorage.removeItem('ot6adminData'); }catch(e){} ADMIN=null; openDetail=null; load(); }
+function logout(){ setKey(''); try{ sessionStorage.removeItem('ot'+COHORT+'adminData'); }catch(e){} ADMIN=null; openDetail=null; load(); }
 // 운영진 로그인 — 페이지 안 화면 (prompt는 카톡 안 브라우저에서 안 뜰 수 있다)
 let adminBusy=false, adminErr='';
 function adminLogin(){
@@ -2117,14 +2120,14 @@ function gdToggle(id){ gdOpen[id]=!gdOpen[id]; const e=document.getElementById('
 // 인증 내용 '칸 이름 : 답' 줄을 칸별로 (여러 줄 답은 다음 칸 이름이 나올 때까지 이어 붙인다)
 const GD_LABELS=['벤치마킹 릴스 링크','벤치마킹 첫 문장','벤치마킹 첫 장면','벤치마킹 뒤 흐름','내 대본 첫 문장','내 대본 첫 장면','내 대본 흐름','촬영 계획','촬영 캡처','촬영 메모','편집 캡처','편집 남은 것','올린 릴스 링크','다음 편 벤치마킹 링크','다음 편 내 대본 첫 문장','다음 편 첫 장면·흐름','이번 주 한 줄 회고'];
 function gdFields(body){ const out=[]; String(body||'').split('\n').forEach(l=>{ const m=l.match(/^(.+?) : ([\s\S]*)$/); if(m && GD_LABELS.includes(m[1].trim())) out.push({k:m[1].trim(),v:m[2]}); else if(out.length) out[out.length-1].v+='\n'+l; }); return out.filter(f=>f.v.trim()); }
-try{ GD=JSON.parse(localStorage.getItem('ot6grad')||'null'); }catch(e){}
+try{ GD=JSON.parse(localStorage.getItem('ot'+COHORT+'grad')||'null'); }catch(e){}
 const kstDay = t => new Date(t+9*3600000).toISOString().slice(0,10);
 const gdIdx = d => Math.round((Date.parse(d+'T00:00:00Z')-Date.parse(GRAD.start+'T00:00:00Z'))/86400000);
 async function loadGrad(force){
   if(DEMO){ if(!GD||!GD._demo){ GD=gradDemo(); render(); } return; }
   if(gdBusy || (!force && Date.now()-gdAt<60000) || !API) return;
   gdBusy=true;
-  try{ const r=await getJSON(API+'?action=grad'); if(r.ok){ GD=r; gdAt=Date.now(); try{ localStorage.setItem('ot6grad',JSON.stringify(r)); }catch(e){} if(view==='grad') render(); } }catch(e){}
+  try{ const r=await getJSON(API+'?action=grad'); if(r.ok){ GD=r; gdAt=Date.now(); try{ localStorage.setItem('ot'+COHORT+'grad',JSON.stringify(r)); }catch(e){} if(view==='grad') render(); } }catch(e){}
   gdBusy=false;
 }
 function gradView(){
@@ -2232,10 +2235,14 @@ async function loadCfg(){
     if(g.form) FORM = g.form.startsWith('http') ? g.form : 'https://tally.so/r/' + g.form;
     if(g.sns_form){ SNS_FORM = g.sns_form.startsWith('http') ? g.sns_form : 'https://tally.so/r/' + g.sns_form; if(TASKS.sns && TASKS.sns[1] && TASKS.sns[1].submit) TASKS.sns[1].submit.url = SNS_FORM; }
     if(g.book) BOOK = g.book;
+    if(g.ot_url && /meet\.google\.com/.test(g.ot_url)) MEET_URL = g.ot_url;
     if(g.ot) OT = g.ot;
     if(Array.isArray(g.weeks) && g.weeks.length) WEEKS = g.weeks;
   }catch(e){}
 }
+(()=>{ const t='원팀 프로젝트 '+COHORT+'기 · 과제방'; document.title=t; const nv=document.querySelector('a[data-v="home"]'); if(nv) nv.textContent=COHORT+'기';
+  document.querySelectorAll('footer').forEach(f=>{ f.innerHTML=f.innerHTML.replace(/원팀 프로젝트 \d+기/,'원팀 프로젝트 '+COHORT+'기'); });
+  document.querySelectorAll('footer a[href="../5/"]').forEach(a=>{ a.href='../'+(COHORT-1)+'/'; a.textContent=(COHORT-1)+'기 과제방'; }); })();
 (async()=>{ warm(); await loadCfg(); render(); load(); pullChecks(); })();
 </script>
 </body>
