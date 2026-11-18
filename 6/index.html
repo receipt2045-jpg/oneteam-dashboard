@@ -250,6 +250,19 @@ body[data-locked="1"] #menu,body[data-locked="1"] footer{display:none}
 .opsnav button.on{background:var(--warn);border-color:var(--warn);color:#fff}
 .opsnav.who{margin-top:2px}.opsnav.who button{font-size:12px;padding:5px 11px;border-style:dashed}.opsnav.who button.on{border-style:solid}
 .opsnav button i{font-style:normal;margin-left:4px;opacity:.85}
+.opstop{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.opstop .opsnav{margin:0}
+.whoseg{display:flex;border:1px solid var(--warn-line);border-radius:99px;overflow:hidden;background:#fff}
+.whoseg button{font-family:inherit;border:0;background:none;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--text-lt);cursor:pointer}
+.whoseg button.on{background:#FBEAF0;color:#72243E}
+.opsnav.subs button{font-size:12.5px;padding:5px 12px;border-style:dashed}.opsnav.subs button.on{border-style:solid}
+.owgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px}
+.owc{background:#fff;border:1px solid var(--warn-line);border-radius:14px;padding:12px 14px}
+.owc .hd{display:flex;justify-content:space-between;align-items:baseline;gap:6px}.owc .hd b{font-size:15px}.owc .hd span{font-size:11.5px;color:var(--text-lt)}
+.owc .r{display:flex;justify-content:space-between;padding:7px 0;border-top:1px dashed var(--warn-line);font-size:13.5px;cursor:pointer}.owc .r:first-of-type{border-top:0}
+.owc .r b{font-size:15px}.owc .r b.hot{color:var(--miss)}
+.lpill{display:inline-block;font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--warn-line);color:var(--text);text-decoration:none;background:#fff;cursor:pointer;font-family:inherit}
+.lpill.no{border-style:dashed;color:var(--text-lt)}.lpill.ed{border:0;background:none;padding:3px 4px;color:var(--text-lt)}
+.lecin{display:flex;gap:6px;padding:8px 6px}.lecin input{flex:1;font-family:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--warn-line);border-radius:8px}
 .dlive{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff;border:1px solid var(--warn-line);border-radius:14px;padding:14px 16px;margin:10px 0 4px}
 .dlive .t{flex:1;min-width:180px;font-size:13px;color:var(--text-lt)}.dlive .t b{display:block;font-size:16px;color:var(--text);margin-top:2px}
 .dlive a{font-size:14px;font-weight:700;padding:9px 16px;border-radius:99px;background:var(--warn);color:#fff;text-decoration:none}
@@ -1746,15 +1759,17 @@ function opsView(){
   const rows=ADMIN.rows||[], cw=curWeek(NOW()), wk=cw||1;
   const unans=rows.filter(r=>r.q && !r.answer);
   const coachRows=rows.filter(isCoach), taskRows=rows.filter(r=>!isCoach(r));
-  const SUBS=[['dash','한눈에',0],['fb','피드백',taskRows.filter(r=>!r.feedback).length],['coach','1:1 내집마련',coachRows.filter(r=>!r.feedback).length],['qa','질문',unans.length],['prog','진행 현황',0],['mvp','MVP',0],['link','링크',0]];
-  if(!SUBS.some(x=>x[0]===opsSub)) opsSub='dash';
+  // 11/18 결영: 탭 7개 → 홈 · 답장하기(피드백·질문·1:1) · 강의(PPT·녹화본) · MVP, 위에 결영/머니그랩 나눠 보기
+  if(opsSub==='prog') opsSub='dash'; if(opsSub==='link') opsSub='lec';
+  if(!['dash','fb','qa','coach','lec','mvp'].includes(opsSub)) opsSub='dash';
+  const REPLY=['fb','qa','coach'], isReply=REPLY.includes(opsSub);
+  const nFb=byOwner(taskRows).filter(r=>!r.feedback).length, nQa=byOwner(unans).length, nCo=byOwner(coachRows).filter(r=>!r.feedback).length;
+  const TOP=[['dash','홈',0],['reply','답장하기',nFb+nQa+nCo],['lec','강의',0],['mvp','MVP',0]];
   let h=`<section class="sec"><div class="admin"><h3>🔒 운영진 <button onclick="logout()">나가기</button></h3>
-    <div class="opsnav">${SUBS.map(([k,n,c])=>`<button class="${k===opsSub?'on':''}" onclick="setOps('${k}')">${n}${c?`<i>${c}</i>`:''}</button>`).join('')}</div>`;
-  if(opsSub==='fb'||opsSub==='qa'){
-    const base=opsSub==='fb'?taskRows.filter(r=>!r.feedback):unans, n=w=>base.filter(r=>ownerOf(r)===w).length;
-    h+=`<div class="opsnav who">${[['all','전체',base.length],['결영','결영 · 돈관리·SNS',n('결영')],['머니그랩','머니그랩 · 내집마련·독서',n('머니그랩')]].map(([k,t,c])=>`<button class="${k===opsWho?'on':''}" onclick="setWho('${k}')">${t}<i>${c}</i></button>`).join('')}</div>`;
-  }
-  h+=opsSub==='dash'?opsDash(rows,cw,unans) : opsSub==='qa'?opsQa(byOwner(rows),byOwner(unans)) : opsSub==='prog'?opsProg(rows,cw,wk) : opsSub==='mvp'?opsMvp(rows) : opsSub==='link'?opsLink(wk) : opsSub==='coach'?opsCoach(coachRows) : opsFb(byOwner(taskRows));
+    <div class="opstop"><div class="opsnav">${TOP.map(([k,n,c])=>`<button class="${(k==='reply'?isReply:k===opsSub)?'on':''}" onclick="setOps('${k==='reply'?(isReply?opsSub:'fb'):k}')">${n}${c?`<i>${c}</i>`:''}</button>`).join('')}</div>
+    <div class="whoseg">${[['all','전체'],['결영','결영'],['머니그랩','머니그랩']].map(([k,t])=>`<button class="${k===opsWho?'on':''}" onclick="setWho('${k}')">${t}</button>`).join('')}</div></div>`;
+  if(isReply) h+=`<div class="opsnav subs">${[['fb','피드백',nFb],['qa','질문',nQa],['coach','1:1 내집마련',nCo]].map(([k,n,c])=>`<button class="${k===opsSub?'on':''}" onclick="setOps('${k}')">${n}${c?`<i>${c}</i>`:''}</button>`).join('')}</div>`;
+  h+=opsSub==='dash'?opsDash(rows,cw,unans,{taskRows,coachRows,wk}) : opsSub==='qa'?opsQa(byOwner(rows),byOwner(unans)) : opsSub==='mvp'?opsMvp(rows) : opsSub==='lec'?opsLec() : opsSub==='coach'?opsCoach(byOwner(coachRows)) : opsFb(byOwner(taskRows));
   return h+`</div></section>`;
 }
 // 한눈에 (11/18 결영: 미트·PPT·과제방 링크를 한곳에 + 부부별 성과)
@@ -1763,11 +1778,52 @@ const MEET_URL='https://meet.google.com/ywq-pxwr-twj';
 function nextLive(now){
   const yr=String((WEEKS[0]&&WEEKS[0].open)||'2026').slice(0,4);
   const at=md=>{ const [m,d]=String(md).split('/').map(Number); return new Date(`${yr}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T21:00:00+09:00`).getTime(); };
-  const L=[{t:at(OT.date),d:OT.date,day:OT.day||'목',name:'OT'}];
-  WEEKS.forEach(w=>{ L.push({t:at(w.tue),d:w.tue,day:'화',name:w.n+'주차 내집마련 · 머니그랩'}); L.push({t:at(w.thu),d:w.thu,day:'목',name:w.n+'주차 SNS · 결영'}); });
+  const L=lectures().map(x=>Object.assign({t:at(x.d)},x));
   return L.sort((a,b)=>a.t-b.t).find(x=>now<x.t+2*3600e3)||null;
 }
 let dashOpen=null;
+// 강의 9개 (OT + 주차별 화 내집마련 · 목 SNS)
+function lectures(){
+  const L=[{k:'0|OT',w:0,tr:'OT',d:OT.date,day:OT.day||'목',name:'OT',who:'결영'}];
+  WEEKS.forEach(w=>{ L.push({k:w.n+'|내집마련',w:w.n,tr:'내집마련',d:w.tue,day:'화',name:w.n+'주차 내집마련',who:'머니그랩'});
+    L.push({k:w.n+'|SNS',w:w.n,tr:'SNS',d:w.thu,day:'목',name:w.n+'주차 SNS',who:'결영'}); });
+  return L;
+}
+// 강의 PPT는 운영진 링크(hub_admin_links)에 이름 'ppt:<주차>|<강의>'로 둔다 — 멤버에겐 안 내려간다
+const pptOf = k => (ADMIN_LINKS||[]).find(l=>l.name==='ppt:'+k);
+const isRecUrl = u => !!u && !/meet\.google\.com/.test(u);
+let lecEdit=null;
+function opsLec(){
+  if(ADMIN_LINKS===null) loadAdminLinks();
+  const L=liveLinks(), rows=lectures().filter(x=>opsWho==='all'||x.who===opsWho);
+  const nP=rows.filter(x=>pptOf(x.k)).length, nV=rows.filter(x=>isRecUrl(L[x.k])).length;
+  let h=`<div class="sub">강의 ${rows.length}개 · PPT ${nP} · 녹화본 ${nV}</div><div style="font-size:12px;color:var(--text-lt);line-height:1.6">'+ 넣기'를 누르면 그 자리에서 주소를 붙여 넣어요. 녹화본은 화·목 밤에 자동으로도 들어가요.</div>
+    <div class="dtw"><table class="dt" style="min-width:520px"><tr><th>날짜</th><th>강의</th><th>담당</th><th>PPT</th><th>녹화본</th></tr>`;
+  rows.forEach(x=>{
+    const p=pptOf(x.k), v=L[x.k], k=JSON.stringify(x.k).replace(/"/g,'&quot;');
+    const cell=(url,kind)=>url?`<a class="lpill" href="${esc(url)}" target="_blank" rel="noopener">열기</a><button class="lpill ed" title="바꾸기" onclick="lecEdit=${k}+'#${kind}';render()">✎</button>`:`<button class="lpill no" onclick="lecEdit=${k}+'#${kind}';render()">+ 넣기</button>`;
+    h+=`<tr><td>${esc(x.d)}(${x.day})</td><td style="text-align:left;font-weight:700">${esc(x.name)}</td><td>${x.who}</td><td>${cell(p&&p.url,'ppt')}</td><td>${cell(isRecUrl(v)?v:'','vod')}</td></tr>`;
+    ['ppt','vod'].forEach(kind=>{ if(lecEdit!==x.k+'#'+kind) return;
+      const cur=kind==='ppt'?(p&&p.url||''):(isRecUrl(v)?v:'');
+      h+=`<tr class="dd"><td colspan="5"><div class="lecin"><input id="lecU" placeholder="${kind==='ppt'?'PPT 주소 (https://claude.ai/artifact/…)':'녹화본 주소 (https://youtu.be/…)'}" value="${esc(cur)}"><button class="sbtn" onclick="saveLec(${k},'${kind}',this)">${esc(x.name)} ${kind==='ppt'?'PPT':'녹화본'} 저장</button><button class="sbtn ghost" onclick="lecEdit=null;render()">취소</button></div></td></tr>`; });
+  });
+  return h+`</table></div>`;
+}
+async function saveLec(k,kind,btn){
+  const url=document.getElementById('lecU').value.trim();
+  if(!/^https?:\/\//.test(url)) return toast('https:// 로 시작하는 주소를 넣어 주세요');
+  btn.disabled=true;
+  try{
+    if(kind==='vod'){
+      const [w,tr]=k.split('|'); const r=await post({op:'link',week:+w,track:tr,url});
+      if(!r||!r.ok) throw 0; lecEdit=null; toast('녹화본을 넣었어요'); load();
+    }else{
+      const old=pptOf(k); if(old){ const d=await adminLinksCall({op:'del',id:old.id}); if(!d||!d.ok) throw 0; }
+      const r=await adminLinksCall({op:'add',name:'ppt:'+k,url}); if(!r||!r.ok) throw 0;
+      ADMIN_LINKS=r.links; lecEdit=null; toast('PPT를 넣었어요'); render();
+    }
+  }catch(e){ btn.disabled=false; toast('저장하지 못했어요. 다시 해 주세요'); }
+}
 // 운영진이 직접 넣는 링크 (11/18) — 서버 hub_admin_links, 운영진 키가 있어야 읽고 쓴다. 멤버 화면엔 안 내려간다
 let ADMIN_LINKS=null, adminLinksBusy=false;
 function adminLinksCall(p){
@@ -1795,13 +1851,20 @@ async function delAdminLink(id,btn){
   let r; try{ r=await adminLinksCall({op:'del',id}); }catch(e){ r=null; }
   if(r&&r.ok){ ADMIN_LINKS=r.links; toast('지웠어요'); render(); } else { btn.disabled=false; toast('지우지 못했어요'); }
 }
-function opsDash(rows,cw,unans){
+function opsDash(rows,cw,unans,X){
   const L=liveLinks(), meet=Object.values(L).find(u=>/meet\.google\.com/.test(u||''))||MEET_URL;
   const nx=nextLive(NOW()), live=nx&&NOW()>nx.t-3600e3;
   const fid=String(FORM).split('/').pop(), sid=String(SNS_FORM).split('/').pop();
   const a=(u,t,sm,self)=>`<a href="${esc(u)}"${self?'':' target="_blank" rel="noopener"'}>${t}${sm?`<small>${sm}</small>`:''}</a>`;
-  let h=`<div class="dlive"><div class="t">${nx?(live?'지금 라이브 중':'다음 라이브'):'라이브 일정 끝'}<b>${nx?`${nx.d}(${nx.day}) 밤 9시 · ${esc(nx.name)}`:'6기 강의가 모두 끝났어요'}</b></div>
-    <a href="${esc(meet)}" target="_blank" rel="noopener">미트 들어가기</a><a class="g" href="https://studio.youtube.com" target="_blank" rel="noopener">유튜브 스튜디오</a></div>`;
+  let h=`<div class="dlive"><div class="t">${nx?(live?'지금 라이브 중':'다음 라이브'):'라이브 일정 끝'}<b>${nx?`${nx.d}(${nx.day}) 밤 9시 · ${esc(nx.name+" · "+nx.who)}`:'6기 강의가 모두 끝났어요'}</b></div>
+    ${nx&&pptOf(nx.k)?`<a class="g" href="${esc(pptOf(nx.k).url)}" target="_blank" rel="noopener">PPT 열기</a>`:nx?`<a class="g" href="#" onclick="lecEdit=${JSON.stringify(nx.k).replace(/"/g,'&quot;')}+'#ppt';setOps('lec');return false">PPT 넣기</a>`:''}<a href="${esc(meet)}" target="_blank" rel="noopener">미트 들어가기</a><a class="g" href="https://studio.youtube.com" target="_blank" rel="noopener">유튜브 스튜디오</a></div>`;
+  if(X){
+    const OW={'결영':'돈관리 · SNS · OT · 목 라이브','머니그랩':'내집마련 · 독서 · 화 라이브'};
+    h+=`<div class="owgrid">${(opsWho==='all'?['결영','머니그랩']:[opsWho]).map(o=>{
+      const f=X.taskRows.filter(r=>!r.feedback&&ownerOf(r)===o).length, q=unans.filter(r=>ownerOf(r)===o).length, c=X.coachRows.filter(r=>!r.feedback&&ownerOf(r)===o).length;
+      const r=(k,t,n)=>`<div class="r" onclick="opsWho='${o}';try{sessionStorage.setItem('ot6who','${o}')}catch(e){};setOps('${k}')"><span>${t}</span><b class="${n?'hot':''}">${n}</b></div>`;
+      return `<div class="owc"><div class="hd"><b>${o}</b><span>${OW[o]}</span></div><div style="margin-top:6px">${r('fb','피드백 기다림',f)}${r('qa','답 안 단 질문',q)}${r('coach','1:1 내집마련',c)}</div></div>`; }).join('')}</div>`;
+  }
   const G=[
     ['라이브', a(meet,'구글 미트','화·목 밤 9시')+a('https://studio.youtube.com','유튜브 스튜디오','송출·녹화본')+a('../live/','채팅 말풍선','북마크 설치')],
     ['PPT', a('https://claude.ai/artifact/ShnkunqhEDaoAZhDFY5B9C','6기 OT PPT')+a('https://claude.ai/artifact/VRuFZcPnA59EkwjEF311Df','11/15 홍보 라이브 PPT')],
@@ -1811,7 +1874,7 @@ function opsDash(rows,cw,unans){
     ['다른 방', a('../5/','5기 과제방')+a('../study/','졸업반 스터디방')]
   ];
   if(ADMIN_LINKS===null) loadAdminLinks();
-  const mine=(ADMIN_LINKS||[]).map(l=>`<div class="lk">${a(l.url,esc(l.name))}<button title="지우기" onclick="delAdminLink(${+l.id},this)">✕</button></div>`).join('');
+  const mine=(ADMIN_LINKS||[]).filter(l=>!/^ppt:/.test(l.name)).map(l=>`<div class="lk">${a(l.url,esc(l.name))}<button title="지우기" onclick="delAdminLink(${+l.id},this)">✕</button></div>`).join('');
   const add=`<div class="dadd"><input id="alName" placeholder="이름 (예: 1주차 PPT)" maxlength="40"><input id="alUrl" placeholder="https:// 주소"><button class="sbtn" onclick="addAdminLink(this)">링크 추가</button></div>`;
   h+=`<div class="dgrid">${G.map(([t,x])=>`<div class="dgrp"><h4>${t}</h4>${x}</div>`).join('')}<div class="dgrp mine"><h4>내가 넣은 링크</h4>${ADMIN_LINKS===null?'<div style="font-size:12px;color:var(--text-lt)">불러오는 중…</div>':mine||'<div style="font-size:12px;color:var(--text-lt)">아직 없어요. 아래에 이름과 주소를 넣어 보세요</div>'}${add}</div></div>`;
 
@@ -1834,6 +1897,7 @@ function opsDash(rows,cw,unans){
       <td class="pc">${r.pct}%</td><td>${r.choice||'–'}</td><td>${r.sent?`${r.read}/${r.sent}`:'–'}</td><td>${r.last?fmtD(r.last):'–'}</td></tr>`;
     if(op) h+=`<tr class="dd"><td colspan="${WEEKS.length+6}">${detailOf(r.x)}</td></tr>`; });
   h+=`</table></div><div style="font-size:11.5px;color:var(--text-lt);margin-top:6px">한 주 4개 = 강의 출석·독서·돈관리·내집마련/SNS 중 하나 · 전체 = OT 출석 + 지금까지 주차 · 이름을 누르면 낸 과제가 펼쳐져요</div>`;
+  if(X){ opsProg.short=true; h+=opsProg(rows,cw,X.wk); opsProg.short=false; }
   return h;
 }
 function opsProg(rows,cw,wk){
@@ -1846,6 +1910,7 @@ function opsProg(rows,cw,wk){
     ${(DATA.snsUnmatched||[]).length?`<div class="sub">SNS 방향성 체크 · 이름 확인 필요 ${DATA.snsUnmatched.length}</div><div style="font-size:12px;color:var(--text-lt)">과제방 부부 이름과 안 맞아서 진행판에 안 잡혔어요. 시트 '방향성체크' 탭 닉네임을 부부 이름으로 고치면 잡혀요.</div>${DATA.snsUnmatched.map(x=>`<span class="chip">${esc(x.h)} · ${fmtD(x.at)}</span>`).join('')}`:''}
     ${(()=>{ const sent=rows.filter(r=>r.feedback), un=sent.filter(r=>!r.readAt); if(!sent.length) return ''; const by={}; un.forEach(r=>{by[r.h]=(by[r.h]||0)+1;});
       return `<div class="sub">보낸 피드백 · 읽음 ${sent.length-un.length} / ${sent.length}</div>${Object.keys(by).length?`<div style="font-size:12px;color:var(--text-lt)">아직 안 읽은 부부 — 내 과제 탭에 로그인하면 읽음으로 바뀌어요</div>`+Object.keys(by).map(h=>`<span class="chip">${esc(h)}${by[h]>1?' '+by[h]:''}</span>`).join(''):'<span class="chip ok">모두 읽었어요</span>'}`; })()}`;
+  if(opsProg.short) return h;
   h+=`<div class="sub">부부별 낸 과제 · 이름을 누르면 펼쳐져요</div>`;
   REAL.forEach(x=>{ const n=rows.filter(r=>r.h===x).length, k=JSON.stringify(x).replace(/"/g,'&quot;');
     h+=`<div class="opsp" onclick="openDetail=openDetail===${k}?null:${k};render()"><b>${esc(x)}</b><span>${wk}주차 ${progress(x,wk).done}/${PER} · 전체 ${n}개</span>${chev(openDetail===x)}</div>${openDetail===x?detailOf(x):''}`; });
