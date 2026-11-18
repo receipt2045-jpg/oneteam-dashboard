@@ -1906,10 +1906,33 @@ function opsMvp(rows){
   if(cur.length){ h+=`<div class="sub">지금 올라간 MVP</div>`; cur.forEach(r=>{ h+=`<div class="aq"><div class="m">${esc(r.h)} · ${esc(r.task)}</div><div class="row2"><button class="sbtn ghost" onclick="unMvp('${esc(r.id)}',this)">내리기</button></div></div>`; }); }
   return h;
 }
+// 녹화본 링크 넣기 (11/18 결영: 주차 → 강의(OT·내집마련·SNS) → 링크 순서로)
+//   OT는 week 0 / track OT. 고르면 이미 넣은 주소가 칸에 채워져서 고칠 수도 있다
+let lkSel=null;
+function lkKey(){ return lkSel.w+'|'+lkSel.t; }
+function lkPick(w,t){
+  w=+w; if(w===0) t='OT'; else if(t==='OT'||!t) t=(lkSel&&lkSel.t!=='OT'?lkSel.t:'내집마련');
+  lkSel={w,t}; render();
+}
 function opsLink(wk){
-  let h='';
-  h+=`<div class="sub">라이브 다시보기 링크</div><div class="row2"><select id="lkW" onchange="document.getElementById('lkT').disabled=this.value==='0'"><option value="0">OT</option>${WEEKS.map(w=>`<option value="${w.n}" ${w.n===wk?'selected':''}>${w.n}주차</option>`).join('')}</select><select id="lkT"><option>내집마련</option><option>SNS</option></select></div>
-    <input id="lkU" placeholder="https://youtu.be/..."><div class="row2"><button class="sbtn" onclick="saveLink(this)">링크 저장</button></div>`;
+  if(!lkSel) lkSel={w:wk||0, t:wk?'내집마련':'OT'};
+  const L=liveLinks(), cur=L[lkKey()]||'', isRec=u=>u&&!/meet\.google\.com/.test(u);
+  const opt=(v,t,on,dis)=>`<option value="${v}" ${on?'selected':''} ${dis?'disabled':''}>${t}</option>`;
+  let h=`<div class="sub">녹화본 링크 넣기</div>
+    <div style="font-size:12px;color:var(--text-lt);line-height:1.6">넣으면 다시보기(녹화본 모음)에 바로 떠요. 이미 넣은 강의를 고르면 주소가 채워져서 고칠 수 있어요.</div>
+    <div class="row2" style="margin-top:8px"><label style="font-size:12px;color:var(--text-lt);min-width:48px">① 주차</label>
+      <select id="lkW" onchange="lkPick(this.value, document.getElementById('lkT').value)">${opt(0,'OT',lkSel.w===0)}${WEEKS.map(w=>opt(w.n,w.n+'주차',lkSel.w===w.n)).join('')}</select></div>
+    <div class="row2"><label style="font-size:12px;color:var(--text-lt);min-width:48px">② 강의</label>
+      <select id="lkT" onchange="lkPick(document.getElementById('lkW').value, this.value)">${opt('OT','OT',lkSel.t==='OT',lkSel.w!==0)}${opt('내집마련','내집마련 (화 · 머니그랩)',lkSel.t==='내집마련',lkSel.w===0)}${opt('SNS','SNS (목 · 결영)',lkSel.t==='SNS',lkSel.w===0)}</select></div>
+    <div class="row2"><label style="font-size:12px;color:var(--text-lt);min-width:48px">③ 링크</label>
+      <input id="lkU" style="flex:1" placeholder="https://youtu.be/..." value="${isRec(cur)?esc(cur):''}"></div>
+    <div class="row2"><button class="sbtn" onclick="saveLink(this)">${isRec(cur)?'링크 바꾸기':'링크 저장'}</button></div>`;
+  // 지금 들어간 녹화본 — 누르면 위 칸이 그 강의로 바뀐다
+  const rows=[{w:0,t:'OT',n:'OT',d:OT.date}];
+  WEEKS.forEach(w=>{ rows.push({w:w.n,t:'내집마련',n:w.n+'주차 내집마련',d:w.tue}); rows.push({w:w.n,t:'SNS',n:w.n+'주차 SNS',d:w.thu}); });
+  h+=`<div class="sub" style="margin-top:16px">넣은 녹화본 · ${rows.filter(r=>isRec(L[r.w+'|'+r.t])).length}/${rows.length}</div>`;
+  rows.forEach(r=>{ const u=L[r.w+'|'+r.t], on=lkSel.w===r.w&&lkSel.t===r.t;
+    h+=`<div class="opsp" style="${on?'background:#FFF8FA':''}" onclick="lkSel={w:${r.w},t:'${r.t}'};render()"><b>${esc(r.n)}</b><span>${esc(r.d)}</span><span style="margin-left:auto;font-size:12px">${isRec(u)?`<a href="${esc(u)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--acc)">✓ 들어감</a>`:'<span style="color:var(--text-lt)">아직</span>'}</span></div>`; });
   return h;
 }
 function detailOf(h){
@@ -1956,8 +1979,9 @@ async function setMvp(id,btn){ btn.disabled=true; const r=await post({op:'mvp',i
 async function unMvp(id,btn){ btn.disabled=true; const r=await post({op:'unmvp',id}); r.ok?(toast('MVP에서 내렸어요'),load()):(btn.disabled=false,toast('저장하지 못했어요')); }
 async function saveLink(btn){
   const url=document.getElementById('lkU').value.trim(); if(!/^https?:\/\//.test(url)) return toast('https:// 로 시작하는 주소를 넣어 주세요');
-  const wk=+document.getElementById('lkW').value;
-  btn.disabled=true; const r=await post({op:'link',week:wk,track:wk===0?'OT':document.getElementById('lkT').value,url}); btn.disabled=false;
+  const wk=+document.getElementById('lkW').value, tr=wk===0?'OT':document.getElementById('lkT').value;
+  if(wk!==0 && tr==='OT') return toast('강의를 골라 주세요');
+  btn.disabled=true; const r=await post({op:'link',week:wk,track:tr,url}); btn.disabled=false;
   r.ok?(toast('링크를 저장했어요'),load()):toast('저장하지 못했어요');
 }
 function logout(){ setKey(''); try{ sessionStorage.removeItem('ot6adminData'); }catch(e){} ADMIN=null; openDetail=null; load(); }
