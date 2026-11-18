@@ -250,6 +250,27 @@ body[data-locked="1"] #menu,body[data-locked="1"] footer{display:none}
 .opsnav button.on{background:var(--warn);border-color:var(--warn);color:#fff}
 .opsnav.who{margin-top:2px}.opsnav.who button{font-size:12px;padding:5px 11px;border-style:dashed}.opsnav.who button.on{border-style:solid}
 .opsnav button i{font-style:normal;margin-left:4px;opacity:.85}
+.dlive{display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff;border:1px solid var(--warn-line);border-radius:14px;padding:14px 16px;margin:10px 0 4px}
+.dlive .t{flex:1;min-width:180px;font-size:13px;color:var(--text-lt)}.dlive .t b{display:block;font-size:16px;color:var(--text);margin-top:2px}
+.dlive a{font-size:14px;font-weight:700;padding:9px 16px;border-radius:99px;background:var(--warn);color:#fff;text-decoration:none}
+.dlive a.g{background:#fff;color:var(--warn);border:1px solid var(--warn-line)}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:8px}
+.dgrp{background:#fff;border:1px solid var(--warn-line);border-radius:14px;padding:12px 14px}
+.dgrp h4{margin:0 0 6px;font-size:12px;color:var(--text-lt);font-weight:600}
+.dgrp a{display:block;font-size:14px;color:var(--text);text-decoration:none;padding:5px 0;border-top:1px dashed var(--warn-line)}
+.dgrp a:first-of-type{border-top:0}.dgrp a:hover{color:var(--warn)}.dgrp a small{color:var(--text-lt);font-size:11.5px;margin-left:4px}
+.dstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-top:8px}
+.dstat div{background:#fff;border:1px solid var(--warn-line);border-radius:12px;padding:10px 12px}
+.dstat b{display:block;font-size:20px;color:var(--warn)}.dstat span{font-size:11.5px;color:var(--text-lt)}
+.dtw{overflow-x:auto;margin-top:8px;background:#fff;border:1px solid var(--warn-line);border-radius:14px}
+.dt{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+.dt th{font-size:11.5px;font-weight:600;color:var(--text-lt);text-align:center;padding:9px 6px;border-bottom:1px solid var(--warn-line);white-space:nowrap}
+.dt td{text-align:center;padding:8px 6px;border-bottom:1px solid var(--warn-line);white-space:nowrap}
+.dt td.n{text-align:left;font-weight:700;cursor:pointer}.dt th:first-child{text-align:left}
+.dt .c{display:inline-block;min-width:34px;padding:2px 6px;border-radius:8px;font-size:12px}
+.dt .c4{background:#E3F4EA;color:#1E7A46}.dt .cp{background:#FAEEDA;color:#633806}.dt .c0{background:var(--miss-bg);color:var(--miss)}.dt .cx{color:#C3C7CE}
+.dt .pc{font-weight:700;color:var(--warn)}
+.dt tr.op td{background:#FFF8FA}.dt tr.dd td{padding:0;text-align:left;white-space:normal}
 .opsp{display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid var(--warn-line);font-size:13px;cursor:pointer}
 .opsp b{flex:1;font-weight:600}.opsp span{font-size:12px;color:var(--text-lt)}
 .admin{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:14px;padding:16px;margin-top:4px}
@@ -1706,7 +1727,7 @@ function mineView(){
 // 결영님 화면 (비밀번호가 맞을 때만 서버가 상세를 내려준다)
 // ─────────────────────────────────────────────────────────────
 // 운영진 탭 — 피드백 · 질문 · 진행 현황 · MVP · 링크 (10/26 결영: 5기 홈에 쌓여 있던 걸 따로 뺐다)
-let opsSub=(()=>{ try{ return sessionStorage.getItem('ot6ops')||'fb'; }catch(e){ return 'fb'; } })();
+let opsSub=(()=>{ try{ return sessionStorage.getItem('ot6ops')||'dash'; }catch(e){ return 'dash'; } })();
 function setOps(k){ opsSub=k; try{ sessionStorage.setItem('ot6ops',k); }catch(e){} render(); window.scrollTo(0,0); }
 const opsWait = () => ADMIN ? (ADMIN.rows||[]).filter(r=>!r.feedback).length : 0;
 // 담당 (10/26 결영) — 결영: 돈관리·SNS·OT 출석·목요일 SNS 라이브 출석 / 머니그랩: 내집마련·독서·화요일 내집마련 라이브 출석
@@ -1721,16 +1742,65 @@ function opsView(){
   const rows=ADMIN.rows||[], cw=curWeek(NOW()), wk=cw||1;
   const unans=rows.filter(r=>r.q && !r.answer);
   const coachRows=rows.filter(isCoach), taskRows=rows.filter(r=>!isCoach(r));
-  const SUBS=[['fb','피드백',taskRows.filter(r=>!r.feedback).length],['coach','1:1 내집마련',coachRows.filter(r=>!r.feedback).length],['qa','질문',unans.length],['prog','진행 현황',0],['mvp','MVP',0],['link','링크',0]];
-  if(!SUBS.some(x=>x[0]===opsSub)) opsSub='fb';
+  const SUBS=[['dash','한눈에',0],['fb','피드백',taskRows.filter(r=>!r.feedback).length],['coach','1:1 내집마련',coachRows.filter(r=>!r.feedback).length],['qa','질문',unans.length],['prog','진행 현황',0],['mvp','MVP',0],['link','링크',0]];
+  if(!SUBS.some(x=>x[0]===opsSub)) opsSub='dash';
   let h=`<section class="sec"><div class="admin"><h3>🔒 운영진 <button onclick="logout()">나가기</button></h3>
     <div class="opsnav">${SUBS.map(([k,n,c])=>`<button class="${k===opsSub?'on':''}" onclick="setOps('${k}')">${n}${c?`<i>${c}</i>`:''}</button>`).join('')}</div>`;
   if(opsSub==='fb'||opsSub==='qa'){
     const base=opsSub==='fb'?taskRows.filter(r=>!r.feedback):unans, n=w=>base.filter(r=>ownerOf(r)===w).length;
     h+=`<div class="opsnav who">${[['all','전체',base.length],['결영','결영 · 돈관리·SNS',n('결영')],['머니그랩','머니그랩 · 내집마련·독서',n('머니그랩')]].map(([k,t,c])=>`<button class="${k===opsWho?'on':''}" onclick="setWho('${k}')">${t}<i>${c}</i></button>`).join('')}</div>`;
   }
-  h+=opsSub==='qa'?opsQa(byOwner(rows),byOwner(unans)) : opsSub==='prog'?opsProg(rows,cw,wk) : opsSub==='mvp'?opsMvp(rows) : opsSub==='link'?opsLink(wk) : opsSub==='coach'?opsCoach(coachRows) : opsFb(byOwner(taskRows));
+  h+=opsSub==='dash'?opsDash(rows,cw,unans) : opsSub==='qa'?opsQa(byOwner(rows),byOwner(unans)) : opsSub==='prog'?opsProg(rows,cw,wk) : opsSub==='mvp'?opsMvp(rows) : opsSub==='link'?opsLink(wk) : opsSub==='coach'?opsCoach(coachRows) : opsFb(byOwner(taskRows));
   return h+`</div></section>`;
+}
+// 한눈에 (11/18 결영: 미트·PPT·과제방 링크를 한곳에 + 부부별 성과)
+//   링크는 운영진 화면에서만 보인다. 미트·녹화본 주소는 서버 링크(liveLinks)를 먼저 쓴다
+const MEET_URL='https://meet.google.com/ywq-pxwr-twj';
+function nextLive(now){
+  const yr=String((WEEKS[0]&&WEEKS[0].open)||'2026').slice(0,4);
+  const at=md=>{ const [m,d]=String(md).split('/').map(Number); return new Date(`${yr}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T21:00:00+09:00`).getTime(); };
+  const L=[{t:at(OT.date),d:OT.date,day:OT.day||'목',name:'OT'}];
+  WEEKS.forEach(w=>{ L.push({t:at(w.tue),d:w.tue,day:'화',name:w.n+'주차 내집마련 · 머니그랩'}); L.push({t:at(w.thu),d:w.thu,day:'목',name:w.n+'주차 SNS · 결영'}); });
+  return L.sort((a,b)=>a.t-b.t).find(x=>now<x.t+2*3600e3)||null;
+}
+let dashOpen=null;
+function opsDash(rows,cw,unans){
+  const L=liveLinks(), meet=Object.values(L).find(u=>/meet\.google\.com/.test(u||''))||MEET_URL;
+  const nx=nextLive(NOW()), live=nx&&NOW()>nx.t-3600e3;
+  const fid=String(FORM).split('/').pop(), sid=String(SNS_FORM).split('/').pop();
+  const a=(u,t,sm,self)=>`<a href="${esc(u)}"${self?'':' target="_blank" rel="noopener"'}>${t}${sm?`<small>${sm}</small>`:''}</a>`;
+  let h=`<div class="dlive"><div class="t">${nx?(live?'지금 라이브 중':'다음 라이브'):'라이브 일정 끝'}<b>${nx?`${nx.d}(${nx.day}) 밤 9시 · ${esc(nx.name)}`:'6기 강의가 모두 끝났어요'}</b></div>
+    <a href="${esc(meet)}" target="_blank" rel="noopener">미트 들어가기</a><a class="g" href="https://studio.youtube.com" target="_blank" rel="noopener">유튜브 스튜디오</a></div>`;
+  const G=[
+    ['라이브', a(meet,'구글 미트','화·목 밤 9시')+a('https://studio.youtube.com','유튜브 스튜디오','송출·녹화본')+a('../live/','채팅 말풍선','북마크 설치')],
+    ['PPT', a('https://claude.ai/artifact/ShnkunqhEDaoAZhDFY5B9C','6기 OT PPT')+a('https://claude.ai/artifact/VRuFZcPnA59EkwjEF311Df','11/15 홍보 라이브 PPT')],
+    ['과제방', a('#home','6기 홈','',1)+a('#read','과제 안내','',1)+a('#vod','녹화본 모음','',1)+a('#files','자료실','',1)+a('#qa','Q&A','',1)],
+    ['제출 폼', a(FORM,'과제 제출 폼','멤버용')+a(`https://tally.so/forms/${fid}/submissions`,'제출 응답 보기','탈리')+a(SNS_FORM,'SNS 방향성 체크')+a(`https://tally.so/forms/${sid}/submissions`,'방향성 응답 보기','탈리')],
+    ['모집·문의', a('https://oneteamm.netlify.app','6기 상세페이지')+a('https://latpeed.com/spaces/0/products/B-Md1/manage','래피드 판매 내역')+a('https://open.kakao.com/me/weddingreceipt','카카오톡 문의')+a('https://console.solapi.com','솔라피 문자·알림톡')],
+    ['다른 방', a('../5/','5기 과제방')+a('../study/','졸업반 스터디방')]
+  ];
+  h+=`<div class="dgrid">${G.map(([t,x])=>`<div class="dgrp"><h4>${t}</h4>${x}</div>`).join('')}</div>`;
+
+  // 성과
+  const wk=cw||0, ppl=REAL.length?REAL:ROSTER;
+  const per=ppl.map(x=>{
+    const ot=progress(x,0).live, ws=WEEKS.map(w=>w.n<=wk?progress(x,w.n).done:null);
+    const got=(ot?1:0)+ws.reduce((s,v)=>s+(v||0),0), tot=1+wk*PER;
+    const mine=rows.filter(r=>r.h===x), sent=mine.filter(r=>r.feedback), last=mine.reduce((m,r)=>Math.max(m,new Date(r.at).getTime()||0),0);
+    return {x,ot,ws,got,tot,pct:Math.round(got/tot*100),choice:choiceOf(x),sent:sent.length,read:sent.filter(r=>r.readAt).length,last};
+  }).sort((p,q)=>q.pct-p.pct||q.got-p.got||ppl.indexOf(p.x)-ppl.indexOf(q.x));
+  const thisWk=wk?ppl.map(x=>progress(x,wk).done):ppl.map(x=>progress(x,0).live?1:0), need=wk?PER:1;
+  const sum=thisWk.reduce((s,v)=>s+v,0), full=thisWk.filter(v=>v===need).length, none=thisWk.filter(v=>v===0).length;
+  h+=`<div class="sub" style="margin-top:20px">부부별 성과 · ${wk?wk+'주차':'OT 주'}</div>
+    <div class="dstat"><div><b>${ppl.length}</b><span>6기 부부</span></div><div><b>${ppl.length?Math.round(sum/(ppl.length*need)*100):0}%</b><span>${wk?'이번 주 달성':'OT 출석'}</span></div><div><b>${full}</b><span>${wk?'이번 주 다 낸 부부':'출석한 부부'}</span></div><div><b>${none}</b><span>아직 하나도 안 낸 부부</span></div><div><b>${opsWait()}</b><span>피드백 기다림</span></div><div><b>${unans.length}</b><span>답 안 단 질문</span></div></div>`;
+  const cell=(v,n)=>v==null?'<span class="c cx">–</span>':`<span class="c ${v>=n?'c4':v>0?'cp':'c0'}">${v}/${n}</span>`;
+  h+=`<div class="dtw"><table class="dt"><tr><th>부부</th><th>OT</th>${WEEKS.map(w=>`<th>${w.n}주</th>`).join('')}<th>전체</th><th>과정</th><th>피드백 읽음</th><th>마지막 제출</th></tr>`;
+  per.forEach(r=>{ const k=JSON.stringify(r.x).replace(/"/g,'&quot;'), op=dashOpen===r.x;
+    h+=`<tr class="${op?'op':''}"><td class="n" onclick="dashOpen=dashOpen===${k}?null:${k};render()">${esc(r.x)} <span style="color:var(--text-lt);font-weight:400">${op?"▴":"▾"}</span></td><td>${cell(r.ot?1:0,1)}</td>${r.ws.map(v=>`<td>${cell(v,PER)}</td>`).join('')}
+      <td class="pc">${r.pct}%</td><td>${r.choice||'–'}</td><td>${r.sent?`${r.read}/${r.sent}`:'–'}</td><td>${r.last?fmtD(r.last):'–'}</td></tr>`;
+    if(op) h+=`<tr class="dd"><td colspan="${WEEKS.length+6}">${detailOf(r.x)}</td></tr>`; });
+  h+=`</table></div><div style="font-size:11.5px;color:var(--text-lt);margin-top:6px">한 주 4개 = 강의 출석·독서·돈관리·내집마련/SNS 중 하나 · 전체 = OT 출석 + 지금까지 주차 · 이름을 누르면 낸 과제가 펼쳐져요</div>`;
+  return h;
 }
 function opsProg(rows,cw,wk){
   const zero=REAL.filter(r=>progress(r,wk).done===0);
