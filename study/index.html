@@ -172,6 +172,12 @@ a{color:var(--acc)}
 .up .ev small{font-size:11.5px;font-weight:700;color:var(--text-lt)}
 /* 스터디 판 = 패들릿 선반 */
 .shelf{display:flex;gap:14px;overflow-x:auto;align-items:flex-start;padding-bottom:10px;scroll-snap-type:x proximity}
+.topbar{overflow-x:auto;overflow-y:hidden;height:14px;margin:0 0 8px}.topbar div{height:1px}
+.topbar::-webkit-scrollbar,.shelf::-webkit-scrollbar{height:12px}
+.topbar::-webkit-scrollbar-thumb,.shelf::-webkit-scrollbar-thumb{background:#B9C0CC;border-radius:99px}
+.topbar::-webkit-scrollbar-track,.shelf::-webkit-scrollbar-track{background:#E3E6EC;border-radius:99px}
+.arrows{display:flex;gap:6px;margin-left:8px}.arrows button{border:1px solid var(--border);background:#fff;border-radius:10px;width:36px;height:32px;font-size:16px;font-weight:800;color:var(--acc);cursor:pointer}
+.arrows button:hover{background:var(--pink-soft)}
 .colm{flex:0 0 86%;max-width:340px;scroll-snap-align:start;background:#EEF0F4;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px}
 .colm.pin{background:#FFF4D6}
 .colm.me{background:var(--pink-soft)}
@@ -223,6 +229,7 @@ a{color:var(--acc)}
 @media (min-width: 960px){
   body{background:#EEF0F4}
   .page{max-width:1280px;padding-bottom:0}
+  .page:has(.dayboard){max-width:none}
   .hd{padding:22px 32px 0;display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
   .hd .t{padding-bottom:14px}
   .tracks{margin-top:0;width:420px}
@@ -451,11 +458,25 @@ function render(){
   if(LEDIT) return renderLeaderForm();
   main = chBoard(me) + main;
   const mi = D.mine || null;
+  const SL = ($('#shelf') || {}).scrollLeft || 0;
   $('#app').innerHTML = (me ? `<div class="me"><span><b>${esc(me)}</b>로 로그인했어요${mi ? ` · 지금까지 참석 ${mi.attend}번 · 과제 ${mi.posts}번 · 댓글 ${mi.comments}개` : ''}</span><button onclick="logout()">나가기</button></div>` : '')
     + viewToggle() + (boardOnly()
       ? heroHtml(me, true) + (me ? '' : `<div class="dayside">${loginBox()}</div>`) + `<div class="dayboard">${main}</div>`
       : heroHtml(me) + upcomingHtml() + `<div class="wrap${me ? ' mf' : ''}"><div class="side">${side}</div><div class="main">${main}</div></div>`);
+  shelfSync(SL);
 }
+// 스터디 판 가로 이동: 판 위 스크롤 막대와 ‹ › 버튼 (아래 막대까지 안 내려가도 됨)
+function shelfSync(left){
+  const sh = $('#shelf'), tb = $('#topbar'); if(!sh || !tb) return;
+  sh.scrollLeft = left || 0;
+  const fit = () => { tb.firstChild.style.width = sh.scrollWidth + 'px'; tb.style.display = sh.scrollWidth > sh.clientWidth + 4 ? '' : 'none'; tb.scrollLeft = sh.scrollLeft; };
+  fit(); requestAnimationFrame(fit); setTimeout(fit, 400);
+  tb.onscroll = () => { if(Math.abs(sh.scrollLeft - tb.scrollLeft) > 1) sh.scrollLeft = tb.scrollLeft; };
+  sh.onscroll = () => { if(Math.abs(sh.scrollLeft - tb.scrollLeft) > 1) tb.scrollLeft = sh.scrollLeft; };
+  sh.querySelectorAll('img').forEach(i => i.addEventListener('load', fit, {once:true}));
+}
+function shelfGo(d){ const sh = $('#shelf'); if(sh) sh.scrollBy({left: d * Math.max(320, sh.clientWidth * 0.8), behavior:'smooth'}); }
+addEventListener('resize', () => shelfSync(($('#shelf') || {}).scrollLeft));
 // 보기 방식: '전체 보기' / '스터디 판만' — 고르지 않으면 스터디 당일엔 판만, 평소엔 전체
 let VIEWM = ''; try { VIEWM = localStorage.getItem('ot_study_view') || ''; } catch(e) {}
 function boardOnly(){ const s = D && D.study; if(!s || s.status === 'done') return false; return VIEWM ? VIEWM === 'board' : dayOf(s); }
@@ -517,6 +538,11 @@ async function attend(a){
   const r = await api({op:'rsvp', h:ME.h, code:ME.code, study:D.study.id, votes:myR.votes || [], attend:a});
   if(!r.ok) return toast('다시 눌러주세요'); toast(a === 'yes' ? '신청했어요! 스터디 판에 우리 팀 열이 생겼어요' : '못 오는 걸로 표시했어요'); load();
 }
+function goHw(){
+  const d = document.querySelector('.hero details');
+  if(!d){ VIEWM = 'all'; render(); return setTimeout(goHw, 60); } // 판만 보기면 이번만 전체 보기로 (고른 방식은 그대로 기억)
+  d.open = true; d.scrollIntoView({behavior:'smooth', block:'start'});
+}
 function copyHw(){
   navigator.clipboard.writeText(D.study.homework).then(() => toast('복사했어요'), () => { const r = document.createRange(); r.selectNodeContents($('#hw')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('선택했어요. 복사를 눌러주세요'); });
 }
@@ -572,7 +598,11 @@ function cardHtml(k, me, lead){
   if(KF && KF.id === k.id) return cardForm();
   return `<div class="kard"><div class="kt"><span>${esc(k.title || '')}</span>${mine ? `<span><button onclick="editCard(${k.id})">고치기</button><button onclick="uncard(${k.id})">지우기</button></span>` : ''}</div>
     ${k.images.length ? `<div class="ki">${k.images.map(u => `<img src="${esc(u)}" alt="${esc(k.title || k.h)} 사진" loading="lazy" onclick="big('${esc(u)}')">`).join('')}</div>` : ''}
-    ${k.body ? `<pre>${esc(k.body)}</pre>` : ''}
+    ${(() => { // 옛 안내('왼쪽 이번 스터디 · 미리 해올 것')는 빼고 맨 위 과제로 가는 버튼
+      const hwRef = k.col === 'pin' && /미리 해올 것|과제/.test(k.title + k.body) && D.study && D.study.homework;
+      const b = hwRef ? k.body.split('\n').filter(x => !/미리 해올 것'?에|왼쪽\s*'?이번 스터디/.test(x)).join('\n').trim() : k.body;
+      return (b ? `<pre>${esc(b)}</pre>` : '') + (hwRef ? `<button class="copy" onclick="goHw()">과제 하는 법 · 복사할 문장 바로 보기 ›</button>` : '');
+    })()}
     ${k.link ? `<div class="hint"><a href="${esc(k.link)}" target="_blank" rel="noopener">링크 열기 ›</a></div>` : ''}
     ${k.col === 'pin' && /양식/.test(k.title) && me && D.study.status !== 'done' ? `<button class="copy" onclick="copyForm(${k.id})">이 양식으로 우리 팀 카드 쓰기</button>` : ''}
     <div class="act"><button class="${myH ? 'on' : ''}" onclick="${me ? `cheart(${k.id})` : 'needLogin()'}" aria-label="좋아요">♥ ${hs.length || ''}</button><span class="hint" style="margin:0">${hs.length ? esc(hs.slice(0, 3).join(', ')) + (hs.length > 3 ? ' 외' : '') : ''}</span></div>
@@ -591,9 +621,9 @@ function boardHtml(me, s, open){
   const lead = me && (D.leaders || []).includes(me);
   const pins = CARDS.filter(k => k.col === 'pin');
   const teams = boardCols(me);
-  let h = `<div class="sec" id="board"><h2>스터디 판 <span class="n">${teams.length}팀</span>${teams.some(t => CARDS.some(k => k.col === t)) ? `<button class="btn ghost" style="margin-left:auto;padding:7px 14px;font-size:13.5px" onclick="present(0)">▶ 발표 모드</button>` : ''}</h2>`;
+  let h = `<div class="sec" id="board"><h2>스터디 판 <span class="n">${teams.length}팀</span><span class="arrows"><button onclick="shelfGo(-1)" title="왼쪽으로">‹</button><button onclick="shelfGo(1)" title="오른쪽으로">›</button></span>${teams.some(t => CARDS.some(k => k.col === t)) ? `<button class="btn ghost" style="margin-left:auto;padding:7px 14px;font-size:13.5px" onclick="present(0)">▶ 발표 모드</button>` : ''}</h2>`;
   if(!me && open) h += `<div class="hint" style="margin:-4px 0 10px">로그인하면 우리 팀 열에 카드를 올릴 수 있어요.</div>`;
-  h += `<div class="shelf">`;
+  h += `<div class="topbar" id="topbar"><div></div></div><div class="shelf" id="shelf">`;
   h += `<div class="colm pin"><div class="ch">📌 오늘 이렇게<small>${pins.length}</small></div>${pins.map(k => cardHtml(k, me, lead)).join('')}
     ${lead ? (KF && KF.col === 'pin' && !KF.id ? cardForm() : `<button class="addc" onclick="newCard('pin')">＋ 안내 카드</button>`) : ''}</div>`;
   teams.forEach(t => {
