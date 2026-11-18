@@ -254,6 +254,14 @@ a{color:var(--acc)}
   .post .imgs{grid-template-columns:repeat(2,1fr)}
 }
 @media (min-width: 1240px){ .board{column-count:3} }
+/* 신청(로그인) 칸: 분홍 테두리 + '여기서 신청해요' 배지 */
+.sec.login{position:relative;margin:22px 14px 14px;background:#FFF7FA;border:2px solid var(--pink);border-radius:16px;padding:24px 18px 18px}
+.sec.login::before{content:'여기서 신청해요';position:absolute;top:-12px;left:16px;background:var(--pink);color:#fff;font-size:12.5px;font-weight:800;padding:3px 12px;border-radius:99px}
+.sec.login input:not([type=checkbox]),.sec.login select{background:#fff;border:1.5px solid #ED93B1}
+.sec.login input:not([type=checkbox]):focus,.sec.login select:focus{border-color:var(--pink);box-shadow:0 0 0 3px rgba(212,83,126,.15)}
+.sec.login .tabs button:not(.on){border-color:#ED93B1;color:#993556}
+.sec.login .btn:not(.pink):not(.ghost){background:var(--pink);border-color:var(--pink);color:#fff}
+.dayside{background:none;overflow:visible}
 </style>
 </head>
 <body>
