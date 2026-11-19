@@ -599,9 +599,10 @@ let CARDS = [], UP = null, KF = null;   // KF = 쓰는 중인 카드 {col, id?, 
 function boardCols(me){
   const s = D.study, teams = [];
   const add = n => { if(n && n !== 'pin' && !teams.includes(n)) teams.push(n); };
+  // 우리 팀 → 카드 올린 팀(먼저 올린 순) → 신청만 하고 아직 안 올린 팀(신청 순)
   if(me) add(me);
+  [...CARDS].filter(k => k.col !== 'pin').sort((a, b) => a.id - b.id).forEach(k => add(k.col));
   (D.rsvp || []).filter(r => r.attend === 'yes').forEach(r => add(r.h));
-  CARDS.forEach(k => add(k.col));
   return teams;
 }
 function cardHtml(k, me, lead){
