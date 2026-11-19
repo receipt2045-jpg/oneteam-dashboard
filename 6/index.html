@@ -1638,12 +1638,16 @@ function filesView(){
 // 새 자료 배너는 가장 최근에 올라온 것 (목록 순서와 따로)
 const newestFile = () => FILES_OF().slice().sort((x,y)=>String(y.date).localeCompare(String(x.date)))[0];
 // 새 자료 배너 — 모든 화면 맨 위. X를 누르면 그 기기에선 그 자료로는 다시 안 뜬다
+// 맨 위 자료 배너 — 11/19 결영: 새 자료가 아니라 '지금 꼭 볼 자료'(기본 모아불리 사용설명서)를 띄운다
+//   서버 기수 설정에 banner(자료 id)가 있으면 그걸로, 없으면 아래 기본값. X를 누르면 그 기기에선 그 자료로는 다시 안 뜬다
+let BANNER_FILE = 'moabuli-guide';
+const bannerFile = () => FILES_OF().find(f=>f.id===BANNER_FILE) || null;
 function filesBanner(){
-  const f=newestFile(); if(!f || !fileIsNew(f) || view==='files') return '';
+  const f=bannerFile(); if(!f || view==='files') return '';
   try{ if(localStorage.getItem('ot'+COHORT+'file_seen')===f.id) return ''; }catch(e){}
-  return `<div class="newfile"><a href="#files" onclick="seenFile()"><span class="ic">🎁</span><span class="tx"><b>새 자료 · ${esc(f.title)}</b><small>${esc(f.desc)}</small></span><span class="go">받기 ›</span></a><button onclick="seenFile();render()" aria-label="닫기">✕</button></div>`;
+  return `<div class="newfile"><a href="${esc(f.file)}" target="_blank" rel="noopener" onclick="seenFile()"><span class="ic">🎁</span><span class="tx"><b>먼저 보세요 · ${esc(f.title)}</b><small>${esc(f.desc)}</small></span><span class="go">받기 ›</span></a><button onclick="seenFile();render()" aria-label="닫기">✕</button></div>`;
 }
-function seenFile(){ try{ const f=newestFile(); if(f) localStorage.setItem('ot'+COHORT+'file_seen',f.id); }catch(e){} }
+function seenFile(){ try{ const f=bannerFile(); if(f) localStorage.setItem('ot'+COHORT+'file_seen',f.id); }catch(e){} }
 
 // 11/2 결영: 질문이 많아져서 과정별 메뉴로 나누고, 답 달린 것부터 최근 순으로. 길면 줄여두고 누르면 펼친다
 let qaTab=(()=>{ try{ return sessionStorage.getItem('ot'+COHORT+'qa')||'all'; }catch(e){ return 'all'; } })();
@@ -2306,6 +2310,7 @@ async function loadCfg(){
     if(g.form) FORM = g.form.startsWith('http') ? g.form : 'https://tally.so/r/' + g.form;
     if(g.sns_form){ SNS_FORM = g.sns_form.startsWith('http') ? g.sns_form : 'https://tally.so/r/' + g.sns_form; if(TASKS.sns && TASKS.sns[1] && TASKS.sns[1].submit) TASKS.sns[1].submit.url = SNS_FORM; }
     if(g.book) BOOK = g.book;
+    if(g.banner) BANNER_FILE = g.banner;
     if(g.ot) OT = g.ot;
     if(Array.isArray(g.weeks) && g.weeks.length) WEEKS = g.weeks;
   }catch(e){}
