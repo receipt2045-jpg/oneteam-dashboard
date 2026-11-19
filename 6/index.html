@@ -1845,7 +1845,8 @@ function opsView(){
 }
 // 한눈에 (11/18 결영: 미트·PPT·과제방 링크를 한곳에 + 부부별 성과)
 //   링크는 운영진 화면에서만 보인다. 미트·녹화본 주소는 서버 링크(liveLinks)를 먼저 쓴다
-let MEET_URL='https://meet.google.com/ywq-pxwr-twj';   // 서버 설정 ot_url(미트)이 있으면 그걸로 바뀐다
+// 미트 주소는 공개 코드에 두지 않는다(11/19 보안) — 운영진 링크 'meet' 또는 로그인해야 받는 링크에서만
+const meetUrl = () => { const a=(ADMIN_LINKS||[]).find(l=>l.name==='meet'); if(a) return a.url; return Object.values(liveLinks()).find(u=>/meet\.google\.com/.test(u||''))||''; };
 function nextLive(now){
   const yr=String((WEEKS[0]&&WEEKS[0].open)||'2026').slice(0,4);
   const at=md=>{ const [m,d]=String(md).split('/').map(Number); return new Date(`${yr}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}T21:00:00+09:00`).getTime(); };
@@ -1926,7 +1927,7 @@ async function delAdminLink(id,btn){
   if(r&&r.ok){ ADMIN_LINKS=r.links; toast('지웠어요'); render(); } else { btn.disabled=false; toast('지우지 못했어요'); }
 }
 function opsDash(rows,cw,unans,X){
-  const L=liveLinks(), meet=MEET_URL;
+  const L=liveLinks(), meet=meetUrl();
   const nx=nextLive(NOW()), live=nx&&NOW()>nx.t-3600e3;
   const fid=String(FORM).split('/').pop(), sid=String(SNS_FORM).split('/').pop();
   const a=(u,t,sm,self)=>`<a href="${esc(u)}"${self?'':' target="_blank" rel="noopener"'}>${t}${sm?`<small>${sm}</small>`:''}</a>`;
@@ -1945,7 +1946,7 @@ function opsDash(rows,cw,unans,X){
     ['다른 방', a('../'+(COHORT-1)+'/',(COHORT-1)+'기 과제방')+a('../study/','졸업반 스터디방')]
   ];
   if(ADMIN_LINKS===null) loadAdminLinks();
-  const mine=(ADMIN_LINKS||[]).filter(l=>!/^ppt:/.test(l.name)).map(l=>`<div class="lk">${a(l.url,esc(l.name))}<button title="지우기" onclick="delAdminLink(${+l.id},this)">✕</button></div>`).join('');
+  const mine=(ADMIN_LINKS||[]).filter(l=>!/^ppt:/.test(l.name)&&l.name!=='meet').map(l=>`<div class="lk">${a(l.url,esc(l.name))}<button title="지우기" onclick="delAdminLink(${+l.id},this)">✕</button></div>`).join('');
   const add=`<div class="dadd"><input id="alName" placeholder="이름 (예: 1주차 PPT)" maxlength="40"><input id="alUrl" placeholder="https:// 주소"><button class="sbtn" onclick="addAdminLink(this)">링크 추가</button></div>`;
   h+=`<div class="dgrid">${G.map(([t,x])=>`<div class="dgrp"><h4>${t}</h4>${x}</div>`).join('')}<div class="dgrp mine"><h4>내가 넣은 링크</h4>${ADMIN_LINKS===null?'<div style="font-size:12px;color:var(--text-lt)">불러오는 중…</div>':mine||'<div style="font-size:12px;color:var(--text-lt)">아직 없어요. 아래에 이름과 주소를 넣어 보세요</div>'}${add}</div></div>`;
 
@@ -2305,7 +2306,6 @@ async function loadCfg(){
     if(g.form) FORM = g.form.startsWith('http') ? g.form : 'https://tally.so/r/' + g.form;
     if(g.sns_form){ SNS_FORM = g.sns_form.startsWith('http') ? g.sns_form : 'https://tally.so/r/' + g.sns_form; if(TASKS.sns && TASKS.sns[1] && TASKS.sns[1].submit) TASKS.sns[1].submit.url = SNS_FORM; }
     if(g.book) BOOK = g.book;
-    if(g.ot_url && /meet\.google\.com/.test(g.ot_url)) MEET_URL = g.ot_url;
     if(g.ot) OT = g.ot;
     if(Array.isArray(g.weeks) && g.weeks.length) WEEKS = g.weeks;
   }catch(e){}
