@@ -1606,27 +1606,44 @@ function trackView(k){
 const FILES_OF = () => (DATA && DATA.files) || [];
 const FILE_NEW_DAYS = 14;
 const fileIsNew = f => (NOW()-kst(f.date))/864e5 < FILE_NEW_DAYS;
+// 11/19 결영: 자료실을 투자 · SNS 두 칸으로 나누고, 지금 당장 봐야 하는 것부터 (서버 자료 목록의 order·wk 칸)
+const FILE_GROUPS = [['invest','투자 · 돈관리','돈관리 · 내집마련 · 독서 과제에 쓰는 자료예요.',t=>t!=='sns'],['sns','SNS','SNS 과제에 쓰는 자료예요.',t=>t==='sns']];
+// 순서·볼 주차 기본값(자료 id 기준, 기수 공용). 서버 자료 목록에 order·wk가 있으면 그게 먼저
+const FILE_PLAN = {'moabuli-guide':[1,1],'glossary-stock':[2,1],'loan-glossary':[3,2],'glossary-realestate':[4,3],'books':[5,null],
+  'reels-workbook':[1,1],'profile-link':[2,1],'ai-analysis':[3,2],'hook-lines':[4,2],'reels-guide':[5,3],'video-edit':[6,3],'auto-dm':[7,4]};
+const fileOrd = f => f.order!=null ? +f.order : (FILE_PLAN[f.id]||[99])[0];
+const fileWk = f => f.wk!==undefined ? f.wk : (FILE_PLAN[f.id]||[0,null])[1];
 function filesView(){
   let h=`<section class="sec-alt"><span class="eyebrow">자료실</span><div class="h1">받아가세요</div>
-    <div class="body1">강의·과제에 쓰는 자료를 여기 모아둬요. 누르면 PDF가 열려요.</div><div class="files">`;
+    <div class="body1">위에서부터 지금 봐야 하는 순서예요. 누르면 PDF가 열려요.</div>`;
   const FILES=FILES_OF();
-  if(!FILES.length) h+=`<div class="empty">아직 올라온 자료가 없어요</div>`;
-  FILES.forEach(f=>{
-    const tr=TRACKS[f.track], [,m,d]=f.date.split('-').map(Number);
-    h+=`<a class="fl" href="${esc(f.file)}" target="_blank" rel="noopener" download="${esc(f.name||'')}">
-      <span class="ic">PDF</span>
-      <span class="tx"><b>${esc(f.title)}${fileIsNew(f)?' <i>NEW</i>':''}</b><small>${esc(f.desc)}</small><small class="m">${tr?esc(tr.name)+' · ':''}${m}/${d}${f.pages?' · '+f.pages+'쪽':''}</small></span>
-      <span class="dl" aria-hidden="true">↓</span></a>`;
+  if(!FILES.length) return h+`<div class="files"><div class="empty">아직 올라온 자료가 없어요</div></div></section>`;
+  const cw=curWeek(NOW());
+  FILE_GROUPS.forEach(([k,name,desc,test])=>{
+    const list=FILES.filter(f=>test(f.track)).sort((x,y)=>fileOrd(x)-fileOrd(y));
+    if(!list.length) return;
+    h+=`<div style="margin-top:22px"><span class="lb">${name}</span><div style="font-size:12.5px;color:var(--text-lt);margin-top:6px">${desc}</div></div><div class="files" style="margin-top:10px">`;
+    list.forEach((f,i)=>{
+      const tr=TRACKS[f.track], wk=fileWk(f), now=wk!=null && +wk<=Math.max(cw,1);
+      const when=wk==null?'틈틈이':(+wk===0?'지금 바로':wk+'주차');
+      h+=`<a class="fl" href="${esc(f.file)}" target="_blank" rel="noopener" download="${esc(f.name||'')}">
+        <span class="ic">${i+1}</span>
+        <span class="tx"><b>${esc(f.title)}${fileIsNew(f)?' <i>NEW</i>':''}</b><small>${esc(f.desc)}</small><small class="m">${when?`<span style="color:${now?'#E5487A':'inherit'};font-weight:${now?700:400}">${when}</span> · `:''}${tr?esc(tr.name):''}${f.pages?' · '+f.pages+'쪽':''}</small></span>
+        <span class="dl" aria-hidden="true">↓</span></a>`;
+    });
+    h+=`</div>`;
   });
-  return h+`</div></section>`;
+  return h+`</section>`;
 }
+// 새 자료 배너는 가장 최근에 올라온 것 (목록 순서와 따로)
+const newestFile = () => FILES_OF().slice().sort((x,y)=>String(y.date).localeCompare(String(x.date)))[0];
 // 새 자료 배너 — 모든 화면 맨 위. X를 누르면 그 기기에선 그 자료로는 다시 안 뜬다
 function filesBanner(){
-  const f=FILES_OF()[0]; if(!f || !fileIsNew(f) || view==='files') return '';
+  const f=newestFile(); if(!f || !fileIsNew(f) || view==='files') return '';
   try{ if(localStorage.getItem('ot'+COHORT+'file_seen')===f.id) return ''; }catch(e){}
   return `<div class="newfile"><a href="#files" onclick="seenFile()"><span class="ic">🎁</span><span class="tx"><b>새 자료 · ${esc(f.title)}</b><small>${esc(f.desc)}</small></span><span class="go">받기 ›</span></a><button onclick="seenFile();render()" aria-label="닫기">✕</button></div>`;
 }
-function seenFile(){ try{ const f=FILES_OF()[0]; if(f) localStorage.setItem('ot'+COHORT+'file_seen',f.id); }catch(e){} }
+function seenFile(){ try{ const f=newestFile(); if(f) localStorage.setItem('ot'+COHORT+'file_seen',f.id); }catch(e){} }
 
 // 11/2 결영: 질문이 많아져서 과정별 메뉴로 나누고, 답 달린 것부터 최근 순으로. 길면 줄여두고 누르면 펼친다
 let qaTab=(()=>{ try{ return sessionStorage.getItem('ot'+COHORT+'qa')||'all'; }catch(e){ return 'all'; } })();
