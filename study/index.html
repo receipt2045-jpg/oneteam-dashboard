@@ -113,6 +113,13 @@ a{color:var(--acc)}
 .cmt b{color:var(--acc);margin-right:6px}
 .cmt button{border:0;background:none;color:var(--mute);font-size:11.5px;margin-left:6px;cursor:pointer}
 .cin{display:flex;gap:6px;margin-top:6px}
+.cin .cam{flex:0 0 auto;width:36px;border:1px solid var(--border);border-radius:99px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+.cin .cam input{display:none}
+.cimgs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.cimgs img{width:84px;height:84px;object-fit:cover;border-radius:8px;cursor:zoom-in;border:1px solid var(--border)}
+.cthumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.cthumbs div{position:relative}.cthumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px}
+.cthumbs button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:99px;border:0;background:#333;color:#fff;font-size:12px;line-height:20px;padding:0;cursor:pointer}
 .cin input{flex:1;min-width:0;font-size:14px;border:1px solid var(--border);border-radius:99px;padding:8px 12px;background:#fff;outline:none}
 .cin button{border:0;border-radius:99px;background:var(--acc);color:#fff;font-size:13px;font-weight:700;padding:0 14px;cursor:pointer}
 /* 자료·주제·스터디장 */
@@ -619,8 +626,8 @@ function cardHtml(k, me, lead){
     ${k.link ? `<div class="hint"><a href="${esc(k.link)}" target="_blank" rel="noopener">링크 열기 ›</a></div>` : ''}
     ${k.col === 'pin' && /양식/.test(k.title) && me && D.study.status !== 'done' ? `<button class="copy" onclick="copyForm(${k.id})">이 양식으로 우리 팀 카드 쓰기</button>` : ''}
     <div class="act"><button class="${myH ? 'on' : ''}" onclick="${me ? `cheart(${k.id})` : 'needLogin()'}" aria-label="좋아요">♥ ${hs.length || ''}</button><span class="hint" style="margin:0">${hs.length ? esc(hs.slice(0, 3).join(', ')) + (hs.length > 3 ? ' 외' : '') : ''}</span></div>
-    ${(k.comments || []).length ? `<div class="cmts">${k.comments.map(c => `<div class="cmt"><b>${esc(c.h)}</b>${esc(c.body)}${c.h === me ? `<button onclick="uncomment2(${c.id})">지우기</button>` : ''}</div>`).join('')}</div>` : ''}
-    ${me ? `<div class="cin"><input id="kc${k.id}" placeholder="한마디 남기기" maxlength="500" onkeydown="if(event.key==='Enter'&&!event.isComposing)ccomment(${k.id})"><button onclick="ccomment(${k.id})">남기기</button></div>` : ''}</div>`;
+    ${(k.comments || []).length ? `<div class="cmts">${k.comments.map(c => `<div class="cmt"><b>${esc(c.h)}</b>${esc(c.body)}${c.h === me ? `<button onclick="uncomment2(${c.id})">지우기</button>` : ''}${(c.images || []).length ? `<div class="cimgs">${c.images.map(u => `<img src="${esc(u)}" alt="${esc(c.h)} 댓글 사진" loading="lazy" onclick="big('${esc(u)}')">`).join('')}</div>` : ''}</div>`).join('')}</div>` : ''}
+    ${me ? `${(CI[k.id] || []).length ? `<div class="cthumbs">${CI[k.id].map((u, i) => `<div><img src="${esc(u)}" alt=""><button onclick="CI[${k.id}].splice(${i},1);render()" aria-label="사진 빼기">×</button></div>`).join('')}</div>` : ''}<div class="cin"><label class="cam" title="사진 넣기">${CBUSY === k.id ? '…' : '📷'}<input type="file" accept="image/*" multiple onchange="ciImgs(${k.id},this.files)"></label><input id="kc${k.id}" data-card="${k.id}" value="${esc(CT[k.id] || '')}" oninput="CT[${k.id}]=this.value" placeholder="한마디 남기기 · 캡처는 Ctrl+V" maxlength="500" onkeydown="if(event.key==='Enter'&&!event.isComposing)ccomment(${k.id})"><button onclick="ccomment(${k.id})">남기기</button></div>` : ''}</div>`;
 }
 function cardForm(){
   return `<div class="kform"><input id="kft" value="${esc(KF.title)}" oninput="KF.title=this.value" placeholder="제목 (예: 캐릭터, 기획표)" maxlength="80">
@@ -663,7 +670,10 @@ async function pickFrom(where){
 }
 function imgFiles(list){ return [...(list || [])].filter(f => /^image\//.test(f.type)); }
 document.addEventListener('paste', e => {
-  const fs = imgFiles(e.clipboardData && e.clipboardData.files); if(!fs.length || !KF || BUSY) return;
+  const fs = imgFiles(e.clipboardData && e.clipboardData.files); if(!fs.length) return;
+  const t = document.activeElement, cid = t && t.dataset && t.dataset.card;
+  if(cid){ e.preventDefault(); return ciImgs(+cid, fs); }
+  if(!KF || BUSY) return;
   e.preventDefault(); kfImgs(fs);
 });
 document.addEventListener('dragover', e => { if(KF) e.preventDefault(); });
@@ -690,7 +700,18 @@ async function saveCard(){
 }
 async function uncard(id){ if(window.ucArm !== id){ window.ucArm = id; toast('한 번 더 누르면 지워져요'); setTimeout(() => window.ucArm = null, 3000); return; } await bapi({op:'uncard', h:ME.h, code:ME.code, id}); load(); }
 async function cheart(id){ await bapi({op:'heart', h:ME.h, code:ME.code, id}); load(); }
-async function ccomment(id){ const e = $('#kc' + id), body = (e.value || '').trim(); if(!body) return; const r = await bapi({op:'comment', h:ME.h, code:ME.code, id, body}); if(!r.ok) return toast('다시 눌러주세요'); load(); }
+// 댓글 사진 (11/21): 카드마다 쓰는 중인 글 CT·사진 CI, 4장까지
+var CT = {}, CI = {}, CBUSY = null;
+async function ciImgs(id, files){
+  if(CBUSY) return; CBUSY = id; CI[id] = CI[id] || []; render();
+  try{ for(const f of [...files].slice(0, 4 - CI[id].length)){ const b = await shrink(f);
+    if(b === f && !/image\/(jpeg|png|webp)/.test(f.type)){ toast('이 사진 형식은 못 올려요. 화면 캡처로 올려주세요'); continue; }
+    const name = 'g/' + D.study.id + '/c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + '.jpg';
+    const r = await fetch(U + '/storage/v1/object/study/' + name, {method:'POST', headers:{apikey:KEY, 'Content-Type':'image/jpeg'}, body:b}); if(r.ok) CI[id].push(IMG_PREFIX + name); else toast('사진 한 장이 안 올라갔어요'); } }
+  finally { CBUSY = null; render(); const e = $('#kc' + id); if(e) e.focus(); }
+}
+async function ccomment(id){ const e = $('#kc' + id), body = (e.value || '').trim(), images = CI[id] || []; if(!body && !images.length) return; if(CBUSY) return toast('사진 올리는 중이에요');
+  const r = await bapi({op:'comment', h:ME.h, code:ME.code, id, body, images}); if(!r.ok) return toast('다시 눌러주세요'); delete CT[id]; delete CI[id]; load(); }
 async function uncomment2(id){ await bapi({op:'uncomment', h:ME.h, code:ME.code, id}); load(); }
 // 맨 위 '다가오는 일정': 2주 안 스터디 · 과제 마감 · 챌린지 시작·업로드 날
 function upcomingHtml(){
