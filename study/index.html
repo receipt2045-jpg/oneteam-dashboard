@@ -611,11 +611,11 @@ async function delPost(){
 function openStudy(id){ VIEW_ID = id; DRAFT = null; load().then(() => scrollTo({top:0, behavior:'smooth'})); }
 function bigK(id, i){ const k = CARDS.find(x => x.id === id); if(k) big(k.images[i], k.images); }
 function bigC(kid, cid, i){ const k = CARDS.find(x => x.id === kid), c = k && (k.comments || []).find(x => x.id === cid); if(c) big(c.images[i], c.images); }
-function big(u, list){
+function big(u, list, opt){
   list = list && list.length ? list : [u]; let at = Math.max(0, list.indexOf(u));
   const old = document.querySelector('.big'); if(old) old.remove();
   const d = document.createElement('div'); d.className = 'big';
-  d.innerHTML = `<div class="bhint">두 번 누르거나 휠·두 손가락으로 확대 · 확대하면 끌어서 이동</div><div class="bz"><img alt="크게 보기" draggable="false"></div>
+  d.innerHTML = `<div class="bhint">마우스 휠로 확대 · 두 번 누르기·두 손가락도 돼요 · 확대하면 끌어서 이동</div><div class="bz"><img alt="크게 보기" draggable="false"></div>
     <div class="bbar">${list.length > 1 ? '<button data-a="prev" aria-label="이전 사진">‹</button><span class="bn"></span><button data-a="next" aria-label="다음 사진">›</button>' : ''}<button data-a="out" aria-label="작게">−</button><button data-a="in" aria-label="크게">＋</button><button data-a="fit">원래대로</button><button data-a="x" class="x">닫기 ✕</button></div>`;
   document.body.appendChild(d);
   const bz = d.querySelector('.bz'), im = bz.querySelector('img'), bn = d.querySelector('.bn');
@@ -639,6 +639,8 @@ function big(u, list){
     lastTap = now; if(e.target === bz && s === 1) setTimeout(() => { if(lastTap === now) close(); }, 330); };
   bz.addEventListener('pointerup', up); bz.addEventListener('pointercancel', up);
   show(at);
+  // 발표 화면에서 휠로 열었으면 그 자리를 바로 확대
+  if(opt && opt.f){ const go = () => { const r = im.getBoundingClientRect(); const [cx, cy] = rel(r.left + r.width * opt.f[0], r.top + r.height * opt.f[1]); zoomTo(2, cx, cy); }; im.complete && im.naturalWidth ? go() : im.addEventListener('load', go, {once:true}); }
 }
 
 // ── 스터디 판 (패들릿처럼) ──
@@ -807,11 +809,12 @@ function present(i){
   const teams = [...new Set(L.map(x => x.h))];
   el.innerHTML = `<div class="top2"><span>${esc(D.study.title)} · 과제 ${PI + 1} / ${L.length}</span><button onclick="presClose()">닫기 (Esc)</button></div>
     <div class="tlist">${teams.map(t => `<button class="${t === p.h ? 'on' : ''}" onclick="presentTeam(${esc(JSON.stringify(t))})">${esc(t)}</button>`).join('')}</div>
-    <div class="stage">${p.images.length ? `<div class="pimgs${p.images.length === 1 ? ' one' : ''}">${p.images.map((u, i) => `<img src="${esc(u)}" alt="${esc(p.h)} 과제 사진" onclick="bigP(${i})">`).join('')}</div>` : ''}
-    <div class="ptxt"><span class="sub">${esc(p.h)}${p.of > 1 ? ` · ${p.n} / ${p.of}` : ''}</span><h3>${esc(p.title || p.h)}</h3>${p.body ? `<pre>${esc(p.body)}</pre>` : ''}${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener" style="color:#F4C0D1;font-size:18px">링크 열기 ›</a>` : ''}${p.images.length ? '<span class="zh">사진을 누르면 크게 보고 확대할 수 있어요</span>' : ''}</div></div>
+    <div class="stage">${p.images.length ? `<div class="pimgs${p.images.length === 1 ? ' one' : ''}">${p.images.map((u, i) => `<img src="${esc(u)}" alt="${esc(p.h)} 과제 사진" onclick="bigP(${i})" onwheel="wheelP(event,${i})">`).join('')}</div>` : ''}
+    <div class="ptxt"><span class="sub">${esc(p.h)}${p.of > 1 ? ` · ${p.n} / ${p.of}` : ''}</span><h3>${esc(p.title || p.h)}</h3>${p.body ? `<pre>${esc(p.body)}</pre>` : ''}${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener" style="color:#F4C0D1;font-size:18px">링크 열기 ›</a>` : ''}${p.images.length ? '<span class="zh">사진 위에서 마우스 휠을 올리면 확대돼요 · 누르면 크게 보기</span>' : ''}</div></div>
     <div class="nav"><button onclick="present(PI-1)" ${PI === 0 ? 'disabled' : ''}>← 이전 과제</button><button onclick="present(PI+1)" ${PI === L.length - 1 ? 'disabled' : ''}>다음 과제 →</button></div>`;
 }
 function bigP(i){ const p = presList()[PI]; if(p) big(p.images[i], p.images); }
+function wheelP(e, i){ if(e.deltaY >= 0 || document.querySelector('.big')) return; e.preventDefault(); const p = presList()[PI]; if(!p) return; const r = e.target.getBoundingClientRect(); big(p.images[i], p.images, {f:[(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]}); }
 function presKey(e){ if(!$('#pres') || document.querySelector('.big')) return; if(e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); present(PI + 1); } else if(e.key === 'ArrowLeft') present(PI - 1); else if(e.key === 'Escape') presClose(); }
 function presClose(){ const el = $('#pres'); if(el) el.remove(); document.removeEventListener('keydown', presKey); }
 
