@@ -203,6 +203,11 @@ a{color:var(--acc)}
 .colm{flex:0 0 86%;max-width:340px;scroll-snap-align:start;background:#EEF0F4;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px}
 .colm.pin{background:#FFF4D6}
 .colm.me{background:var(--pink-soft)}
+/* 11/22 스터디장 특별 대우: 분홍 테두리 열 + '스터디장 ♥' 배지 (결영이네는 운영진이라 제외) */
+.colm.lead{background:linear-gradient(180deg,#FFE3EE 0,#FFF6FA 120px);box-shadow:inset 0 0 0 2px var(--pink)}
+.colm.lead > .ch{color:#B4235A}
+.lb{display:inline-flex;align-items:center;gap:3px;margin-left:6px;background:var(--pink);color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;vertical-align:middle;white-space:nowrap;line-height:1.5}
+.lb.s{font-size:10px;padding:1px 6px;margin-left:4px}
 .colm > .ch{display:flex;justify-content:space-between;align-items:center;font-size:14.5px;font-weight:800;color:var(--acc);padding:2px 4px}
 .colm > .ch small{font-weight:600;color:var(--text-lt);font-size:12px}
 .kard{background:#fff;border-radius:12px;padding:12px 13px;box-shadow:0 1px 2px rgba(20,24,31,.06)}
@@ -383,6 +388,8 @@ async function upload(){
   if(!r.ok) return toast('다시 눌러주세요'); toast('도장 찍었어요!'); load();
 }
 async function unupload(id){ await capi({op:'unupload', h:ME.h, code:ME.code, challenge:CH.id, id}); load(); }
+const isLead = n => n !== '결영이네' && (D && D.leaders || []).includes(n);
+const lb = (n, small) => isLead(n) ? `<span class="lb${small ? ' s' : ''}">스터디장 ♥</span>` : '';
 function mine(){ return ME && D && D.login === 'ok' ? ME.h : null; }
 
 // 11/22: 다가오는 스터디가 있는 종류가 먼저 (SNS 끝나면 부동산이 맨 앞)
@@ -421,7 +428,7 @@ function heroHtml(me, slim){
     else if(!s.zoom) h += `<div class="note">구글 미트 링크는 곧 올라와요. 시작 1시간 전에 문자로도 보내드려요.</div>`;
   }
   if(me && mineR.attend === 'yes') h += `<div class="ok">신청 완료 · 아래 스터디 판에 우리 팀 열이 있어요</div>`;
-  if(yes.length) h += `<div class="note">신청 ${yes.length}팀 · ${yes.map(x => `<b>${esc(x)}</b>`).join(', ')}</div>`;
+  if(yes.length) h += `<div class="note">신청 ${yes.length}팀 · ${yes.map(x => `<b>${esc(x)}</b>${lb(x, 1)}`).join(', ')}</div>`;
   h += `</div>`;
   if(s.homework && !slim){
     const first = s.homework.split('\n').map(x => x.trim()).find(Boolean) || '미리 해올 것';
@@ -468,7 +475,7 @@ function render(){
         + (!me ? `<div class="hint" style="margin-top:0">이름과 번호만 넣으면 바로 신청돼요. 신청하면 스터디 판에 우리 팀 열이 생겨요.</div><div class="row"><button class="btn pink wide" onclick="MODE='join';render();focusLogin()">스터디 신청하기</button></div>`
           : myR.attend === 'yes' ? `<div class="hint" style="margin-top:0;color:var(--ok);font-weight:700">신청했어요! 스터디 판에 우리 팀 열이 생겼어요.</div><div class="row"><button class="btn ghost" style="flex:1" onclick="attend('no')">이번엔 못 가요</button></div>`
           : `<div class="row"><button class="btn pink" style="flex:1" onclick="attend('yes')">신청할게요</button><button class="btn ${myR.attend === 'no' ? 'on' : 'ghost'}" style="flex:1" onclick="attend('no')">이번엔 못 가요</button></div>`)
-        + `${yes.length ? `<div class="who">신청 · ${yes.map(x => `<b>${esc(x)}</b>`).join(', ')}</div>` : ''}${no.length ? `<div class="who">못 와요 · ${no.map(esc).join(', ')}</div>` : ''}</div>`;
+        + `${yes.length ? `<div class="who">신청 · ${yes.map(x => `<b>${esc(x)}</b>${lb(x, 1)}`).join(', ')}</div>` : ''}${no.length ? `<div class="who">못 와요 · ${no.map(esc).join(', ')}</div>` : ''}</div>`;
     }
     // ④ 스터디 판 (패들릿처럼: 📌 열 + 팀마다 열)
     main += boardHtml(me, s, open);
@@ -675,7 +682,7 @@ function cardHtml(k, me, lead){
     ${k.link ? `<div class="hint"><a href="${esc(k.link)}" target="_blank" rel="noopener">링크 열기 ›</a></div>` : ''}
     ${k.col === 'pin' && /양식/.test(k.title) && me && D.study.status !== 'done' ? `<button class="copy" onclick="copyForm(${k.id})">이 양식으로 우리 팀 카드 쓰기</button>` : ''}
     <div class="act"><button class="${myH ? 'on' : ''}" onclick="${me ? `cheart(${k.id})` : 'needLogin()'}" aria-label="좋아요">♥ ${hs.length || ''}</button><span class="hint" style="margin:0">${hs.length ? esc(hs.slice(0, 3).join(', ')) + (hs.length > 3 ? ' 외' : '') : ''}</span></div>
-    ${(k.comments || []).length ? `<div class="cmts">${k.comments.map(c => `<div class="cmt"><b>${esc(c.h)}</b>${esc(c.body)}${c.h === me ? `<button onclick="uncomment2(${c.id})">지우기</button>` : ''}${(c.images || []).length ? `<div class="cimgs">${c.images.map((u, i) => `<img src="${esc(u)}" alt="${esc(c.h)} 댓글 사진" loading="lazy" onclick="bigC(${k.id},${c.id},${i})">`).join('')}</div>` : ''}</div>`).join('')}</div>` : ''}
+    ${(k.comments || []).length ? `<div class="cmts">${k.comments.map(c => `<div class="cmt"><b>${esc(c.h)}${lb(c.h, 1)}</b>${esc(c.body)}${c.h === me ? `<button onclick="uncomment2(${c.id})">지우기</button>` : ''}${(c.images || []).length ? `<div class="cimgs">${c.images.map((u, i) => `<img src="${esc(u)}" alt="${esc(c.h)} 댓글 사진" loading="lazy" onclick="bigC(${k.id},${c.id},${i})">`).join('')}</div>` : ''}</div>`).join('')}</div>` : ''}
     ${me ? `${(CI[k.id] || []).length ? `<div class="cthumbs">${CI[k.id].map((u, i) => `<div><img src="${esc(u)}" alt=""><button onclick="CI[${k.id}].splice(${i},1);render()" aria-label="사진 빼기">×</button></div>`).join('')}</div>` : ''}<div class="cin"><label class="cam" title="사진 넣기">${CBUSY === k.id ? '…' : '📷'}<input type="file" accept="image/*" multiple onchange="ciImgs(${k.id},this.files)"></label><input id="kc${k.id}" data-card="${k.id}" value="${esc(CT[k.id] || '')}" oninput="CT[${k.id}]=this.value" placeholder="한마디 남기기 · 캡처는 Ctrl+V" maxlength="500" onkeydown="if(event.key==='Enter'&&!event.isComposing)ccomment(${k.id})"><button onclick="ccomment(${k.id})">남기기</button></div>` : ''}</div>`;
 }
 function cardForm(){
@@ -697,7 +704,7 @@ function boardHtml(me, s, open){
     ${lead ? (KF && KF.col === 'pin' && !KF.id ? cardForm() : `<button class="addc" onclick="newCard('pin')">＋ 안내 카드</button>`) : ''}</div>`;
   teams.forEach(t => {
     const ks = CARDS.filter(k => k.col === t);
-    h += `<div class="colm ${t === me ? 'me' : ''}"><div class="ch">${esc(t)}${t === me ? ' (우리)' : ''}${ks.length ? `<button class="pbtn" onclick="presentTeam(${esc(JSON.stringify(t))})">▶ 발표</button>` : ''}<small>${ks.length}</small></div>${ks.map(k => cardHtml(k, me, lead)).join('')}
+    h += `<div class="colm ${t === me ? 'me' : ''}${isLead(t) ? ' lead' : ''}"><div class="ch"><span>${esc(t)}${t === me ? ' (우리)' : ''}${lb(t)}</span>${ks.length ? `<button class="pbtn" onclick="presentTeam(${esc(JSON.stringify(t))})">▶ 발표</button>` : ''}<small>${ks.length}</small></div>${ks.map(k => cardHtml(k, me, lead)).join('')}
       ${t === me && open ? (KF && KF.col !== 'pin' && !KF.id ? cardForm() : `<button class="addc" onclick="newCard('')">＋ 카드 올리기</button>`) : ''}</div>`;
   });
   if(!teams.length) h += `<div class="colm"><div class="ch">팀</div><div class="hint" style="padding:4px">참석하거나 카드를 올린 팀이 여기 열로 생겨요.</div></div>`;
