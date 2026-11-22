@@ -1043,6 +1043,7 @@ function banner(){
   if(!nextDue(now)) return '';
   const w=W(cw), [,m,d]=w.due.split('-').map(Number), p=me?progress(me,cw):null;
   const t=k=>esc(TASKS[k][cw].name);
+  const late=lateTodos(me,cw,mine);
   const items=`${li(`w${cw}-live`,'출석',`고른 과정 라이브 보고 한 줄 <small style="color:var(--text-lt)">(화 내집 · 목 SNS)</small>`,`#ex/live/${cw}`,p&&p.live)}
     ${li(`w${cw}-read`,'독서',t('read'),`#ex/read/${cw}`,p&&p.read)}
     ${li(`w${cw}-money`,'돈관리',t('money'),`#ex/money/${cw}`,p&&p.money)}
@@ -1051,11 +1052,31 @@ function banner(){
   // 내집·SNS는 둘 중 하나만 하면 되니 개수는 한 칸으로 센다 (4개 기준)
   const hOk=!!(p&&p.house)||!!mine[`w${cw}-house`], sOk=!!(p&&p.sns)||!!mine[`w${cw}-sns`];
   nAll--; if(hOk&&sOk) nDone--;
-  const head=`<b>${cw}주차 해야 할 일</b><span>마감 ${m}/${d}(월) 23:59</span>`;
+  const head=`<b>${cw}주차 해야 할 일</b><span>마감 ${m}/${d}(월) 23:59${late.length?` · <b style="color:#E5487A;font-weight:700">지난주 ${late.length}개 남음</b>`:''}</span>`;
   if(!open) return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${nDone}/${nAll} ${chev(false)}</i></button></section>`;
-  return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${nDone}/${nAll} ${chev(true)}</i></button><ul>
+  return `<section class="todo"><button class="hd" onclick="toggleBanner()"><span style="margin:0">${head}</span><i>${nDone}/${nAll} ${chev(true)}</i></button>${late.length?`<div style="padding:10px 16px 0;font-size:12.5px;font-weight:700;color:#E5487A">지난주(${cw-1?cw-1+'주차':'OT 주'}) 못 한 과제 · 지금 내도 돼요</div><ul>${late.join('')}</ul><div style="padding:8px 16px 0;font-size:12.5px;font-weight:700;color:var(--text-lt)">이번 주(${cw}주차)</div>`:''}<ul>
     ${items}
   </ul><div class="ft"><span>${todoNote(me)}</span><a class="sb" href="${FORM}" target="_blank" rel="noopener">과제 제출하기</a></div></section>`;
+}
+// 지난주에 안 낸 과제 — 로그인한 부부만 (낸 기록이 있어야 알 수 있다). 직접 체크한 건 뺀다
+function lateTodos(me,cw,mine){
+  if(!me || cw<1) return [];
+  const pw=cw-1, pp=progress(me,pw), out=[];
+  const row=(key,k,tx,href)=>{ if(mine[key]) return; out.push(`<li><button class="ck" onclick="toggleTodo('${key}')" title="눌러서 체크" aria-label="체크하기"></button><a href="${href}"><span class="k" style="color:#E5487A">${k}</span><span class="tx">${tx}</span><span class="go">›</span></a></li>`); };
+  if(pw===0){
+    if(!pp.live) row('w0-live','출석','OT 과제 · 강의 출석 올리기','#ex/live/0');
+    sp2Load(); if(SP2.phone===null) row('w0-sp2','알림','배우자 번호 넣기 <small style="color:var(--text-lt)">(내 과제 탭 맨 위)</small>','#mine');
+    return out;
+  }
+  const t=k=>esc((TASKS[k][pw]||{}).name||'');
+  if(!pp.live) row(`w${pw}-live`,'출석','고른 과정 라이브(다시보기) 보고 한 줄',`#ex/live/${pw}`);
+  if(!pp.read) row(`w${pw}-read`,'독서',t('read'),`#ex/read/${pw}`);
+  if(!pp.money) row(`w${pw}-money`,'돈관리',t('money'),`#ex/money/${pw}`);
+  if(!pp.pick && !mine[`w${pw}-house`] && !mine[`w${pw}-sns`]){
+    const k=choiceOf(me)==='SNS'?'sns':'house';
+    row(`w${pw}-${k}`,k==='sns'?'SNS':'내집',t(k),`#ex/${k}/${pw}`);
+  }
+  return out;
 }
 // 직접 체크 — 이 기기에만 저장한다 (낸 과제는 서버 기록으로 자동 ✓)
 function todoChecks(){ try{ return JSON.parse(localStorage.getItem('ot'+COHORT+'todo')||'{}'); }catch(e){ return {}; } }
