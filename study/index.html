@@ -319,6 +319,7 @@ async function load(){
   if(ME){ p.h = ME.h; p.code = ME.code; }
   const [d, c, u] = await Promise.all([api(p), capi({track: TRACK}).catch(() => null), UP ? null : bapi({action:'upcoming'}).catch(() => null)]);
   D = d; CH = c && c.ok ? c.challenge : null; if(u && u.ok) UP = u;
+  if(!window.autoTrack){ window.autoTrack = true; if(!hashTrack() && location.hash !== '#challenge'){ const f = trackOrder()[0]; if(f && f.id !== TRACK){ TRACK = f.id; VIEW_ID = null; return load(); } } }
   // 운영진 미리보기: 운영진 비번으로 들어온 탭에선 아직 '준비 중'인 스터디도 확정된 것처럼 보여줌 (멤버에겐 안 보임)
   if(D && D.ok && !D.study && AK){
     const a = await api({action:'admin', key:AK}).catch(() => null);
@@ -384,9 +385,14 @@ async function upload(){
 async function unupload(id){ await capi({op:'unupload', h:ME.h, code:ME.code, challenge:CH.id, id}); load(); }
 function mine(){ return ME && D && D.login === 'ok' ? ME.h : null; }
 
+// 11/22: 다가오는 스터디가 있는 종류가 먼저 (SNS 끝나면 부동산이 맨 앞)
+function trackOrder(){
+  const tr = (D && D.tracks) || {}, live = t => tr[t.id] && (tr[t.id].status === 'set' || tr[t.id].status === 'vote');
+  return [...TRACKS].sort((a, b) => (live(b) - live(a)) || (live(a) && live(b) ? String(tr[a.id].startsAt).localeCompare(String(tr[b.id].startsAt)) : 0));
+}
 function renderTracks(){
   const tr = (D && D.tracks) || {};
-  $('#tracks').innerHTML = location.hash === '#admin' ? '' : TRACKS.map(t => {
+  $('#tracks').innerHTML = location.hash === '#admin' ? '' : trackOrder().map(t => {
     const s = tr[t.id];
     const sub = !s ? '준비 중' : s.status === 'vote' ? '날짜 투표 중' : s.status === 'done' ? '지난 스터디' : when(s.startsAt).replace(/ (오전|오후|밤).*/, '');
     return `<a href="#${t.id}" class="${TRACK === t.id ? 'on' : ''}">${esc(t.name)}<small>${esc(sub)}</small></a>`;
@@ -656,7 +662,7 @@ function boardCols(me){
   return teams;
 }
 function cardHtml(k, me, lead){
-  const mine = k.h === me || (k.col === 'pin' && lead);
+  const mine = k.h === me || lead;   // 11/22: 스터디장(결영이네 포함)은 모든 카드 고치기·지우기
   const hs = k.hearts || [], myH = me && hs.includes(me);
   if(KF && KF.id === k.id) return cardForm();
   return `<div class="kard"><div class="kt"><span>${esc(k.title || '')}</span><span>${k.col !== 'pin' ? `<button onclick="presentCard(${k.id})" style="color:var(--acc);font-weight:800">▶ 크게</button>` : ''}${mine ? `<button onclick="editCard(${k.id})">고치기</button><button onclick="uncard(${k.id})">지우기</button>` : ''}</span></div>
