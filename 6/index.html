@@ -51,6 +51,16 @@ button{font-family:inherit}
 .newfile b{font-size:13.5px;font-weight:700;color:#A3284F;letter-spacing:-.02em}
 .newfile small{font-size:12px;color:#B4536F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .newfile .go{flex-shrink:0;font-size:13px;font-weight:700;color:#A3284F}
+.newfile.read{background:#F4F6FB;border-bottom:1px solid #DCE1EC}
+.newfile.read b{color:#232B38}.newfile.read small{color:#5A6372}.newfile.read .go{color:#232B38}
+.rdm{position:fixed;inset:0;background:rgba(20,24,32,.55);z-index:999;display:flex;align-items:flex-end;justify-content:center}
+.rdm .box{background:#fff;width:100%;max-width:520px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:26px 22px 22px;color:#232B38;line-height:1.7}
+.rdm h3{font-size:19px;font-weight:800;margin:0 0 4px}.rdm .sub{font-size:13px;color:#6B7280;margin-bottom:16px}
+.rdm h4{font-size:14px;font-weight:800;margin:16px 0 4px;color:#8A4B5E}.rdm p,.rdm li{font-size:14px}.rdm ul{margin:0;padding-left:18px}
+.rdm .ex{background:#FFF6CC;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:6px}
+.rdm .cta{display:block;text-align:center;background:#232B38;color:#fff;font-weight:800;border-radius:12px;padding:14px;margin-top:20px;text-decoration:none}
+.rdm .close{display:block;width:100%;background:none;border:0;color:#6B7280;font-size:13px;margin-top:10px;padding:8px;cursor:pointer}
+@media(min-width:600px){.rdm{align-items:center}.rdm .box{border-radius:18px}}
 .newfile button{flex-shrink:0;background:none;border:0;color:#B4536F;font-size:14px;cursor:pointer;padding:6px}
 .files{margin-top:16px;display:grid;gap:10px}
 .fl{display:flex;align-items:center;gap:14px;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px;text-decoration:none;color:inherit}
@@ -895,7 +905,7 @@ function render(){
   // 운영진 로그인 칸은 과제 데이터 없이 그린다 (로그인 전엔 DATA가 비어 있다)
   if(view==='admin' || (view==='ops' && !ADMIN)){ if(bn) bn.innerHTML=''; el.innerHTML=adminLogin(); return; }
   if(locked){ if(bn) bn.innerHTML=''; el.innerHTML=gateView(); return; }
-  if(bn) bn.innerHTML=filesBanner()+(DATA?banner():'');
+  if(bn) bn.innerHTML=readBanner()+filesBanner()+(DATA?banner():'');
   if(!DATA){ el.innerHTML='<div class="state">과제 정보를 불러오지 못했어요.<br>잠시 뒤에 새로고침해 주세요.</div>'; return; }
   el.innerHTML = view==='ex'?exView(exm[1],+exm[2]) : view==='write'?writeView(wrm[1],+wrm[2]) : view==='home'?homeView() : view==='qa'?qaView() : view==='files'?filesView() : view==='mine'?mineView() : view==='admin'?adminLogin() : view==='ops'?opsView() : view==='coach'?coachView() : view==='vod'?vodView() : trackView(view);
 }
@@ -1669,6 +1679,37 @@ function filesBanner(){
   const f=bannerFile(); if(!f || view==='files') return '';
   try{ if(localStorage.getItem('ot'+COHORT+'file_seen')===f.id) return ''; }catch(e){}
   return `<div class="newfile"><a href="${esc(f.file)}" target="_blank" rel="noopener" onclick="seenFile()"><span class="ic">🎁</span><span class="tx"><b>먼저 보세요 · ${esc(f.title)}</b><small>${esc(f.desc)}</small></span><span class="go">받기 ›</span></a><button onclick="seenFile();render()" aria-label="닫기">✕</button></div>`;
+}
+// 11/23 결영: 독서 챌린지(졸업생·외부와 같은 톡방) 배너 — 누르면 자세히 보기, 12/21 지나면 저절로 안 뜸
+const READ_TALK = 'https://open.kakao.com/o/gQhC9kYi';
+function readBanner(){
+  if(new Date() > new Date('2026-12-22T00:00:00+09:00')) return '';
+  try{ if(localStorage.getItem('ot'+COHORT+'read_seen')==='1') return ''; }catch(e){}
+  return `<div class="newfile read"><a href="#" onclick="openRead();return false"><span class="ic">📖</span><span class="tx"><b>독서 챌린지 함께 하실 분</b><small>졸업생·외부 분들과 같은 톡방에서 『부의 인문학』 같이 읽어요 · 6기는 무료</small></span><span class="go">자세히 ›</span></a><button onclick="seenRead();render()" aria-label="닫기">✕</button></div>`;
+}
+function seenRead(){ try{ localStorage.setItem('ot'+COHORT+'read_seen','1'); }catch(e){} }
+function closeRead(){ const m=document.getElementById('rdm'); if(m) m.remove(); }
+function openRead(){
+  closeRead();
+  const d=document.createElement('div'); d.className='rdm'; d.id='rdm';
+  d.onclick=e=>{ if(e.target===d) closeRead(); };
+  d.innerHTML=`<div class="box">
+    <h3>📖 원팀 독서 챌린지</h3>
+    <div class="sub">11/25(수) ~ 12/21(월) · 4주 · 6기는 무료</div>
+    <p>6기 독서 과제 『부의 인문학』을 이번엔 졸업생·외부 분들과 한 톡방에서 같이 읽어요. 진도는 6기와 똑같아요.</p>
+    <h4>주별 진도</h4>
+    <ul><li>1주 1장 (11/25 ~ 11/30)</li><li>2주 2·3장 (12/1 ~ 12/7)</li><li>3주 4·5장 (12/8 ~ 12/14)</li><li>4주 6장 + 회고 (12/15 ~ 12/21)</li></ul>
+    <h4>매일 인증</h4>
+    <p>읽은 쪽 사진 1장 + [인증]으로 시작하는 한 줄. 오늘의 소감, 배운 점, 실천할 점 중 하나면 돼요.</p>
+    <div class="ex">[인증] 실천할 점: 이번 달 고정비 하나 줄여보기</div>
+    <h4>미니강의</h4>
+    <p>매주 월요일, 주식 15년차·부동산 8년차 머니그랩이 VOD로 어려운 장을 풀어줘요.</p>
+    <h4>꼭 봐주세요</h4>
+    <ul><li>톡방 프로필 이름은 과제방에서 쓰는 이름 그대로</li><li>독서 과제는 지금처럼 과제방에도 제출해 주세요</li><li>책 문장은 한 문장까지만, 종목·매수 얘기는 하지 않아요</li></ul>
+    <a class="cta" href="${READ_TALK}" target="_blank" rel="noopener">톡방 들어가기 ›</a>
+    <button class="close" onclick="closeRead()">닫기</button>
+  </div>`;
+  document.body.appendChild(d);
 }
 function seenFile(){ try{ const f=bannerFile(); if(f) localStorage.setItem('ot'+COHORT+'file_seen',f.id); }catch(e){} }
 
