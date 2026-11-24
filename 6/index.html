@@ -295,6 +295,25 @@ body[data-locked="1"] #menu,body[data-locked="1"] footer{display:none}
 .dstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-top:8px}
 .dstat div{background:#fff;border:1px solid var(--warn-line);border-radius:12px;padding:10px 12px}
 .dstat b{display:block;font-size:20px;color:var(--warn)}.dstat span{font-size:11.5px;color:var(--text-lt)}
+/* 독서 챌린지 체크표 (11/24 결영: 매일 캡처해서 톡방에) */
+.rdbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0}
+.rdcap{background:#fff;border:1px solid #F1E3E8;border-radius:16px;padding:22px 20px 18px;max-width:760px;color:#232B38}
+.rdcap .ey{font-size:12px;font-weight:700;color:#8A4B5E}
+.rdcap h2{font-size:21px;font-weight:800;margin:3px 0 2px}
+.rdcap .sb{font-size:12.5px;color:#6B7280}
+.rdsum{display:flex;gap:8px;margin:14px 0 14px}.rdsum div{flex:1;background:#FBF3F5;border-radius:12px;padding:10px;text-align:center}
+.rdsum b{display:block;font-size:21px;font-weight:800;color:#8A4B5E}.rdsum span{font-size:11.5px;color:#6B7280}
+.rdt{width:100%;border-collapse:collapse;font-size:13px}
+.rdt th{font-size:11px;font-weight:600;color:#9CA3AF;padding:4px 2px 6px;text-align:center;white-space:nowrap}
+.rdt th.td{color:#8A4B5E}
+.rdt td{padding:4px 2px;text-align:center;border-top:1px solid #F5EEF1;white-space:nowrap}
+.rdt td.nm{text-align:left;font-weight:700;padding-right:8px;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.rdt tr.full td.nm::after{content:' ✦';color:#D9A3B3}
+.rdt i{display:inline-block;width:24px;height:24px;border-radius:7px;background:#EEF0F3;vertical-align:middle;font-style:normal;font-size:13px;line-height:24px;color:#fff;font-weight:800}
+.rdt i.ok{background:#D9A3B3}.rdt i.late{background:#F1D5DE}.rdt i.fu{background:#fff;border:1px dashed #E5E7EB;box-sizing:border-box}
+.rdt td.c{font-size:12.5px;color:#4B5563}.rdt td.c b{color:#232B38}.rdt tr.full td.c b{color:#8A4B5E}
+.rdcap .ft{margin-top:12px;font-size:11px;color:#9CA3AF;line-height:1.6}
+@media(max-width:560px){.rdcap{padding:16px 10px 14px;border-radius:12px}.rdcap h2{font-size:18px}.rdsum b{font-size:18px}.rdt{font-size:11.5px}.rdt th{font-size:9.5px;padding:3px 0 5px}.rdt td{padding:3px 1px}.rdt td.nm{max-width:92px;font-size:12px;padding-right:4px}.rdt i{width:19px;height:19px;border-radius:5px;font-size:10.5px;line-height:19px}.rdt td.c{font-size:11px}}
 .dtw{overflow-x:auto;margin-top:8px;background:#fff;border:1px solid var(--warn-line);border-radius:14px}
 .dt{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
 .dt th{font-size:11.5px;font-weight:600;color:var(--text-lt);text-align:center;padding:9px 6px;border-bottom:1px solid var(--warn-line);white-space:nowrap}
@@ -1900,15 +1919,15 @@ function opsView(){
   const coachRows=rows.filter(isCoach), taskRows=rows.filter(r=>!isCoach(r));
   // 11/18 결영: 탭 7개 → 홈 · 답장하기(피드백·질문·1:1) · 강의(PPT·녹화본) · MVP, 위에 결영/머니그랩 나눠 보기
   if(opsSub==='prog') opsSub='dash'; if(opsSub==='link') opsSub='lec';
-  if(!['dash','fb','qa','coach','lec','mvp'].includes(opsSub)) opsSub='dash';
+  if(!['dash','fb','qa','coach','lec','mvp','read'].includes(opsSub)) opsSub='dash';
   const REPLY=['fb','qa','coach'], isReply=REPLY.includes(opsSub);
   const nFb=byOwner(taskRows).filter(r=>!r.feedback).length, nQa=byOwner(unans).length, nCo=byOwner(coachRows).filter(r=>!r.feedback).length;
-  const TOP=[['dash','홈',0],['reply','답장하기',nFb+nQa+nCo],['lec','강의',0],['mvp','MVP',0]];
+  const TOP=[['dash','홈',0],['reply','답장하기',nFb+nQa+nCo],['lec','강의',0],['mvp','MVP',0],['read','📖 독서',0]];
   let h=`<section class="sec"><div class="admin"><h3>🔒 운영진 <button onclick="logout()">나가기</button></h3>
     <div class="opstop"><div class="opsnav">${TOP.map(([k,n,c])=>`<button class="${(k==='reply'?isReply:k===opsSub)?'on':''}" onclick="setOps('${k==='reply'?(isReply?opsSub:'fb'):k}')">${n}${c?`<i>${c}</i>`:''}</button>`).join('')}</div>
     <div class="whoseg">${[['all','전체'],['결영','결영'],['머니그랩','머니그랩']].map(([k,t])=>`<button class="${k===opsWho?'on':''}" onclick="setWho('${k}')">${t}</button>`).join('')}</div></div>`;
   if(isReply) h+=`<div class="opsnav subs">${[['fb','피드백',nFb],['qa','질문',nQa],['coach','1:1 내집마련',nCo]].map(([k,n,c])=>`<button class="${k===opsSub?'on':''}" onclick="setOps('${k}')">${n}${c?`<i>${c}</i>`:''}</button>`).join('')}</div>`;
-  h+=opsSub==='dash'?opsDash(rows,cw,unans,{taskRows,coachRows,wk}) : opsSub==='qa'?opsQa(byOwner(rows),byOwner(unans)) : opsSub==='mvp'?opsMvp(rows) : opsSub==='lec'?opsLec() : opsSub==='coach'?opsCoach(byOwner(coachRows)) : opsFb(byOwner(taskRows));
+  h+=opsSub==='read'?opsRead() : opsSub==='dash'?opsDash(rows,cw,unans,{taskRows,coachRows,wk}) : opsSub==='qa'?opsQa(byOwner(rows),byOwner(unans)) : opsSub==='mvp'?opsMvp(rows) : opsSub==='lec'?opsLec() : opsSub==='coach'?opsCoach(byOwner(coachRows)) : opsFb(byOwner(taskRows));
   return h+`</div></section>`;
 }
 // 한눈에 (11/18 결영: 미트·PPT·과제방 링크를 한곳에 + 부부별 성과)
@@ -1922,6 +1941,55 @@ function nextLive(now){
   return L.sort((a,b)=>a.t-b.t).find(x=>now<x.t+2*3600e3)||null;
 }
 let dashOpen=null;
+// ── 독서 챌린지 체크표 (11/24 결영: 매일 캡처해서 톡방에 올리기, 운영진만) ──
+//   데이터 = 독서챌린지 집계 Apps Script 웹 앱 ?fmt=json (톡방 알림·대화 파일로 30분마다 다시 셈, 현황판 is.gd/oneteamread와 같은 내용)
+const READ_API = 'https://script.google.com/macros/s/AKfycbzY6OWlV3s6Pa4RLZzsNfDWJ403SLqHh6nZ0_maScOsCGRdeKbx-LjlH0ydDOa4adit/exec?fmt=json';
+let RD=null, rdBusy=false, rdErr='', rdWeek=0;
+async function loadRead(){
+  if(rdBusy) return; rdBusy=true; rdErr=''; render();
+  try{ const r=await fetch(READ_API+'&t='+Date.now()); const j=await r.json(); if(!j.ok) throw 0; RD=j; if(!rdWeek) rdWeek=Math.min(Math.max(j.w,1),4); }
+  catch(e){ rdErr='불러오지 못했어요. 잠시 뒤 다시 눌러 주세요.'; }
+  rdBusy=false; render();
+}
+function opsRead(){
+  if(!RD && !rdBusy && !rdErr) setTimeout(loadRead,0);
+  let h=`<div class="rdbar">${[1,2,3,4].map(w=>`<button class="lpill" style="${w===rdWeek?'background:var(--warn);color:#fff;border-color:var(--warn)':''}" onclick="rdWeek=${w};render()">${w}주차</button>`).join('')}
+    <button class="lpill" onclick="loadRead()">${rdBusy?'불러오는 중…':'새로고침'}</button>
+    <button class="lpill" onclick="saveReadPng(this)">이미지로 저장</button>
+    <a class="lpill" href="https://is.gd/oneteamread" target="_blank" rel="noopener">톡방용 현황판</a></div>`;
+  if(rdErr) h+=`<div style="font-size:13px;color:var(--warn)">${esc(rdErr)}</div>`;
+  if(!RD) return h+(rdBusy?'<div style="font-size:13px;color:var(--text-lt)">불러오는 중이에요…</div>':'');
+  const wd=['일','월','화','수','목','금','토'], days=RD.days.filter(x=>x.w===rdWeek);
+  const dow=x=>{ const [m,d]=x.date.split('/').map(Number); return wd[new Date(2026,m-1,d).getDay()]; };
+  const ppl=RD.people.map(p=>Object.assign({n:p.wk[rdWeek-1]||0,s:p.sns[rdWeek-1]||0},p))
+    .sort((a,b)=>b.n-a.n||b.total-a.total||a.name.localeCompare(b.name));
+  const cur=rdWeek===RD.w, today=RD.d;
+  const nToday=cur?RD.people.filter(p=>p.c[today]).length:null, nFull=ppl.filter(p=>p.n>=RD.wm).length;
+  const range=days.length?days[0].date+'('+dow(days[0])+') ~ '+days[days.length-1].date+'('+dow(days[days.length-1])+')':'';
+  h+=`<div class="rdcap" id="rdCap"><div class="ey">원팀 독서 챌린지 · 『부의 인문학』</div>
+    <h2>${rdWeek}주차 인증 체크표</h2><div class="sb">${range}${cur?' · 오늘 '+today+'일차':''}${RD.at?' · '+esc(RD.at)+' 집계':''}</div>
+    <div class="rdsum">${cur?`<div><b>${nToday}</b><span>오늘 인증</span></div>`:''}<div><b>${nFull}</b><span>주 ${RD.wm}일 채운 분</span></div><div><b>${ppl.length}</b><span>참여</span></div></div>
+    <table class="rdt"><tr><th style="text-align:left">활동명</th>${days.map(x=>`<th class="${cur&&x.n===today?'td':''}">${dow(x)}<br>${x.date}</th>`).join('')}<th>인증</th><th>SNS</th></tr>`;
+  ppl.forEach(p=>{
+    const full=p.n>=RD.wm;
+    h+=`<tr class="${full?'full':''}"><td class="nm">${esc(p.name)}</td>${days.map(x=>{ const v=p.c[x.n]; return `<td><i class="${v==='ok'?'ok':v==='late'?'late':x.n>today?'fu':''}">${v?'✓':''}</i></td>`; }).join('')}
+      <td class="c"><b>${p.n}</b>/${RD.wm}</td><td class="c"><b>${p.s}</b>/${RD.sm}</td></tr>`;
+  });
+  if(!ppl.length) h+=`<tr><td colspan="${days.length+3}" style="padding:18px;color:#9CA3AF">아직 명단이 비어 있어요</td></tr>`;
+  h+=`</table><div class="ft">분홍 ✓ = 인증 · 연분홍 = 늦게 채움 · 점선 = 아직 안 온 날 · ✦ = 이번 주 ${RD.wm}일 달성<br>인증 = 책 사진 1장 + 한 줄 · 환급 미션 = 4주 모두 주 ${RD.wm}일 + 공개 SNS 주 ${RD.sm}개</div></div>`;
+  return h;
+}
+async function saveReadPng(btn){
+  const el=document.getElementById('rdCap'); if(!el) return;
+  btn.textContent='만드는 중…';
+  try{
+    if(!window.html2canvas) await new Promise((ok,no)=>{ const t=document.createElement('script'); t.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'; t.onload=ok; t.onerror=no; document.head.appendChild(t); });
+    const cv=await html2canvas(el,{scale:2,backgroundColor:'#ffffff'});
+    const a=document.createElement('a'); a.download='독서챌린지_'+rdWeek+'주차_'+(RD.days.find(x=>x.n===RD.d)||{date:''}).date.replace('/','')+'.png'; a.href=cv.toDataURL('image/png'); a.click();
+    btn.textContent='저장했어요';
+  }catch(e){ btn.textContent='저장 실패 — 화면 캡처로'; }
+  setTimeout(()=>{ btn.textContent='이미지로 저장'; },2500);
+}
 // 강의 9개 (OT + 주차별 화 내집마련 · 목 SNS)
 function lectures(){
   const L=[{k:'0|OT',w:0,tr:'OT',d:OT.date,day:OT.day||'목',name:'OT',who:'결영'}];
