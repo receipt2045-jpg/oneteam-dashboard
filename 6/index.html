@@ -1944,17 +1944,19 @@ let dashOpen=null;
 // ── 독서 챌린지 체크표 (11/24 결영: 매일 캡처해서 톡방에 올리기, 운영진만) ──
 //   데이터 = 독서챌린지 집계 Apps Script 웹 앱 ?fmt=json (톡방 알림·대화 파일로 30분마다 다시 셈, 현황판 is.gd/oneteamread와 같은 내용)
 const READ_API = 'https://script.google.com/macros/s/AKfycbzY6OWlV3s6Pa4RLZzsNfDWJ403SLqHh6nZ0_maScOsCGRdeKbx-LjlH0ydDOa4adit/exec?fmt=json';
-let RD=null, rdBusy=false, rdErr='', rdWeek=0;
+let RD=(()=>{ try{ return JSON.parse(localStorage.getItem('otReadRD')||'null'); }catch(e){ return null; } })(), rdBusy=false, rdErr='', rdWeek=0, rdFresh=false;
 async function loadRead(){
   if(rdBusy) return; rdBusy=true; rdErr=''; render();
-  try{ const r=await fetch(READ_API+'&t='+Date.now()); const j=await r.json(); if(!j.ok) throw 0; RD=j; if(!rdWeek) rdWeek=Math.min(Math.max(j.w,1),4); }
+  try{ const r=await fetch(READ_API+'&t='+Date.now()); const j=await r.json(); if(!j.ok) throw 0; RD=j; rdFresh=true; try{ localStorage.setItem('otReadRD',JSON.stringify(j)); }catch(e){} if(!rdWeek) rdWeek=Math.min(Math.max(j.w,1),4); }
   catch(e){ rdErr='불러오지 못했어요. 잠시 뒤 다시 눌러 주세요.'; }
   rdBusy=false; render();
 }
 function opsRead(){
-  if(!RD && !rdBusy && !rdErr) setTimeout(loadRead,0);
+  // 지난번 데이터를 먼저 바로 보여 주고, 뒤에서 새로 받아 바꾼다 (구글 웹 앱이 3~4초 걸림)
+  if(!rdFresh && !rdBusy && !rdErr) setTimeout(loadRead,0);
+  if(RD && !rdWeek) rdWeek=Math.min(Math.max(RD.w,1),4);
   let h=`<div class="rdbar">${[1,2,3,4].map(w=>`<button class="lpill" style="${w===rdWeek?'background:var(--warn);color:#fff;border-color:var(--warn)':''}" onclick="rdWeek=${w};render()">${w}주차</button>`).join('')}
-    <button class="lpill" onclick="loadRead()">${rdBusy?'불러오는 중…':'새로고침'}</button>
+    <button class="lpill" onclick="loadRead()">${rdBusy?'새로 세는 중…':'새로고침'}</button>
     <button class="lpill" onclick="saveReadPng(this)">이미지로 저장</button>
     <a class="lpill" href="https://is.gd/oneteamread" target="_blank" rel="noopener">톡방용 현황판</a></div>`;
   if(rdErr) h+=`<div style="font-size:13px;color:var(--warn)">${esc(rdErr)}</div>`;
