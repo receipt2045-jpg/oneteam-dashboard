@@ -1944,10 +1944,16 @@ let dashOpen=null;
 // ── 독서 챌린지 체크표 (11/24 결영: 매일 캡처해서 톡방에 올리기, 운영진만) ──
 //   데이터 = 독서챌린지 집계 Apps Script 웹 앱 ?fmt=json (톡방 알림·대화 파일로 30분마다 다시 셈, 현황판 is.gd/oneteamread와 같은 내용)
 const READ_API = 'https://script.google.com/macros/s/AKfycbzY6OWlV3s6Pa4RLZzsNfDWJ403SLqHh6nZ0_maScOsCGRdeKbx-LjlH0ydDOa4adit/exec?fmt=json';
+// 오늘이 며칠차인지 (11/24 = 1일차, 새벽 3시 전은 전날) — 서버 값은 마지막으로 센 시각 기준이라 여기서 다시 계산
+function rdToday(fb){ const n=Math.floor((Date.now()-Date.parse('2026-11-24T03:00:00+09:00'))/864e5)+1; return Math.min(Math.max(n,1),28)||fb; }
 let RD=(()=>{ try{ return JSON.parse(localStorage.getItem('otReadRD')||'null'); }catch(e){ return null; } })(), rdBusy=false, rdErr='', rdWeek=0, rdFresh=false;
 async function loadRead(){
   if(rdBusy) return; rdBusy=true; rdErr=''; render();
-  try{ const r=await fetch(READ_API+'&t='+Date.now()); const j=await r.json(); if(!j.ok) throw 0; RD=j; rdFresh=true; try{ localStorage.setItem('otReadRD',JSON.stringify(j)); }catch(e){} if(!rdWeek) rdWeek=Math.min(Math.max(j.w,1),4); }
+  // 11/24: 집계 스크립트가 셀 때마다 과제방 서버(read_board_get)에 올려 둔 걸 먼저 읽는다(0.2초). 없으면 구글 웹 앱(3초)
+  try{ let j=null;
+    try{ const q=await fetch(SUPA.replace(/hub_api$/,'read_board_get'),{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:'{}'}); j=await q.json(); }catch(e){}
+    if(!j||!j.ok){ const r=await fetch(READ_API+'&t='+Date.now()); j=await r.json(); }
+    if(!j.ok) throw 0; j.d=rdToday(j.d); j.w=Math.min(Math.ceil(j.d/7),4); RD=j; rdFresh=true; try{ localStorage.setItem('otReadRD',JSON.stringify(j)); }catch(e){} if(!rdWeek) rdWeek=Math.min(Math.max(j.w,1),4); }
   catch(e){ rdErr='불러오지 못했어요. 잠시 뒤 다시 눌러 주세요.'; }
   rdBusy=false; render();
 }
