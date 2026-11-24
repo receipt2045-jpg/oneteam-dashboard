@@ -1929,6 +1929,19 @@ function lectures(){
     L.push({k:w.n+'|SNS',w:w.n,tr:'SNS',d:w.thu,day:'목',name:w.n+'주차 SNS',who:'결영'}); });
   return L;
 }
+// 강의 표에만 쓰는 목록 — 주차마다 내집마련·SNS 다음에 독서(부의 인문학) 한 줄 (11/24 결영: '강의 표에 독서 칸도')
+//   독서는 라이브가 없어 날짜 칸엔 마감일, 녹화본 칸은 없음. PPT는 공용(cohort 0) 'ppt:<주차>|독서'
+function lecTable(){
+  const out=[];
+  lectures().forEach(x=>{
+    out.push(x);
+    if(x.tr==='SNS'){
+      const w=W(x.w), t=TASKS.read&&TASKS.read[x.w], due=w&&w.due?w.due.slice(5).replace('-','/').replace(/^0/,'').replace('/0','/'):'';
+      out.push({k:x.w+'|독서',w:x.w,tr:'독서',d:due?'~'+due:'',day:'',name:x.w+'주차 독서 · 부의 인문학 '+(t&&t.name?t.name.replace('부의 인문학 ','').replace(' + 4주 회고',''):''),who:'머니그랩',read:true});
+    }
+  });
+  return out;
+}
 // 강의 PPT는 운영진 링크(hub_admin_links)에 이름 'ppt:<주차>|<강의>'로 둔다 — 멤버에겐 안 내려간다
 // 이 기수 것이 먼저, 없으면 공용(cohort 0)
 const pptOf = k => { const a=(ADMIN_LINKS||[]).find(l=>l.name==='ppt:'+k); if(a) return Object.assign({cohort:COHORT},a); const z=SHARED_LINKS.find(l=>l.name==='ppt:'+k); return z?Object.assign({cohort:0},z):null; };
@@ -1936,15 +1949,15 @@ const isRecUrl = u => !!u && !/meet\.google\.com/.test(u);
 let lecEdit=null;
 function opsLec(){
   if(ADMIN_LINKS===null) loadAdminLinks();
-  const L=liveLinks(), rows=lectures().filter(x=>opsWho==='all'||x.who===opsWho);
-  const nP=rows.filter(x=>pptOf(x.k)).length, nV=rows.filter(x=>isRecUrl(L[x.k])).length;
-  let h=`<div class="sub">강의 ${rows.length}개 · PPT ${nP} · 녹화본 ${nV}</div><div style="font-size:12px;color:var(--text-lt);line-height:1.6">'+ 넣기'를 누르면 그 자리에서 주소를 붙여 넣어요. 녹화본은 화·목 밤에 자동으로도 들어가요.</div>
+  const L=liveLinks(), rows=lecTable().filter(x=>opsWho==='all'||x.who===opsWho);
+  const nP=rows.filter(x=>pptOf(x.k)).length, nV=rows.filter(x=>!x.read&&isRecUrl(L[x.k])).length;
+  let h=`<div class="sub">강의 ${rows.length}개 · PPT ${nP} · 녹화본 ${nV}</div><div style="font-size:12px;color:var(--text-lt);line-height:1.6">'+ 넣기'를 누르면 그 자리에서 주소를 붙여 넣어요. 녹화본은 화·목 밤에 자동으로도 들어가요. 독서는 라이브가 없어 날짜 칸에 과제 마감일을 적었어요.</div>
     <div class="dtw"><table class="dt" style="min-width:520px"><tr><th>날짜</th><th>강의</th><th>담당</th><th>PPT</th><th>녹화본</th></tr>`;
   rows.forEach(x=>{
     const p=pptOf(x.k), v=L[x.k], k=JSON.stringify(x.k).replace(/"/g,'&quot;');
     const cell=(url,kind)=>url?`<a class="lpill" href="${esc(url)}" target="_blank" rel="noopener">열기</a><button class="lpill ed" title="바꾸기" onclick="lecEdit=${k}+'#${kind}';render()">✎</button>`:`<button class="lpill no" onclick="lecEdit=${k}+'#${kind}';render()">+ 넣기</button>`;
-    h+=`<tr><td>${esc(x.d)}(${x.day})</td><td style="text-align:left;font-weight:700">${esc(x.name)}</td><td>${x.who}</td><td>${cell(p&&p.url,'ppt')}</td><td>${cell(isRecUrl(v)?v:'','vod')}</td></tr>`;
-    ['ppt','vod'].forEach(kind=>{ if(lecEdit!==x.k+'#'+kind) return;
+    h+=`<tr${x.read?' style="background:#FAFBF6"':''}><td>${esc(x.d)}${x.day?`(${x.day})`:''}</td><td style="text-align:left;font-weight:700">${esc(x.name)}</td><td>${x.who}</td><td>${cell(p&&p.url,'ppt')}</td><td>${x.read?'<span style="color:var(--text-lt)">–</span>':cell(isRecUrl(v)?v:'','vod')}</td></tr>`;
+    (x.read?['ppt']:['ppt','vod']).forEach(kind=>{ if(lecEdit!==x.k+'#'+kind) return;
       const cur=kind==='ppt'?(p&&p.url||''):(isRecUrl(v)?v:'');
       h+=`<tr class="dd"><td colspan="5"><div class="lecin"><input id="lecU" placeholder="${kind==='ppt'?'PPT 주소 (https://claude.ai/artifact/…)':'녹화본 주소 (https://youtu.be/…)'}" value="${esc(cur)}"><button class="sbtn" onclick="saveLec(${k},'${kind}',this)">${esc(x.name)} ${kind==='ppt'?'PPT':'녹화본'} 저장</button><button class="sbtn ghost" onclick="lecEdit=null;render()">취소</button></div></td></tr>`; });
   });
