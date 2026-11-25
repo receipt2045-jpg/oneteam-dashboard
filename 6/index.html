@@ -1993,8 +1993,8 @@ function opsRead(){
   if(!RD) return h+(rdBusy?'<div style="font-size:13px;color:var(--text-lt)">불러오는 중이에요…</div>':'');
   const wd=['일','월','화','수','목','금','토'], days=RD.days.filter(x=>x.w===rdWeek);
   const dow=x=>{ const [m,d]=x.date.split('/').map(Number); return wd[new Date(2026,m-1,d).getDay()]; };
-  const ppl=RD.people.map(p=>Object.assign({n:p.wk[rdWeek-1]||0,s:p.sns[rdWeek-1]||0},p))
-    .sort((a,b)=>b.n-a.n||b.total-a.total||a.name.localeCompare(b.name));
+  const ppl=RD.people.map((p,i)=>Object.assign({n:p.wk[rdWeek-1]||0,i:i,s:p.sns[rdWeek-1]||0},p))
+    .sort((a,b)=>b.n-a.n||b.total-a.total||a.i-b.i);   // 11/25 결영: 같으면 먼저 인증한 사람 위 (서버가 그 순서로 보냄)
   const cur=rdWeek===RD.w, today=RD.d;
   const nToday=cur?RD.people.filter(p=>p.c[today]).length:null, nFull=ppl.filter(p=>p.n>=RD.wm).length;
   const range=days.length?days[0].date+'('+dow(days[0])+') ~ '+days[days.length-1].date+'('+dow(days[days.length-1])+')':'';
