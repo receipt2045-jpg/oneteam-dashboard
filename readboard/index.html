@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>원팀 독서 챌린지 현황판</title>
+<meta property="og:title" content="원팀 독서 챌린지 현황판">
+<meta property="og:description" content="『부의 인문학』 오늘까지 누가 인증했는지 한눈에">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap">
+<!-- 11/25 결영: 구글 웹 앱 현황판이 카톡 안 브라우저에서 '파일을 열 수 없습니다'로 막혀서 여기로 옮김.
+     데이터는 집계 스크립트가 셀 때마다 과제방 서버(read_board_get)에 올려 둔 것 — 운영진 체크표와 같은 데이터 -->
+<style>
+body{margin:0;background:#fff;color:#232B38;font-family:"Noto Sans KR",sans-serif;word-break:keep-all}
+.wrap{max-width:520px;margin:0 auto;padding:22px 16px 40px}
+.ey{font-size:12px;font-weight:700;color:#8A4B5E}h1{font-size:22px;font-weight:900;margin:4px 0 2px}.sub{font-size:12.5px;color:#6B7280}
+.sum{display:flex;gap:8px;margin:16px 0 18px}.sum div{flex:1;background:#FBF3F5;border-radius:12px;padding:12px;text-align:center}
+.sum b{display:block;font-size:22px;font-weight:900;color:#8A4B5E}.sum span{font-size:12px;color:#6B7280}
+.daysh{display:flex;gap:4px;padding:0 13px 4px}.daysh span{width:26px;text-align:center;font-size:11px;color:#9CA3AF}
+.row{border:1px solid #F1E3E8;border-radius:12px;padding:12px;margin-bottom:8px}.row.full{border-color:#D9A3B3;background:#FFFAFB}
+.nm{font-weight:700;font-size:15px}
+.badge{font-size:11px;background:#232B38;color:#fff;border-radius:999px;padding:2px 8px;margin-left:4px;vertical-align:2px}
+.dots{display:flex;gap:4px;margin:8px 0 6px}.dots i{width:26px;height:26px;border-radius:7px;background:#EEF0F3;display:block}
+.dots i.ok{background:#D9A3B3}.dots i.late{background:#F1D5DE}.dots i.skip{visibility:hidden}
+.dots i.future{background:#fff;border:1px dashed #E5E7EB;box-sizing:border-box}
+.meta{font-size:12.5px;color:#4B5563}.meta b{color:#232B38}.off{color:#9CA3AF}.empty{color:#6B7280;font-size:14px}
+.foot{margin-top:18px;font-size:11.5px;color:#9CA3AF;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="ey">원팀 독서 챌린지 · 『부의 인문학』</div><p class="empty">불러오는 중이에요…</p></div>
+<script>
+const API='https://vfgfvwqejfuqaxvtordh.supabase.co/rest/v1/rpc/read_board_get', KEY='sb_publishable_W_XKLh1kA5hZ-zFatXOhLQ_icQ-j1aW';
+const START=Date.parse('2026-11-24T03:00:00+09:00'), DAYS=28, FIRST_REAL_DAY=2;
+const wd=['일','월','화','수','목','금','토'];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dateOf=n=>{ const t=new Date(Date.UTC(2026,10,24+n-1)); return (t.getUTCMonth()+1)+'/'+t.getUTCDate(); };
+const dowOf=n=>wd[new Date(Date.UTC(2026,10,24+n-1)).getUTCDay()];
+function render(j){
+  // 오늘이 며칠차인지 (새벽 3시 전은 전날)
+  const d=Math.min(Math.max(Math.floor((Date.now()-START)/864e5)+1,1),DAYS), w=Math.min(Math.ceil(d/7),4);
+  const wm=j.wm||5, sm=j.sm||3, first=(w-1)*7+1;
+  const people=(j.people||[]).map((p,i)=>{
+    const cells=[]; for(let n=first;n<first+7;n++) cells.push({n, v:n<FIRST_REAL_DAY?'skip':n>d?'future':(p.c[n]||'none')});
+    const alive=[1,2,3,4].filter(x=>x<w).every(x=>(p.wk[x-1]||0)>=wm&&(p.sns[x-1]||0)>=sm);
+    return {name:p.name, cells, wkDays:p.wk[w-1]||0, sns:p.sns[w-1]||0, total:p.total||0, alive, i, today:!!p.c[d]};
+  // 많이 한 사람 위, 같으면 먼저 인증한 사람 위 (서버가 그 순서로 보냄)
+  }).sort((a,b)=>b.wkDays-a.wkDays||b.total-a.total||a.i-b.i);
+  let rows='';
+  people.forEach(p=>{
+    const full=p.wkDays>=wm;
+    rows+='<div class="row'+(full?' full':'')+'"><div class="nm">'+esc(p.name)+(full?' <span class="badge">이번 주 달성</span>':'')+'</div>'+
+      '<div class="dots">'+p.cells.map(c=>'<i class="'+c.v+'" title="'+dateOf(c.n)+'"></i>').join('')+'</div>'+
+      '<div class="meta"><b>'+p.wkDays+'</b>/'+wm+'일 · SNS <b>'+p.sns+'</b>/'+sm+' · 누적 '+p.total+'일'+(p.alive?'':' · <span class="off">환급 미션 종료</span>')+'</div></div>';
+  });
+  const days=[]; for(let n=first;n<first+7;n++) days.push('<span>'+(n<FIRST_REAL_DAY?'':dowOf(n))+'</span>');
+  document.getElementById('app').innerHTML='<div class="ey">원팀 독서 챌린지 · 『부의 인문학』</div><h1>'+w+'주차 현황판</h1>'+
+    '<div class="sub">'+d+'일차('+dateOf(d)+')'+(j.at?' · '+esc(j.at)+' 집계':'')+'</div>'+
+    '<div class="sum"><div><b>'+people.filter(p=>p.today).length+'</b><span>오늘 인증</span></div><div><b>'+people.filter(p=>p.wkDays>=wm).length+'</b><span>이번 주 '+wm+'일 달성</span></div><div><b>'+people.length+'</b><span>참여</span></div></div>'+
+    '<div class="daysh">'+days.join('')+'</div>'+(people.length?'':'<p class="empty">아직 집계된 인증이 없어요.</p>')+rows+
+    '<div class="foot">분홍 = 인증 · 연분홍 = 늦게 채움 · 점선 = 아직 안 온 날<br>톡방 인증은 30분마다 모아서 세요. 방금 올린 인증은 다음 집계 때 반영돼요.<br>환급 미션: 4주 모두 인증 주 '+wm+'일 + 공개 SNS 주 '+sm+'개</div>';
+}
+fetch(API,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:'{}'})
+  .then(r=>r.json()).then(j=>{ if(!j||!j.ok) throw 0; render(j); })
+  .catch(()=>{ document.getElementById('app').innerHTML='<div class="ey">원팀 독서 챌린지</div><p class="empty">현황판을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.</p>'; });
+</script>
+</body>
+</html>
