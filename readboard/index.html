@@ -55,7 +55,7 @@ function render(j){
   });
   const days=[]; for(let n=first;n<first+7;n++) days.push('<span>'+(n<FIRST_REAL_DAY?'':dowOf(n))+'</span>');
   document.getElementById('app').innerHTML='<div class="ey">원팀 독서 챌린지 · 『부의 인문학』</div><h1>'+w+'주차 현황판</h1>'+
-    '<div class="sub">'+d+'일차('+dateOf(d)+')'+(j.at?' · '+esc(j.at)+' 집계':'')+'</div>'+
+    '<div class="sub">'+(d-FIRST_REAL_DAY+1)+'일차('+dateOf(d)+')'+(j.at?' · '+esc(j.at)+' 집계':'')+'</div>'+
     '<div class="sum"><div><b>'+people.filter(p=>p.today).length+'</b><span>오늘 인증</span></div><div><b>'+people.filter(p=>p.wkDays>=wm).length+'</b><span>이번 주 '+wm+'일 달성</span></div><div><b>'+people.length+'</b><span>참여</span></div></div>'+
     '<div class="daysh">'+days.join('')+'</div>'+(people.length?'':'<p class="empty">아직 집계된 인증이 없어요.</p>')+rows+
     '<div class="foot">분홍 = 인증 · 연분홍 = 늦게 채움 · 점선 = 아직 안 온 날<br>톡방 인증은 30분마다 모아서 세요. 방금 올린 인증은 다음 집계 때 반영돼요.<br>환급 미션: 4주 모두 인증 주 '+wm+'일 + 공개 SNS 주 '+sm+'개</div>';
