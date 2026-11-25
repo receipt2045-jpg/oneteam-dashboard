@@ -1988,7 +1988,7 @@ function opsRead(){
   let h=`<div class="rdbar">${[1,2,3,4].map(w=>`<button class="lpill" style="${w===rdWeek?'background:var(--warn);color:#fff;border-color:var(--warn)':''}" onclick="rdWeek=${w};render()">${w}주차</button>`).join('')}
     <button class="lpill" onclick="loadRead()">${rdBusy?'새로 세는 중…':'새로고침'}</button>
     <button class="lpill" onclick="saveReadPng(this)">이미지로 저장</button>
-    <a class="lpill" href="https://is.gd/oneteamread" target="_blank" rel="noopener">톡방용 현황판</a></div>`;
+    <a class="lpill" href="../readboard/" target="_blank" rel="noopener">톡방용 현황판</a></div>`;
   if(rdErr) h+=`<div style="font-size:13px;color:var(--warn)">${esc(rdErr)}</div>`;
   if(!RD) return h+(rdBusy?'<div style="font-size:13px;color:var(--text-lt)">불러오는 중이에요…</div>':'');
   const wd=['일','월','화','수','목','금','토'], days=RD.days.filter(x=>x.w===rdWeek);
