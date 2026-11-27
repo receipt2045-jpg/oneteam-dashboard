@@ -199,6 +199,8 @@ body[data-locked="1"] #menu,body[data-locked="1"] footer{display:none}
 .cp:last-child{border-bottom:1px solid var(--border)}
 .cp .n{width:118px;font-weight:600;display:flex;align-items:center;gap:5px;min-width:0}
 .cp .n span.nn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crown{font-size:13px;line-height:1;flex-shrink:0;cursor:default}
+.crownbar{margin-top:12px;padding:10px 14px;border-radius:10px;background:#FFF6DB;color:#7A5300;font-size:13.5px;font-weight:700}
 .cp .tr{font-size:10.5px;font-weight:700;color:var(--acc2);background:var(--acc2-soft);padding:1px 6px;border-radius:4px;flex-shrink:0}
 .cp .bar{flex:1;height:7px;background:var(--acc-soft);border-radius:4px;overflow:hidden}
 .cp .bar i{display:block;height:100%;background:var(--acc);border-radius:4px;transition:width .4s}
@@ -903,6 +905,20 @@ function choiceOf(h){
   return hs&&sn?'둘 다':hs?'내집':sn?'SNS':'';
 }
 
+// 11/27 결영: 화 내집마련·목 SNS 강의를 둘 다 출석한 부부는 '둘 다 냈다'고 왕관을 씌운다
+//   목록 행의 live(서버가 '본 라이브' 칸만 내려줌) 또는 내 글 본문에서 본 라이브를 읽는다
+const liveOf = r => r.live || ((String(r.body || '').match(/본 라이브 :\s*([^\n]+)/) || [])[1] || '');
+function bothWeeks(list){
+  const by = {};
+  (list || []).forEach(r => { const t = parseTask(r.task); if(!t || t.track !== 'live' || !t.week) return;
+    const o = by[t.week] = by[t.week] || {}, l = liveOf(r); if(/내집/.test(l)) o.h = 1; if(/SNS/.test(l)) o.s = 1; });
+  return Object.keys(by).filter(w => by[w].h && by[w].s).map(Number).sort((a, b) => a - b);
+}
+function crown(h, wk){
+  const ws = bothWeeks(((DATA && DATA.subs) || []).filter(s => s.h === h)).filter(w => wk == null || w === wk);
+  return ws.length ? `<span class="crown" title="${ws.map(w => w + '주차').join('·')} 화·목 두 강의 모두 출석">👑${ws.length > 1 ? '×' + ws.length : ''}</span>` : '';
+}
+
 // ─────────────────────────────────────────────────────────────
 // 화면
 // ─────────────────────────────────────────────────────────────
@@ -984,10 +1000,11 @@ function board(cw){
   shown.forEach(r=>{
     const c=choiceOf(r.h), w=r.total?Math.round(r.done/r.total*100):0;
     h+=`<div class="cp${r.done===r.total?' done':''}${ADMIN?' click':''}" ${ADMIN?`onclick="openDetail=openDetail===${JSON.stringify(r.h).replace(/"/g,'&quot;')}?null:${JSON.stringify(r.h).replace(/"/g,'&quot;')};render()"`:''}>
-      <span class="n"><span class="nn">${esc(r.h)}</span>${c?`<span class="tr">${c}</span>`:''}</span>
+      <span class="n"><span class="nn">${esc(r.h)}</span>${crown(r.h,boardMode==='week'?cw:null)}${c?`<span class="tr">${c}</span>`:''}</span>
       <span class="bar"><i style="width:${w}%"></i></span><span class="v">${r.done}/${r.total}</span></div>`;
     if(ADMIN && openDetail===r.h) h+=detailOf(r.h);
   });
+  if(ROSTER.some(x=>crown(x,boardMode==='week'?cw:null))) h+=`<div style="font-size:12px;color:var(--text-lt);margin-top:8px">👑 ${boardMode==='week'?cw+'주차 ':''}화 내집마련 · 목 SNS 두 강의 모두 출석한 부부</div>`;
   if(rows.length>8) h+=`<button class="more" onclick="boardAll=!boardAll;render()">${boardAll?`접기 ${chev(true)}`:`${n}부부 모두 보기 ${chev(false)}`}</button>`;
   return h+`</div>`;
 }
@@ -1908,14 +1925,14 @@ function mineView(){
   let h=`<section class="sec"><div class="who-bar"><span><b>${esc(MINE.h)}</b>님 로그인 중${MINE._stale?' <span style="color:var(--text-lt);font-size:12px">· 새 내용 확인 중…</span>':''}</span><button onclick="leaveMine()">로그아웃</button></div>
     ${sp2Box()}
     <div class="h1">낸 과제 <span class="hl">${rows.length}개</span>,<br>피드백 ${got}개</div>
-    <div class="body1">피드백은 마감 뒤 며칠 안에 하나씩 달려요.</div><div style="margin-top:14px">`;
+    <div class="body1">피드백은 마감 뒤 며칠 안에 하나씩 달려요.</div>${(ws=>ws.length?`<div class="crownbar">👑 ${ws.map(w=>w+'주차').join('·')} 화 내집마련 · 목 SNS 두 강의 모두 출석했어요</div>`:'')(bothWeeks(rows))}<div style="margin-top:14px">`;
   coach.forEach(r=>{ h+=`<div class="mrow"><div class="t">1:1 내집마련 피드백</div><div class="m">${fmtD(r.at)} 신청</div>
       <details><summary>내가 쓴 신청서 보기</summary><pre>${esc(r.body)}</pre></details>
       ${r.feedback?`<div class="fb"><b>${esc(r.feedbackBy||'머니그랩')}의 피드백</b>${esc(r.feedback)}<div style="margin-top:10px;font-size:12px;color:var(--text-lt)">피드백 내용은 참고만 해주세요. 투자의 책임은 본인에게 있습니다.</div></div>`:`<div class="fb wait">머니그랩님이 답변을 준비하고 있어요</div>`}</div>`; });
   if(!rows.length) h+=`<div class="empty">아직 낸 과제가 없어요</div>`;
   rows.forEach(r=>{
-    const t=parseTask(r.task), name=t&&TASKS[t.track][t.week]?(t.week?`${t.week}주차 ${TRACKS[t.track].name} · ${TASKS[t.track][t.week].name}`:TASKS[t.track][0].name):r.task;
-    h+=`<div class="mrow"><div class="t">${esc(name)}</div><div class="m">${fmtD(r.at)} 제출${r.who?' · '+esc(r.who):''}</div>
+    const t=parseTask(r.task), name=t&&TASKS[t.track][t.week]?(t.week?`${t.week}주차 ${TRACKS[t.track].name} · ${TASKS[t.track][t.week].name}`:TASKS[t.track][0].name):r.task, lv=t&&t.track==='live'&&t.week?liveOf(r):'';
+    h+=`<div class="mrow"><div class="t">${esc(name)}${lv?` · ${esc(lv)}`:''}</div><div class="m">${fmtD(r.at)} 제출${r.who?' · '+esc(r.who):''}</div>
       <details><summary>내가 쓴 글 보기</summary><pre>${esc(r.body)}</pre>${r.link?`<a href="${esc(r.link)}" target="_blank" rel="noopener" style="font-size:12.5px;color:var(--acc)">게시물 ›</a>`:''}</details>
       ${r.feedback?`<div class="fb"><b>${esc(r.feedbackBy||'결영이네')}의 피드백</b>${esc(r.feedback)}</div>`:`<div class="fb wait">피드백을 준비하고 있어요</div>`}
       ${r.q?`<div class="fb" style="background:var(--bg)"><b>질문</b>${esc(r.q)}${r.answer?`<b style="margin-top:8px">답</b>${esc(r.answer)}`:''}</div>`:''}</div>`;
@@ -2147,7 +2164,7 @@ function opsDash(rows,cw,unans,X){
   const cell=(v,n)=>v==null?'<span class="c cx">–</span>':`<span class="c ${v>=n?'c4':v>0?'cp':'c0'}">${v}/${n}</span>`;
   h+=`<div class="dtw"><table class="dt"><tr><th>부부</th><th>OT</th>${WEEKS.map(w=>`<th>${w.n}주</th>`).join('')}<th>전체</th><th>과정</th><th>피드백 읽음</th><th>마지막 제출</th></tr>`;
   per.forEach(r=>{ const k=JSON.stringify(r.x).replace(/"/g,'&quot;'), op=dashOpen===r.x;
-    h+=`<tr class="${op?'op':''}"><td class="n" onclick="dashOpen=dashOpen===${k}?null:${k};render()">${esc(r.x)} <span style="color:var(--text-lt);font-weight:400">${op?"▴":"▾"}</span></td><td>${cell(r.ot?1:0,1)}</td>${r.ws.map(v=>`<td>${cell(v,PER)}</td>`).join('')}
+    h+=`<tr class="${op?'op':''}"><td class="n" onclick="dashOpen=dashOpen===${k}?null:${k};render()">${esc(r.x)}${crown(r.x)} <span style="color:var(--text-lt);font-weight:400">${op?"▴":"▾"}</span></td><td>${cell(r.ot?1:0,1)}</td>${r.ws.map(v=>`<td>${cell(v,PER)}</td>`).join('')}
       <td class="pc">${r.pct}%</td><td>${r.choice||'–'}</td><td>${r.sent?`${r.read}/${r.sent}`:'–'}</td><td>${r.last?fmtD(r.last):'–'}</td></tr>`;
     if(op) h+=`<tr class="dd"><td colspan="${WEEKS.length+6}">${detailOf(r.x)}</td></tr>`; });
   h+=`</table></div><div style="font-size:11.5px;color:var(--text-lt);margin-top:6px">한 주 4개 = 강의 출석·독서·돈관리·내집마련/SNS 중 하나 · 전체 = OT 출석 + 지금까지 주차 · 이름을 누르면 낸 과제가 펼쳐져요</div>`;
@@ -2342,7 +2359,8 @@ function demoData(){
   ['오유부부','용영','희찬부부'].forEach((h,i)=>{ add(h,1,'read','아내'); add(h,1,'money','남편'); add(h,1,i%2?'sns':'house','아내'); });
   ['웆슫부부','우나비아'].forEach(h=>{ add(h,1,'money','아내',null,true,'전세보증금도 자산에 넣나요?',true); add(h,1,'house','남편'); });
   ['뚜띠부부'].forEach(h=>add(h,1,'read','둘이 같이'));
-  ['오유부부','용영','웆슫부부'].forEach(h=>add(h,1,'live','아내'));
+  ['오유부부','용영','웆슫부부'].forEach(h=>{ add(h,1,'live','아내','본 라이브 :\n화 내집마련\n\n알게 된 점 :\n계좌마다 목적이 달라요'); subs[subs.length-1].live='화 내집마련'; });
+  add('오유부부',1,'live','남편','본 라이브 :\n목 SNS\n\n알게 된 점 :\n타깃부터 정해요'); subs[subs.length-1].live='목 SNS';   // 두 강의 다 → 왕관
   add('오유부부',1,'sns','남편',null,true,'부부 얼굴이 안 나와도 되나요?',true);
   const qa=[{id:'d6',task:T(1,'money'),q:'전세보증금도 자산에 넣나요?',a:'네, 돌려받을 돈이라 자산이에요. 대출이 끼어 있으면 부채에도 같이 적어주세요.',by:'머니그랩',at:''},{id:'d18',task:T(1,'sns'),q:'부부 얼굴이 안 나와도 되나요?',a:'',by:'',at:''}];
   const mvp=[{id:'d2',h:'오유부부',who:'남편',task:'OT - 강의 출석',quote:'',body:'알게 된 점 :\n부부 사이 증여는 10년에 6억까지 세금이 없다는 걸 처음 알았어요. 생활비로 쓰는 돈은 증여로 보지 않는다는 것도요.\n\n통장을 합치라는 이유가 돈이 불어나는 걸 둘이 바로 보려는 거였는데, 가계부로 같이 보면 굳이 합치지 않아도 되겠다 싶었어요.\n\n실천할 점 :\n이번 주 안에 생활비 통장 하나만 같이 쓰고, 투자는 각자 계좌로 나누기로 했어요. 주말에 모아불리에 자산부터 입력해 볼게요.',link:''},
