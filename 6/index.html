@@ -197,7 +197,7 @@ body[data-locked="1"] #menu,body[data-locked="1"] footer{display:none}
 .seg button.on{background:#fff;color:var(--acc);box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .cp{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--border);font-size:14.5px}
 .cp:last-child{border-bottom:1px solid var(--border)}
-.cp .n{width:118px;font-weight:600;display:flex;align-items:center;gap:5px;min-width:0}
+.cp .n{width:150px;font-weight:600;display:flex;align-items:center;gap:5px;min-width:0}
 .cp .n span.nn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .crown{font-size:13px;line-height:1;flex-shrink:0;cursor:default}
 .crownbar{margin-top:12px;padding:10px 14px;border-radius:10px;background:#FFF6DB;color:#7A5300;font-size:13.5px;font-weight:700}
@@ -899,9 +899,10 @@ function progress(h, week){
     get done(){return (this.live?1:0)+(this.read?1:0)+(this.money?1:0)+(this.pick?1:0);}};
 }
 const PER = 4;  // 한 주 과제 수
-function choiceOf(h){
+function choiceOf(h,withLive){
   let hs=0, sn=0;
-  (DATA.subs||[]).filter(s=>s.h===h).forEach(s=>{const t=parseTask(s.task); if(!t)return; if(t.track==='house')hs++; if(t.track==='sns')sn++;});
+  (DATA.subs||[]).filter(s=>s.h===h).forEach(s=>{const t=parseTask(s.task); if(!t)return; if(t.track==='house')hs++; if(t.track==='sns')sn++;
+    if(withLive&&t.track==='live'&&t.week){ const l=s.live||''; if(/내집/.test(l))hs++; if(/SNS/.test(l))sn++; }});   // 11/27 결영: 강의 출석도 과정으로
   return hs&&sn?'둘 다':hs?'내집':sn?'SNS':'';
 }
 
@@ -998,9 +999,9 @@ function board(cw){
     <div class="seg"><button class="${boardMode==='week'?'on':''}" onclick="boardMode='week';render()">이번 주</button><button class="${boardMode==='all'?'on':''}" onclick="boardMode='all';render()">${cw>1?'OT~'+cw+'주 전체':'OT 포함 전체'}</button></div>
     <div style="margin-top:12px">`;
   shown.forEach(r=>{
-    const c=choiceOf(r.h), w=r.total?Math.round(r.done/r.total*100):0;
+    const c=choiceOf(r.h,true), w=r.total?Math.round(r.done/r.total*100):0;
     h+=`<div class="cp${r.done===r.total?' done':''}${ADMIN?' click':''}" ${ADMIN?`onclick="openDetail=openDetail===${JSON.stringify(r.h).replace(/"/g,'&quot;')}?null:${JSON.stringify(r.h).replace(/"/g,'&quot;')};render()"`:''}>
-      <span class="n"><span class="nn">${esc(r.h)}</span>${crown(r.h,boardMode==='week'?cw:null)}${c?`<span class="tr">${c}</span>`:''}</span>
+      <span class="n"><span class="nn">${esc(r.h)}</span>${crown(r.h,boardMode==='week'?cw:null)}${(c==='둘 다'?['내집','SNS']:c?[c]:[]).map(x=>`<span class="tr">${x}</span>`).join('')}</span>
       <span class="bar"><i style="width:${w}%"></i></span><span class="v">${r.done}/${r.total}</span></div>`;
     if(ADMIN && openDetail===r.h) h+=detailOf(r.h);
   });
@@ -2155,7 +2156,7 @@ function opsDash(rows,cw,unans,X){
     const ot=progress(x,0).live, ws=WEEKS.map(w=>w.n<=wk?progress(x,w.n).done:null);
     const got=(ot?1:0)+ws.reduce((s,v)=>s+(v||0),0), tot=1+wk*PER;
     const mine=rows.filter(r=>r.h===x), sent=mine.filter(r=>r.feedback), last=mine.reduce((m,r)=>Math.max(m,new Date(r.at).getTime()||0),0);
-    return {x,ot,ws,got,tot,pct:Math.round(got/tot*100),choice:choiceOf(x),sent:sent.length,read:sent.filter(r=>r.readAt).length,last};
+    return {x,ot,ws,got,tot,pct:Math.round(got/tot*100),choice:choiceOf(x,true),sent:sent.length,read:sent.filter(r=>r.readAt).length,last};
   }).sort((p,q)=>q.pct-p.pct||q.got-p.got||ppl.indexOf(p.x)-ppl.indexOf(q.x));
   const thisWk=wk?ppl.map(x=>progress(x,wk).done):ppl.map(x=>progress(x,0).live?1:0), need=wk?PER:1;
   const sum=thisWk.reduce((s,v)=>s+v,0), full=thisWk.filter(v=>v===need).length, none=thisWk.filter(v=>v===0).length;
