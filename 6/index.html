@@ -1244,7 +1244,8 @@ function attendBox(n){
     <div class="exsub">내 과제 탭에서 부부 닉네임으로 로그인하면, 이 자리에서 칸 세 개만 채우고 바로 출석할 수 있어요</div>
     <div class="btns" style="max-width:320px"><a class="b fill" href="#mine">로그인하러 가기 ›</a></div></section>`;
   const v = attGet(n), task = attTask(n);
-  const done = DATA && Array.isArray(DATA.rows) && DATA.rows.some(r => r.task === task);
+  // 11/27 출석은 본 라이브(화 내집마련·목 SNS)마다 따로 남는다 — 같은 라이브를 다시 낼 때만 '바뀌어요'
+  const done = DATA && Array.isArray(DATA.rows) && DATA.rows.some(r => r.task === task && (!n || !v.l || String(r.body || '').indexOf('본 라이브 :'+String.fromCharCode(10)+v.l) >= 0));
   const who = v.who || '';
   return `<section class="sec att" id="att"><div class="exh"><span>✓</span>여기서 바로 출석하기</div>
     <div class="exsub"><b>${esc(m.h)}</b> · ${esc(task)}${done ? ' · <span style="color:var(--acc);font-weight:700">이미 냈어요 — 다시 내면 새 글로 바뀌어요</span>' : ''}</div>
@@ -1932,7 +1933,7 @@ const opsWait = () => ADMIN ? (ADMIN.rows||[]).filter(r=>!r.feedback).length : 0
 // 담당 (10/26 결영) — 결영: 돈관리·SNS·OT 출석·목요일 SNS 라이브 출석 / 머니그랩: 내집마련·독서·화요일 내집마련 라이브 출석
 const ownerOf = r => { const t=parseTask(r.task); if(!t) return '머니그랩';
   if(t.track==='money'||t.track==='sns') return '결영';
-  if(t.track==='live') return t.week===0 || /어떤 강의를 들었나요\? :\n[^\n]*SNS/.test(r.body||'') ? '결영' : '머니그랩';
+  if(t.track==='live') return t.week===0 || /(어떤 강의를 들었나요\?|본 라이브) :\s*[^\n]*SNS/.test(r.body||'') ? '결영' : '머니그랩';
   return '머니그랩'; };
 let opsWho=(()=>{ try{ return sessionStorage.getItem('ot'+COHORT+'who')||'all'; }catch(e){ return 'all'; } })();
 function setWho(k){ opsWho=k; try{ sessionStorage.setItem('ot'+COHORT+'who',k); }catch(e){} render(); }
